@@ -26,3 +26,4 @@ lib/data.js
 *.js.map
 release.tar.gz
 mailconfig.php
+.direnv
