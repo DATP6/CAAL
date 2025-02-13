@@ -21,6 +21,7 @@
 /// <reference path="activity/hmlgame.ts" />
 
 declare var CCSParser;
+declare var PCCSParser;
 declare var TCCSParser;
 declare var HMLParser;
 declare var THMLParser;
@@ -28,16 +29,16 @@ import ccs = CCS;
 import hml = HML;
 
 module Main {
-    declare var Version : string;
+    declare var Version: string;
     export var activityHandler = new Activity.ActivityHandler();
     var timer;
 
     $(document).ready(function() {
         activityHandler.addActivity("editor", new Activity.Editor("#editor-container", "#edit-btn"));
         activityHandler.addActivity("explorer", new Activity.Explorer("#explorer-container", "#explore-btn"));
-        activityHandler.addActivity("verifier" , new Activity.Verifier("#verifier-container", "#verify-btn"));
-        activityHandler.addActivity("game" , new Activity.Game("#game-container", "#game-btn", "#select-game"));
-        activityHandler.addActivity("hmlgame" , new Activity.HmlGame("#hml-game-container", "#hml-game-btn", "#select-game"));
+        activityHandler.addActivity("verifier", new Activity.Verifier("#verifier-container", "#verify-btn"));
+        activityHandler.addActivity("game", new Activity.Game("#game-container", "#game-btn", "#select-game"));
+        activityHandler.addActivity("hmlgame", new Activity.HmlGame("#hml-game-container", "#hml-game-btn", "#select-game"));
         activityHandler.selectActivity("editor");
 
         new New("#new-btn", activityHandler);
@@ -45,11 +46,11 @@ module Main {
         new Load(null, activityHandler);
         new Delete("#delete-btn", activityHandler);
         new Export("#export-pdf-btn", activityHandler, {});
-        new Export("#export-pdf-with-props", activityHandler, {properties: true});
+        new Export("#export-pdf-with-props", activityHandler, { properties: true });
 
         new HotkeyHandler().setGlobalHotkeys(activityHandler, save);
 
-        $('[data-toggle="tooltip"]').tooltip(); 
+        $('[data-toggle="tooltip"]').tooltip();
         Activity.addTooltips();
     });
 
@@ -57,20 +58,20 @@ module Main {
     $("#helpModal").load("help.html");
     $("#contactModal").load("contact.html", () => ContactForm.init());
 
-    export function showNotification(text : string, time : number) : void {
+    export function showNotification(text: string, time: number): void {
         window.clearTimeout(timer);
 
         var $box = $("#notification-box");
         $box.html(text);
         $box.fadeIn(500);
-        
+
         timer = setTimeout(() => {
             $box.fadeOut(500);
             window.clearTimeout(timer);
         }, time);
     }
 
-    export function getVersion() : string {
+    export function getVersion(): string {
         return Version;
     }
 }

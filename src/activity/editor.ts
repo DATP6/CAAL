@@ -1,13 +1,13 @@
 module Activity {
 
     export class Editor extends Activity {
-        private $editor : JQuery;
-        private $parse : JQuery;
-        private editor : any;
-        private autosave : AutoSave;
-        private initialCCS : string;
+        private $editor: JQuery;
+        private $parse: JQuery;
+        private editor: any;
+        private autosave: AutoSave;
+        private initialCCS: string;
 
-        constructor(container : string, button : string) {
+        constructor(container: string, button: string) {
             super(container, button);
 
             this.project = Project.getInstance();
@@ -43,17 +43,17 @@ module Activity {
             }
 
             this.$parse.on("click", () => this.parse());
-            this.$parse.popover({delay: {"show": 100, "hide": 100}, html: true, placement: "bottom", trigger: "manual"});
+            this.$parse.popover({ delay: { "show": 100, "hide": 100 }, html: true, placement: "bottom", trigger: "manual" });
 
             $("#input-mode").on("change", (e) => this.setInputMode(e));
             $("#font-size").on("change", (e) => this.setFontSize(e));
         }
 
-        protected checkPreconditions() : boolean {
+        protected checkPreconditions(): boolean {
             return true;
         }
 
-        public onShow(configuration? : any) : void {
+        public onShow(configuration?: any): void {
             $(window).on("resize", () => this.resize());
             this.resize();
 
@@ -68,12 +68,12 @@ module Activity {
             this.editor.focus();
         }
 
-        public onHide() : void {
+        public onHide(): void {
             $(window).off("resize");
             this.project.setChanged(this.initialCCS !== this.project.getCCS());
         }
 
-        private parse() : void {
+        private parse(): void {
             var graph, errors, title, content;
 
             title = '<span class="text-danger"><i class="fa fa-exclamation-circle fa-lg"></i> Error</span>';
@@ -100,7 +100,7 @@ module Activity {
             this.showPopover(title, content, true);
         }
 
-        private showPopover(title : string, content : string, sticky : boolean) : void {
+        private showPopover(title: string, content: string, sticky: boolean): void {
             this.$parse.attr("data-original-title", title);
             this.$parse.attr("data-content", content);
             this.$parse.popover("show");
@@ -121,33 +121,36 @@ module Activity {
 
         // http://stackoverflow.com/questions/11703093/
         private handleClick = (e) => {
-            if (!$(e.target).is(this.$parse) && $(e.target).parents(".popover.in").length === 0) { 
+            if (!$(e.target).is(this.$parse) && $(e.target).parents(".popover.in").length === 0) {
                 this.$parse.popover("hide");
             }
         }
 
-        private setInputMode(e) : void {
-            var inputMode = InputMode[<string> $(e.target).val()];
+        private setInputMode(e): void {
+            var inputMode = InputMode[<string>$(e.target).val()];
 
             if (inputMode === InputMode.CCS) {
                 this.editor.getSession().setMode("ace/mode/ccs");
+            } else if (inputMode === InputMode.PCCS) {
+                // TODO: Implement PCCS editor mode
+                this.editor.getSession().setMode("ace/mode/pccs");
             } else if (inputMode === InputMode.TCCS) {
                 this.editor.getSession().setMode("ace/mode/tccs");
             }
-            
+
             this.project.setInputMode(inputMode);
             this.project.setChanged(true);
             this.editor.focus();
         }
 
-        private setFontSize(e) : void {
+        private setFontSize(e): void {
             var fontSize = $(e.target).val();
             this.editor.setFontSize(parseInt(fontSize));
             this.updateHeight();
         }
 
         // http://stackoverflow.com/questions/11584061/
-        private updateHeight() : void {
+        private updateHeight(): void {
             var height = this.editor.getSession().getScreenLength() * this.editor.renderer.lineHeight + this.editor.renderer.scrollBar.getWidth();
 
             this.$editor.height(height);
@@ -156,7 +159,7 @@ module Activity {
             this.editor.resize();
         }
 
-        private resize() : void {
+        private resize(): void {
             var height = window.innerHeight - this.$editor.parent().offset().top - 32;
             this.$editor.css("max-height", height);
         }

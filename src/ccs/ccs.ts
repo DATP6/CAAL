@@ -6,39 +6,39 @@ module CCS {
     export type ProcessId = string;
 
     export interface Process {
-        id : ProcessId;
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T;
+        id: ProcessId;
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T;
     }
 
     export interface ProcessDispatchHandler<T> {
-        dispatchNullProcess(process : NullProcess, ... args) : T;
-        dispatchNamedProcess(process : NamedProcess, ... args) : T;
-        dispatchSummationProcess(process : SummationProcess, ... args) : T;
-        dispatchCompositionProcess(process : CompositionProcess, ... args) : T;
-        dispatchActionPrefixProcess(process : ActionPrefixProcess, ... args) : T;
-        dispatchRestrictionProcess(process : RestrictionProcess, ... args) : T;
-        dispatchRelabellingProcess(process : RelabellingProcess, ... args) : T;
+        dispatchNullProcess(process: NullProcess, ...args): T;
+        dispatchNamedProcess(process: NamedProcess, ...args): T;
+        dispatchSummationProcess(process: SummationProcess, ...args): T;
+        dispatchCompositionProcess(process: CompositionProcess, ...args): T;
+        dispatchActionPrefixProcess(process: ActionPrefixProcess, ...args): T;
+        dispatchRestrictionProcess(process: RestrictionProcess, ...args): T;
+        dispatchRelabellingProcess(process: RelabellingProcess, ...args): T;
     }
 
     export interface CollapsedDispatchHandler<T> extends ProcessDispatchHandler<T> {
-        dispatchCollapsedProcess(process : CollapsedProcess, ... args) : T
+        dispatchCollapsedProcess(process: CollapsedProcess, ...args): T
     }
 
     export interface CollapsedDispatchHandler<T> extends ProcessDispatchHandler<T> {
-        dispatchCollapsedProcess(process : CollapsedProcess, ... args) : T
+        dispatchCollapsedProcess(process: CollapsedProcess, ...args): T
     }
 
     export interface ProcessVisitor<T> {
-        visit(process : Process) : T;
+        visit(process: Process): T;
     }
 
     export interface SuccessorGenerator {
-        getGraph() : Graph;
-        getProcessByName(processName : string) : Process;
-        getProcessById(processId : ProcessId) : Process;
-        getSuccessors(processId : ProcessId) : TransitionSet;
+        getGraph(): Graph;
+        getProcessByName(processName: string): Process;
+        getProcessById(processId: ProcessId): Process;
+        getSuccessors(processId: ProcessId): TransitionSet;
     }
-    
+
     /*
         For the process type definitions, since toString is used 
         called before any property lookup it should return a unique
@@ -52,10 +52,10 @@ module CCS {
     */
 
     export class NullProcess implements Process {
-        private ccs : string;
+        private ccs: string;
         constructor() {
         }
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchNullProcess(this);
         }
         toString() {
@@ -67,10 +67,10 @@ module CCS {
     }
 
     export class NamedProcess implements Process {
-        private ccs : string;
-        constructor(public name : string, public subProcess : Process) {
+        private ccs: string;
+        constructor(public name: string, public subProcess: Process) {
         }
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchNamedProcess(this);
         }
         toString() {
@@ -82,10 +82,10 @@ module CCS {
     }
 
     export class SummationProcess implements Process {
-        private ccs : string;
-        constructor(public subProcesses : Process[]) {
+        private ccs: string;
+        constructor(public subProcesses: Process[]) {
         }
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchSummationProcess(this);
         }
         toString() {
@@ -98,10 +98,10 @@ module CCS {
     }
 
     export class CompositionProcess implements Process {
-        private ccs : string;
-        constructor(public subProcesses : Process[]) {
+        private ccs: string;
+        constructor(public subProcesses: Process[]) {
         }
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchCompositionProcess(this);
         }
         toString() {
@@ -114,10 +114,10 @@ module CCS {
     }
 
     export class ActionPrefixProcess implements Process {
-        private ccs : string;
-        constructor(public action : Action, public nextProcess : Process) {
+        private ccs: string;
+        constructor(public action: Action, public nextProcess: Process) {
         }
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchActionPrefixProcess(this);
         }
         toString() {
@@ -128,12 +128,12 @@ module CCS {
             return this.toString();
         }
     }
-    
+
     export class RestrictionProcess implements Process {
-        private ccs : string;
-        constructor(public subProcess : Process, public restrictedLabels : LabelSet) {
+        private ccs: string;
+        constructor(public subProcess: Process, public restrictedLabels: LabelSet) {
         }
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchRestrictionProcess(this);
         }
         toString() {
@@ -148,10 +148,10 @@ module CCS {
     }
 
     export class RelabellingProcess implements Process {
-        private ccs : string;
-        constructor(public subProcess : Process, public relabellings : RelabellingSet) {
+        private ccs: string;
+        constructor(public subProcess: Process, public relabellings: RelabellingSet) {
         }
-        dispatchOn<T>(dispatcher : ProcessDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchRelabellingProcess(this);
         }
         toString() {
@@ -166,10 +166,10 @@ module CCS {
     }
 
     export class CollapsedProcess implements Process {
-        private ccs : string;
-        constructor(public subProcesses : Process[]) {
+        private ccs: string;
+        constructor(public subProcesses: Process[]) {
         }
-        dispatchOn<T>(dispatcher : CollapsedDispatchHandler<T>) : T {
+        dispatchOn<T>(dispatcher: CollapsedDispatchHandler<T>): T {
             return dispatcher.dispatchCollapsedProcess(this);
         }
         toString() {
@@ -182,10 +182,10 @@ module CCS {
     }
 
     export class Action {
-        private label : string;
-        private complement : boolean;
+        private label: string;
+        private complement: boolean;
 
-        constructor(label : string, isComplement : boolean) {
+        constructor(label: string, isComplement: boolean) {
             if (label === "tau" && isComplement) {
                 throw newError("TauNoComplement", "Tau has no complement.");
             }
@@ -193,15 +193,15 @@ module CCS {
             this.complement = isComplement;
         }
 
-        getLabel() : string {
+        getLabel(): string {
             return this.label;
         }
 
-        isComplement() : boolean {
+        isComplement(): boolean {
             return this.complement;
         }
 
-        equals(other : Action) {
+        equals(other: Action) {
             return this.label === other.label &&
                 this.complement === other.complement;
         }
@@ -224,22 +224,22 @@ module CCS {
     }
 
     interface Error {
-        name : string;
-        message : string;
+        name: string;
+        message: string;
     }
 
-    function newError(type, message) : Error {
+    function newError(type, message): Error {
         var error = new Error(message);
         error.name = type;
         return error;
     }
 
     export class Graph {
-        protected nextId : number = 1;
+        protected nextId: number = 1;
         protected nullProcess = new NullProcess();
         //Contains all processes by their .id
         //is also used to optimize number of instances.
-        protected processes = {"0": this.nullProcess};
+        protected processes = { "0": this.nullProcess };
         protected labelsToProc = Object.create(null);
         protected procsToLabel = Object.create(null);
         protected namedProcesses = Object.create(null);
@@ -253,7 +253,7 @@ module CCS {
         constructor() {
         }
 
-        newNamedProcess(processName : string, process : Process) {
+        newNamedProcess(processName: string, process: Process) {
             var namedProcess = this.namedProcesses[processName];
             if (!namedProcess) {
                 namedProcess = this.namedProcesses[processName] = new NamedProcess(processName, process);
@@ -266,7 +266,7 @@ module CCS {
             return namedProcess;
         }
 
-        referToNamedProcess(processName : string) {
+        referToNamedProcess(processName: string) {
             var namedProcess = this.namedProcesses[processName];
             if (!namedProcess) {
                 //Null will be fixed, by newNamedProcess
@@ -280,12 +280,12 @@ module CCS {
             return this.nullProcess;
         }
 
-        newActionPrefixProcess(action : Action, nextProcess : Process) {
+        newActionPrefixProcess(action: Action, nextProcess: Process) {
             var result = new ActionPrefixProcess(action, nextProcess);
             return this.processes[result.id] = result;
         }
 
-        newSummationProcess(subProcesses : Process[]) {
+        newSummationProcess(subProcesses: Process[]) {
             //Ensure left.id <= right.id
             var newProcesses = subProcesses.slice(0);
             newProcesses.sort();
@@ -293,7 +293,7 @@ module CCS {
             return this.processes[result.id] = result;
         }
 
-        newCompositionProcess(subProcesses : Process[]) {
+        newCompositionProcess(subProcesses: Process[]) {
             //Ensure left.id <= right.id
             var newProcesses = subProcesses.slice(0);
             newProcesses.sort();
@@ -301,7 +301,7 @@ module CCS {
             return this.processes[result.id] = result;
         }
 
-        newRestrictedProcess(process, restrictedLabels : LabelSet) {
+        newRestrictedProcess(process, restrictedLabels: LabelSet) {
             //For now return just new instead of structural sharing
             restrictedLabels = this.allRestrictedSets.getOrAdd(restrictedLabels);
             var result = new RestrictionProcess(process, restrictedLabels);
@@ -318,35 +318,35 @@ module CCS {
             return this.newRestrictedProcess(process, labelSet);
         }
 
-        newRelabelingProcess(process, relabellings : RelabellingSet) {
+        newRelabelingProcess(process, relabellings: RelabellingSet) {
             relabellings = this.allRelabellings.getOrAdd(relabellings);
             var result = new RelabellingProcess(process, relabellings);
             return this.processes[result.id] = result;
         }
 
-        newCollapsedProcess(subProcesses : Process[]) {
+        newCollapsedProcess(subProcesses: Process[]) {
             var newProcesses = subProcesses.slice(0);
             newProcesses.sort();
             var result = new CollapsedProcess(newProcesses);
             return this.processes[result.id] = result;
         }
 
-        defineNamedSet(name, labelSet : LabelSet) {
+        defineNamedSet(name, labelSet: LabelSet) {
             if (this.definedSets[name]) {
                 this.constructErrors.push(newError("DuplicateSetDefinition", "Duplicate definition of set '" + name + "'."));
             }
             this.definedSets[name] = this.allRestrictedSets.getOrAdd(labelSet);
         }
 
-        processById(id : ProcessId) : Process {
+        processById(id: ProcessId): Process {
             return this.processes[id] || null;
         }
 
-        processByName(name : string) : Process {
+        processByName(name: string): Process {
             return this.namedProcesses[name] || null;
         }
 
-        processByLabel(label : string) : Process {
+        processByLabel(label: string): Process {
             var proc = this.procsToLabel[label];
             if (!proc) throw "processByLabel: unknown label '" + label + "'";
             return proc;
@@ -356,7 +356,7 @@ module CCS {
             return Object.keys(this.namedProcesses);
         }
 
-        getLabel(process : Process) : string {
+        getLabel(process: Process): string {
             var label = this.labelsToProc[process.id];
             if (!label) {
                 label = this.labelsToProc[process.id] = (process instanceof CCS.NamedProcess) ? (<CCS.NamedProcess>process).name : "" + this.nextId++;
@@ -396,8 +396,8 @@ module CCS {
         private froms = [];
         private tos = [];
 
-        constructor(relabellings : {from: string; to: string}[]) {
-            relabellings.forEach( (relabel) => {
+        constructor(relabellings: { from: string; to: string }[]) {
+            relabellings.forEach((relabel) => {
                 if (relabel.from === "tau") {
                     throw newError("TauRelabel", "Cannot relabel tau.");
                 }
@@ -405,17 +405,17 @@ module CCS {
             });
         }
 
-        forEach(f : (from : string, to : string) => void, thisObject?) {
+        forEach(f: (from: string, to: string) => void, thisObject?) {
             for (var i = 0, max = this.froms.length; i < max; i++) {
                 f.call(thisObject, this.froms[i], this.tos[i]);
             }
         }
 
-        hasRelabelForLabel(label : string ) : boolean {
+        hasRelabelForLabel(label: string): boolean {
             return this.froms.indexOf(label) !== -1;
         }
 
-        relabeledActionFor(action : Action) : Action {
+        relabeledActionFor(action: Action): Action {
             var index = this.froms.indexOf(action.getLabel()),
                 result = null,
                 newLabel;
@@ -427,7 +427,7 @@ module CCS {
             return result;
         }
 
-        equals(other : RelabellingSet) {
+        equals(other: RelabellingSet) {
             if (other === this) return true;
             if (other.froms.length !== this.froms.length) return false;
             for (var i = 0; i < this.froms.length; i++) {
@@ -437,20 +437,20 @@ module CCS {
             return true;
         }
 
-        toString() : string {
+        toString(): string {
             return "RelabellingSet";
         }
 
-        isEmpty() : boolean {
+        isEmpty(): boolean {
             return this.froms.length === 0;
         }
 
-        private addRelabel(from : string, to : string) {
+        private addRelabel(from: string, to: string) {
             this.froms.push(from);
             this.tos.push(to);
         }
 
-        private targetLabelFor(label : string) : string {
+        private targetLabelFor(label: string): string {
             const index = this.froms.indexOf(label);
             if (index === -1) {
                 return null;
@@ -458,11 +458,11 @@ module CCS {
             return this.tos[index];
         }
 
-        private hasTargetLabel(targetLabel : string) : boolean {
+        private hasTargetLabel(targetLabel: string): boolean {
             return this.tos.indexOf(targetLabel) !== -1;
         }
 
-        private static ComposeTwo(first : RelabellingSet, second : RelabellingSet) : RelabellingSet {
+        private static ComposeTwo(first: RelabellingSet, second: RelabellingSet): RelabellingSet {
             // This could be implemented in-place but it is tricky to get right.
             const result = new RelabellingSet([]);
 
@@ -480,7 +480,7 @@ module CCS {
                     result.addRelabel(firstFrom, firstTo);
                 }
             });
-            
+
             // Case 3:  A --second--> B
             second.forEach((secondFrom, secondTo) => {
                 // Do not readd case 1, implied if: first.hasTargetLabel(secondFrom)
@@ -493,7 +493,7 @@ module CCS {
             return result;
         }
 
-        static FromComposition(...relabellings : RelabellingSet[]) : RelabellingSet {
+        static FromComposition(...relabellings: RelabellingSet[]): RelabellingSet {
             var last = new RelabellingSet([]);
             relabellings.forEach(toApply => {
                 last = RelabellingSet.ComposeTwo(last, toApply);
@@ -503,32 +503,32 @@ module CCS {
     }
 
     export class LabelSet {
-        private labels : string[] = [];
+        private labels: string[] = [];
 
-        constructor(labels : string[]) {
+        constructor(labels: string[]) {
             this.labels = ArrayUtil.sortAndRemoveDuplicates(labels);
             if (this.contains("tau")) {
                 throw newError("TauInLabelSet", "Tau is not allowed in label set.");
             }
         }
 
-        toArray() : string[] {
+        toArray(): string[] {
             return this.labels.slice(0);
         }
 
-        contains(label : string) : boolean {
+        contains(label: string): boolean {
             return this.labels.indexOf(label) !== -1;
         }
 
-        empty() : boolean {
+        empty(): boolean {
             return this.count() === 0;
         }
 
-        count() : number {
+        count(): number {
             return this.labels.length;
         }
 
-        forEach(f : (label : string) => void, thisObject?) {
+        forEach(f: (label: string) => void, thisObject?) {
             if (thisObject) {
                 this.labels.forEach(label => f.call(this, label));
             } else {
@@ -536,7 +536,7 @@ module CCS {
             }
         }
 
-        equals(other : LabelSet) {
+        equals(other: LabelSet) {
             var myLabels = this.labels,
                 otherLabels = other.labels;
             if (other === this) return true;
@@ -547,11 +547,11 @@ module CCS {
             return true;
         }
 
-        union(other : LabelSet) : LabelSet {
+        union(other: LabelSet): LabelSet {
             return LabelSet.Union(this, other);
         }
 
-        static Union(... sets : LabelSet[]) {
+        static Union(...sets: LabelSet[]) {
             var result = new LabelSet([]);
             sets.forEach(set => {
                 set.labels.forEach(label => {
@@ -574,14 +574,14 @@ module CCS {
     */
     export class Transition {
 
-        constructor(public action : Action, public targetProcess : Process) {
+        constructor(public action: Action, public targetProcess: Process) {
         }
 
-        equals(other : Transition) {
+        equals(other: Transition) {
             if (!(other instanceof Transition)) {
                 return false;
             }
-            
+
             return (this.action.equals(other.action) && this.targetProcess.id == other.targetProcess.id);
         }
 
@@ -594,53 +594,53 @@ module CCS {
     }
 
     export class TransitionSet {
-        private transitions : Transition[] = [];
+        private transitions: Transition[] = [];
 
-        constructor(transitions? : Transition[]) {
+        constructor(transitions?: Transition[]) {
             if (transitions) {
                 this.addMany(transitions);
             }
         }
 
-        add(transition : Transition) : void {
+        add(transition: Transition): void {
             var index = this.indexOf(transition);
             if (index === -1) {
                 this.transitions.push(transition);
             }
         }
 
-        contains(transition : Transition) : boolean {
+        contains(transition: Transition): boolean {
             return this.indexOf(transition) !== -1;
         }
 
-        private indexOf(transition : Transition) : number {
+        private indexOf(transition: Transition): number {
             var allCurrent = this.transitions;
-            for (var i = 0, max = allCurrent.length; i < max; i++){
+            for (var i = 0, max = allCurrent.length; i < max; i++) {
                 if (transition.equals(allCurrent[i])) return i;
             }
             return -1;
         }
 
-        addMany(transitions : Transition[]) : void {
-            for (var i = 0, max = transitions.length; i < max; i++){
+        addMany(transitions: Transition[]): void {
+            for (var i = 0, max = transitions.length; i < max; i++) {
                 this.add(transitions[i]);
             }
         }
 
-        unionWith(tSet : TransitionSet) : TransitionSet {
+        unionWith(tSet: TransitionSet): TransitionSet {
             this.addMany(tSet.transitions);
             return this;
         }
 
-        clone() : TransitionSet {
+        clone(): TransitionSet {
             return new TransitionSet(this.transitions);
         }
 
-        count() : number {
+        count(): number {
             return this.transitions.length;
         }
 
-        applyRestrictionSet(labels : LabelSet) : TransitionSet {
+        applyRestrictionSet(labels: LabelSet): TransitionSet {
             var count = this.transitions.length,
                 allCurrent = this.transitions,
                 i = 0;
@@ -655,11 +655,11 @@ module CCS {
             return this;
         }
 
-        applyRelabelSet(relabels : RelabellingSet) : void {
+        applyRelabelSet(relabels: RelabellingSet): void {
             var allCurrent = this.transitions,
                 newAction, oldAction, transition;
             for (var i = 0, max = allCurrent.length; i < max; i++) {
-                if (allCurrent[i] instanceof Transition){
+                if (allCurrent[i] instanceof Transition) {
                     transition = allCurrent[i];
                     oldAction = transition.action;
                     if (relabels.hasRelabelForLabel(transition.action.label)) {
@@ -670,7 +670,7 @@ module CCS {
             }
         }
 
-        possibleActions() : Action[] {
+        possibleActions(): Action[] {
             var actions = [],
                 action, found;
             for (var i = 0; i < this.transitions.length; i++) {
@@ -687,24 +687,27 @@ module CCS {
             return actions;
         }
 
-        transitionsForAction(action : Action) : Transition[] {
+        transitionsForAction(action: Action): Transition[] {
             return this.transitions.filter((transition) => action.equals(transition.action));
         }
 
-        forEach(f : (transition : Transition) => any) {
-            for (var i = 0, max = this.transitions.length; i < max; i++){
+        forEach(f: (transition: Transition) => any) {
+            for (var i = 0, max = this.transitions.length; i < max; i++) {
                 f(this.transitions[i]);
             }
         }
 
-        toArray() : Transition[] {
+        toArray(): Transition[] {
             return this.transitions.slice(0);
         }
     }
 
     export class StrictSuccessorGenerator implements SuccessorGenerator, ProcessDispatchHandler<TransitionSet> {
 
-        constructor(public graph : Graph, public cache?) {
+        // public cache: Record<string, TransitionSet>;
+        public cache: { [key: string]: TransitionSet };
+
+        constructor(public graph: Graph, cache?) {
             this.cache = cache || {};
         }
 
@@ -712,22 +715,22 @@ module CCS {
             return this.graph;
         }
 
-        getSuccessors(processId : ProcessId) : TransitionSet {
+        getSuccessors(processId: ProcessId): TransitionSet {
             //Move recursive calling into loop with stack here
             //if overflow becomes an issue.
             var process = this.graph.processById(processId);
             return this.cache[process.id] = process.dispatchOn(this);
         }
 
-        getProcessByName(processName : string) : Process {
+        getProcessByName(processName: string): Process {
             return this.graph.processByName(processName);
         }
 
-        getProcessById(processId : ProcessId) : Process {
+        getProcessById(processId: ProcessId): Process {
             return this.graph.processById(processId);
         }
 
-        dispatchNullProcess(process : NullProcess) {
+        dispatchNullProcess(process: NullProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
                 transitionSet = this.cache[process.id] = new TransitionSet();
@@ -735,7 +738,7 @@ module CCS {
             return transitionSet;
         }
 
-        dispatchNamedProcess(process : NamedProcess) {
+        dispatchNamedProcess(process: NamedProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
                 //Assume nothing, then figure it out when subprocess successors are known.
@@ -745,7 +748,7 @@ module CCS {
             return transitionSet;
         }
 
-        dispatchSummationProcess(process : SummationProcess) {
+        dispatchSummationProcess(process: SummationProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
                 transitionSet = this.cache[process.id] = new TransitionSet();
@@ -756,15 +759,15 @@ module CCS {
             return transitionSet;
         }
 
-        dispatchCompositionProcess(process : CompositionProcess) {
+        dispatchCompositionProcess(process: CompositionProcess) {
             var transitionSet = this.cache[process.id],
                 leftSet, rightSet;
             if (!transitionSet) {
                 transitionSet = this.cache[process.id] = new TransitionSet();
                 var subTransitionSets = process.subProcesses.map(subProc => subProc.dispatchOn(this));
                 //COM3s
-                for (var i=0; i < subTransitionSets.length-1; i++) {
-                    for (var j=i+1; j < subTransitionSets.length; j++) {
+                for (var i = 0; i < subTransitionSets.length - 1; i++) {
+                    for (var j = i + 1; j < subTransitionSets.length; j++) {
                         //For each pairs in  P1 | P2 | P3 | P4, find COM3 transitions.
                         var left = subTransitionSets[i];
                         var right = subTransitionSets[j];
@@ -784,7 +787,7 @@ module CCS {
                     }
                 }
                 //COM1/2s
-                subTransitionSets.forEach( (subTransitionSet, index) => {
+                subTransitionSets.forEach((subTransitionSet, index) => {
                     subTransitionSet.forEach(subTransition => {
                         var targetSubprocesses = process.subProcesses.slice(0);
                         //Only the index of the subprocess will have changed.
@@ -797,7 +800,7 @@ module CCS {
             return transitionSet;
         }
 
-        dispatchActionPrefixProcess(process : ActionPrefixProcess) {
+        dispatchActionPrefixProcess(process: ActionPrefixProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
                 //process.nextProcess.dispatchOn(this).clone();
@@ -806,7 +809,7 @@ module CCS {
             return transitionSet;
         }
 
-        dispatchRestrictionProcess(process : RestrictionProcess) {
+        dispatchRestrictionProcess(process: RestrictionProcess) {
             var transitionSet = this.cache[process.id],
                 subTransitionSet;
             if (!transitionSet) {
@@ -821,7 +824,7 @@ module CCS {
             return transitionSet;
         }
 
-        dispatchRelabellingProcess(process : RelabellingProcess) {
+        dispatchRelabellingProcess(process: RelabellingProcess) {
             var transitionSet = this.cache[process.id],
                 subTransitionSet;
             if (!transitionSet) {
@@ -838,12 +841,12 @@ module CCS {
     }
 
     export class GrowingIndexedArraySet<T> {
-            
+
         private elements = [];
 
         constructor() { }
 
-        getOrAdd(element : T) : T {
+        getOrAdd(element: T): T {
             var result = element,
                 index = this.indexOf(element);
             if (element === undefined || element === null) throw "Bad argument to getOrAdd";
@@ -855,11 +858,11 @@ module CCS {
             return result;
         }
 
-        get(index : number) : T {
+        get(index: number): T {
             return index >= this.elements.length ? null : this.elements[index];
         }
 
-        indexOf(element : T) : number {
+        indexOf(element: T): number {
             for (var i = 0; i < this.elements.length; i++) {
                 if (this.elements[i].equals(element)) return i;
             }
@@ -867,8 +870,8 @@ module CCS {
         }
     }
 
-    export function getSuccGenerator(graph : Graph, options : any) : SuccessorGenerator {
-        var settings = { inputMode: "CCS", succGen: "strong", reduce: true, time: "timed"},
+    export function getSuccGenerator(graph: Graph, options: any): SuccessorGenerator {
+        var settings = { inputMode: "CCS", succGen: "strong", reduce: true, time: "timed" },
             succGenerator: SuccessorGenerator,
             treeReducer: Traverse.ProcessTreeReducer;
 
@@ -883,10 +886,10 @@ module CCS {
                 treeReducer = new Traverse.ProcessTreeReducer(graph);
             }
         } else {
-            succGenerator = new TCCS.StrictSuccessorGenerator(<TCCS.Graph> graph);
+            succGenerator = new TCCS.StrictSuccessorGenerator(<TCCS.Graph>graph);
 
             if (settings.reduce) {
-                treeReducer = new Traverse.TCCSProcessTreeReducer(<TCCS.Graph> graph);
+                treeReducer = new Traverse.TCCSProcessTreeReducer(<TCCS.Graph>graph);
             }
         }
 
@@ -894,8 +897,8 @@ module CCS {
         if (settings.reduce) {
             succGenerator = new Traverse.ReducingSuccessorGenerator(succGenerator, treeReducer);
         }
-        
-        
+
+
         if (settings.inputMode === "CCS") {
             if (settings.succGen === "weak") {
                 succGenerator = new Traverse.WeakSuccessorGenerator(succGenerator);
@@ -917,7 +920,7 @@ module CCS {
         return succGenerator;
     }
 
-    export function getNSuccessors(succGen : CCS.SuccessorGenerator, process : CCS.Process, maxDepth : number) : any {
+    export function getNSuccessors(succGen: CCS.SuccessorGenerator, process: CCS.Process, maxDepth: number): any {
         var result = {},
             queue = [[1, process]],
             depth, fromProcess, transitions;
@@ -937,11 +940,11 @@ module CCS {
         return result;
     }
 
-    export function reachableProcessIterator(initialProcess : ProcessId, succGen : SuccessorGenerator) {
+    export function reachableProcessIterator(initialProcess: ProcessId, succGen: SuccessorGenerator) {
         var visitStack = [initialProcess],
             addedProcs = Object.create(null),
-            iterator : any = {};
-        
+            iterator: any = {};
+
         addedProcs[initialProcess] = true;
         iterator.hasNext = () => visitStack.length > 0;
         iterator.next = () => {
@@ -959,8 +962,8 @@ module CCS {
         return iterator;
     }
 
-    export function expandBFS(process : Process, succGen : SuccessorGenerator, maxDepth : number) : {[id : number] : CCS.TransitionSet} {
-        var result : any = {},
+    export function expandBFS(process: Process, succGen: SuccessorGenerator, maxDepth: number): { [id: number]: CCS.TransitionSet } {
+        var result: any = {},
             queue = [[1, process]], //non-emptying array as queue.
             depth, qIdx, fromProcess, transitions;
         for (qIdx = 0; qIdx < queue.length; qIdx++) {
