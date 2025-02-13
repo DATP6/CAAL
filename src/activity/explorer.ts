@@ -13,28 +13,29 @@
 module Activity {
 
     export class Explorer extends Activity {
-        private graph : CCS.Graph;
-        private succGenerator : CCS.SuccessorGenerator;
-        private selectedProcess : CCS.Process;
+        private graph: CCS.Graph;
+        private succGenerator: CCS.SuccessorGenerator;
+        private selectedProcess: CCS.Process;
         private lastSelectedProcess: CCS.Process;
-        private fullscreen : Fullscreen;
-        private $canvasContainer : JQuery;
-        private $statusContainer : JQuery;
-        private $statusTable : JQuery;
-        private tooltip : ProcessTooltip;
-        private timeout : number;
+        private fullscreen: Fullscreen;
+        private $canvasContainer: JQuery;
+        private $statusContainer: JQuery;
+        private $statusTable: JQuery;
+        private tooltip: ProcessTooltip;
+        private timeout: number;
         private $ccsOptions: JQuery;
+        private $pccsOptions: JQuery;
         private $tccsOptions: JQuery;
-        private $zoom : JQuery;
-        private $depth : JQuery;
-        private $freeze : JQuery;
-        private $save : JQuery;
-        private canvas : HTMLCanvasElement;
+        private $zoom: JQuery;
+        private $depth: JQuery;
+        private $freeze: JQuery;
+        private $save: JQuery;
+        private canvas: HTMLCanvasElement;
         private renderer: Renderer;
         private uiGraph: GUI.ProcessGraphUI;
-        private options : any;
+        private options: any;
 
-        constructor(container : string, button : string) {
+        constructor(container: string, button: string) {
             super(container, button);
 
             this.project = Project.getInstance();
@@ -44,12 +45,13 @@ module Activity {
             this.$statusTable = this.$statusContainer.find("tbody");
             this.tooltip = new ProcessTooltip(this.$statusTable);
             this.$ccsOptions = $("#ccs-options");
+            this.$pccsOptions = $("#pccs-options");
             this.$tccsOptions = $("#tccs-options");
             this.$zoom = $("#explorer-zoom");
             this.$depth = $("#explorer-depth");
             this.$freeze = $("#explorer-freeze");
             this.$save = $("#explorer-save");
-            this.canvas = <HTMLCanvasElement> $("#explorer-canvas").find("canvas")[0];
+            this.canvas = <HTMLCanvasElement>$("#explorer-canvas").find("canvas")[0];
             this.renderer = new Renderer(this.canvas);
             this.uiGraph = new GUI.ArborGraph(this.renderer);
 
@@ -81,10 +83,11 @@ module Activity {
 
             $("#explorer-process-list, #option-simplify").on("change", () => this.draw());
             this.$ccsOptions.find("input").on("change", () => this.draw());
+            this.$pccsOptions.find("input").on("change", () => this.draw());
             this.$tccsOptions.find("input").on("change", () => this.draw());
         }
 
-        public onShow(configuration? : any) : void {
+        public onShow(configuration?: any): void {
             $(window).on("resize", () => this.resize(this.$zoom.val()));
             this.resize(this.$zoom.val());
 
@@ -110,7 +113,7 @@ module Activity {
                     tooltipAnchor.css("left", position.x - this.$canvasContainer.scrollLeft());
                     tooltipAnchor.css("top", position.y - this.$canvasContainer.scrollTop() - 10);
 
-                    tooltipAnchor.tooltip({title: this.tooltip.ccsNotationForProcessId(processId), html: true});
+                    tooltipAnchor.tooltip({ title: this.tooltip.ccsNotationForProcessId(processId), html: true });
                     tooltipAnchor.tooltip("show");
                 }, 1000)
             });
@@ -123,7 +126,7 @@ module Activity {
             this.toggleFreeze(this.isFreezeSet());
         }
 
-        public onHide() : void {
+        public onHide(): void {
             $(window).off("resize");
 
             this.fullscreen.onHide();
@@ -135,7 +138,7 @@ module Activity {
             this.uiGraph.freeze();
         }
 
-        private displayOptions() : void {
+        private displayOptions(): void {
             var processes = this.graph.getNamedProcesses().reverse();
             var list = $("#explorer-process-list").empty();
 
@@ -148,35 +151,54 @@ module Activity {
                 }
             }
 
-            if (this.project.getInputMode() === InputMode.CCS) {
-                this.$ccsOptions.show();
-                this.$tccsOptions.hide();
-            } else {
-                this.$ccsOptions.hide();
-                this.$tccsOptions.show();
+            switch (this.project.getInputMode()) {
+                case InputMode.CCS:
+                    this.$ccsOptions.show();
+                    this.$pccsOptions.hide();
+                    this.$tccsOptions.hide();
+                    break;
+                case InputMode.PCCS:
+                    this.$ccsOptions.hide();
+                    this.$pccsOptions.show();
+                    this.$tccsOptions.hide();
+                    break;
+                case InputMode.TCCS:
+                default: // Default to preserve previous "else" behaviour, which didn't check on TCCS
+                    this.$ccsOptions.hide();
+                    this.$pccsOptions.hide()
+                    this.$tccsOptions.show();
+                    break;
             }
         }
 
-        private getOptions() : any {
+        private getOptions(): any {
             var options = {
                 process: $("#explorer-process-list :selected").text(),
                 simplify: $("#option-simplify").prop("checked"),
                 inputMode: InputMode[this.project.getInputMode()]
             };
 
-            if (this.project.getInputMode() === InputMode.CCS) {
-                options["successor"] = $("input[name=option-ccs-successor]:checked").val();
-                options["collapse"] = $("input[name=option-collapse]:checked").val();
-            } else {
-                options["collapse"] = $("input[name=option-tccs-collapse]:checked").val();
-                options["successor"] = $("input[name=option-tccs-successor]:checked").val();
-                options["time"] = $("input[name=option-tccs-successor]:checked").data("time");
+            switch (this.project.getInputMode()) {
+                case InputMode.CCS:
+                    options["successor"] = $("input[name=option-ccs-successor]:checked").val();
+                    options["collapse"] = $("input[name=option-collapse]:checked").val();
+                    break;
+                case InputMode.PCCS:
+                    options["successor"] = $("input[name=option-pccs-successor]:checked").val();
+                    options["collapse"] = $("input[name=option-pccs-collapse]:checked").val();
+                    break;
+                case InputMode.TCCS:
+                default:
+                    options["collapse"] = $("input[name=option-tccs-collapse]:checked").val();
+                    options["successor"] = $("input[name=option-tccs-successor]:checked").val();
+                    options["time"] = $("input[name=option-tccs-successor]:checked").data("time");
             }
+
             this.options = options;
             return options;
         }
 
-        private draw() : void {
+        private draw(): void {
             this.uiGraph.clearAll();
             this.$statusTable.empty();
             this.$zoom.val("1");
@@ -184,31 +206,31 @@ module Activity {
 
             var options = this.getOptions();
             this.succGenerator = CCS.getSuccGenerator(this.graph,
-                {inputMode: options.inputMode, succGen: options.successor, time: options.time, reduce: options.simplify});
+                { inputMode: options.inputMode, succGen: options.successor, time: options.time, reduce: options.simplify });
             var process = this.succGenerator.getProcessByName(options.process);
 
             var mode = this.project.getInputMode();
 
             if (options.collapse !== 'none') {
                 var defendInfos = {
-                    'strong': {succGen: 'strong', time: undefined},
-                    'weak': {succGen: 'weak', time: undefined},
-                    'strong-timed': {succGen: 'strong', time: 'timed'},
-                    'strong-untimed': {succGen: 'strong', time: 'untimed'},
-                    'weak-timed': {succGen: 'weak', time: 'timed'},
-                    'weak-untimed': {succGen: 'weak', time: 'untimed'}
+                    'strong': { succGen: 'strong', time: undefined },
+                    'weak': { succGen: 'weak', time: undefined },
+                    'strong-timed': { succGen: 'strong', time: 'timed' },
+                    'strong-untimed': { succGen: 'strong', time: 'untimed' },
+                    'weak-timed': { succGen: 'weak', time: 'timed' },
+                    'weak-untimed': { succGen: 'weak', time: 'untimed' }
                 };
                 var defInfo = defendInfos[options.collapse];
                 if (!defInfo) throw "Invalid collapse setting: '" + options.collapse + "'";
                 try {
                     //Always attack with strong succ generator (improves performance)
-                    var attackSuccGen = CCS.getSuccGenerator(this.graph, {inputMode: mode, succGen: "strong", time: "timed", reduce: options.simplify});
-                    var defendSuccGen = CCS.getSuccGenerator(this.graph, {inputMode: mode, succGen: defInfo.succGen, time: defInfo.time, reduce: options.simplify});
+                    var attackSuccGen = CCS.getSuccGenerator(this.graph, { inputMode: mode, succGen: "strong", time: "timed", reduce: options.simplify });
+                    var defendSuccGen = CCS.getSuccGenerator(this.graph, { inputMode: mode, succGen: defInfo.succGen, time: defInfo.time, reduce: options.simplify });
                     try {
-                        var collapse = Equivalence.getBisimulationCollapse(attackSuccGen, defendSuccGen, process.id, process.id);    
+                        var collapse = Equivalence.getBisimulationCollapse(attackSuccGen, defendSuccGen, process.id, process.id);
                     } catch (err) {
                         if (err && err.name && err.name === 'CollapseTooLarge') {
-                            this.showMessageBox('System too large', 
+                            this.showMessageBox('System too large',
                                 'The bisimulation collapse is too large to compute in the browser.' + (
                                     options.simplify ? '' : " Try enabling 'Structural Reduction'."
                                 )
@@ -240,12 +262,12 @@ module Activity {
             this.expand(process);
         }
 
-        private save() : void {
+        private save(): void {
             this.$save.attr("href", this.canvas.toDataURL("image/png"));
             this.$save.attr("download", this.getOptions().process + ".png");
         }
 
-        private setDepth(depth : number) : void {
+        private setDepth(depth: number): void {
             if (!/^[1-9][0-9]*$/.test(depth.toString())) {
                 this.$depth.val(this.$depth.data("previous-depth"));
             } else {
@@ -254,11 +276,11 @@ module Activity {
             }
         }
 
-        private isFreezeSet() : boolean {
+        private isFreezeSet(): boolean {
             return !!(this.$freeze.data("frozen"));
         }
 
-        private toggleFreeze(freeze : boolean) : void {
+        private toggleFreeze(freeze: boolean): void {
             var icon = this.$freeze.find("i");
 
             if (freeze) {
@@ -272,12 +294,12 @@ module Activity {
             this.$freeze.data("frozen", freeze);
         }
 
-        private showProcess(process : CCS.Process) : void {
+        private showProcess(process: CCS.Process): void {
             if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            this.uiGraph.showProcess(process.id, {label: this.graph.getLabel(process), status: "unexpanded"});
+            this.uiGraph.showProcess(process.id, { label: this.graph.getLabel(process), status: "unexpanded" });
         }
 
-        private expand(process : CCS.Process) : void {
+        private expand(process: CCS.Process): void {
             this.selectedProcess = process;
 
             var allTransitions = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
@@ -294,7 +316,7 @@ module Activity {
 
                     Object.keys(groupedByTargetProcessId).forEach(strProcId => {
                         var group = groupedByTargetProcessId[strProcId];
-                        var data = group.map(t => {return {label: t.action.toString()}});
+                        var data = group.map(t => { return { label: t.action.toString() } });
                         this.showProcess(this.graph.processById(strProcId));
                         this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
                     });
@@ -306,13 +328,13 @@ module Activity {
             this.centerProcess(process);
         }
 
-        private updateStatusTable(transitions : CCS.Transition[]) : void {
+        private updateStatusTable(transitions: CCS.Transition[]): void {
             this.$statusTable.empty();
 
             transitions.forEach(t => {
                 var row = $("<tr>");
                 var $actionTd = $("<td>");
-                
+
                 if (this.succGenerator instanceof Traverse.AbstractingSuccessorGenerator) {
                     var abstractingSuccGen = <Traverse.AbstractingSuccessorGenerator>this.succGenerator;
                     var $action = Tooltip.wrap(t.action.toString(true));
@@ -334,7 +356,7 @@ module Activity {
             });
         }
 
-        private sourceText(process : CCS.Process) : any {
+        private sourceText(process: CCS.Process): any {
             /* Collapsed processes present us with another indirection meaning
                that under normal cirsumstances it would not be possible to hover
                over the constituent processes and get their description. */
@@ -343,7 +365,7 @@ module Activity {
                 return [].concat(
                     [Tooltip.wrapProcess(this.graph.getLabel(process))],
                     [" = {"],
-                    ArrayUtil.intersperse<any>(wrappedSubProcs, ", "), 
+                    ArrayUtil.intersperse<any>(wrappedSubProcs, ", "),
                     ["}"]
                 );
             } else {
@@ -351,7 +373,7 @@ module Activity {
             }
         }
 
-        private onTransitionTableRowHover(entering : boolean, event) : void {
+        private onTransitionTableRowHover(entering: boolean, event): void {
             this.uiGraph.clearHighlights();
 
             if (entering) {
@@ -361,19 +383,19 @@ module Activity {
                     var action = $(event.currentTarget).data("action");
                     this.highlightStrictPath(action, targetId);
                 } else {*/
-                    this.uiGraph.highlightToNode(targetId);
+                this.uiGraph.highlightToNode(targetId);
                 //}
             }
         }
 
         private highlightStrictPath(action, toTargetId) {
             var strictPath = (<Traverse.AbstractingSuccessorGenerator>this.succGenerator).
-                    getStrictPath(this.selectedProcess.id, action, toTargetId);
+                getStrictPath(this.selectedProcess.id, action, toTargetId);
             var from = this.selectedProcess.id;
             GUI.highlightTransitions(this.uiGraph, this.selectedProcess.id, strictPath);
         }
 
-        private onTransitionTableRowClick(e : Event) : void {
+        private onTransitionTableRowClick(e: Event): void {
             var targetId = $(e.currentTarget).data("targetId");
 
             if (targetId !== "undefined") {
@@ -382,11 +404,11 @@ module Activity {
             }
         }
 
-        private showProcessAsExplored(process : CCS.Process) : void {
+        private showProcessAsExplored(process: CCS.Process): void {
             this.uiGraph.getProcessDataObject(process.id).status = "expanded";
         }
 
-        private centerProcess(process : CCS.Process) : void {
+        private centerProcess(process: CCS.Process): void {
             var position = this.uiGraph.getPosition(process.id.toString());
 
             if (position && this.$zoom.val() > 1) {
@@ -395,7 +417,7 @@ module Activity {
             }
         }
 
-        private resize(zoom : number) : void {
+        private resize(zoom: number): void {
             var offsetTop = this.$canvasContainer.offset().top;
             var offsetBottom = this.$statusContainer.height() + 38; // Margin bot + border.
 

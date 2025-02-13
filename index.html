@@ -59,6 +59,8 @@
                                         <li class="divider"></li>
                                         <li id="ccs-projects-list" class="dropdown-header" role="presentation">My CCS Projects</li>
                                         <li class="divider"></li>
+                                        <li id="pccs-projects-list" class="dropdown-header" role="presentation">My CCS Projects</li>
+                                        <li class="divider"></li>
                                         <li id="tccs-projects-list" class="dropdown-header" role="presentation">My TCCS Projects</li>
                                         <li class="divider"></li>
                                         <li id="ccs-examples-list" class="dropdown-header" role="presentation">CCS Examples</li>
@@ -69,6 +71,8 @@
                                 <li id="delete-btn"><a>Delete</a>
                                     <ul class="dropdown-menu">
                                         <li id="ccs-delete-list" class="dropdown-header" role="presentation">My CCS Projects</li>
+                                        <li class="divider"></li>
+                                        <li id="pccs-delete-list" class="dropdown-header" role="presentation">My CCS Projects</li>
                                         <li class="divider"></li>
                                         <li id="tccs-delete-list" class="dropdown-header" role="presentation">My TCCS Projects</li>
                                     </ul>
@@ -125,6 +129,9 @@
                         <div id="input-mode" class="btn-group" data-toggle="buttons">
                             <label class="btn btn-default active">
                                 <input value="CCS" type="radio" checked>CCS</input>
+                            </label>
+                            <label class="btn btn-default">
+                                <input value="PCCS" type="radio">PCCS</input>
                             </label>
                             <label class="btn btn-default">
                                 <input value="TCCS" type="radio">TCCS</input>
@@ -185,6 +192,34 @@
                                                     <div class="radio">
                                                         <label data-tooltip="collapse-weak">
                                                             <input name="option-collapse" value="weak" type="radio">Weak Bisimulation Collapse
+                                                        </label>
+                                                    </div>
+                                                </span>
+                                                <span id="pccs-options">
+                                                    <div class="radio">
+                                                        <label>
+                                                            <input name="option-pccs-successor" value="strong" type="radio" checked>Strong Successors (&#x2192;)
+                                                        </label>
+                                                    </div>
+                                                    <div class="radio">
+                                                        <label>
+                                                            <input name="option-pccs-successor" value="weak" type="radio">Weak Successors (&#x21D2;)
+                                                        </label>
+                                                    </div>
+                                                    <div class="divider"></div>
+                                                    <div class="radio">
+                                                        <label data-tooltip="collapse-none">
+                                                            <input name="option-pccs-collapse" value="none" type="radio" checked>No Bisimulation Collapse
+                                                        </label>
+                                                    </div>
+                                                    <div class="radio">
+                                                        <label data-tooltip="collapse-strong">
+                                                            <input name="option-pccs-collapse" value="strong" type="radio">Strong Bisimulation Collapse
+                                                        </label>
+                                                    </div>
+                                                    <div class="radio">
+                                                        <label data-tooltip="collapse-weak">
+                                                            <input name="option-pccs-collapse" value="weak" type="radio">Weak Bisimulation Collapse
                                                         </label>
                                                     </div>
                                                 </span>
@@ -591,6 +626,7 @@
         <script src="lib/ace/src/ace.js" type="text/javascript" charset="utf-8"></script>
         <script src="lib/ace/src/ext-language_tools.js"></script>
         <script src="lib/ccs_grammar.js"></script>
+        <script src="lib/pccs_grammar.js"></script>
         <script src="lib/tccs_grammar.js"></script>
         <script src="lib/hml_grammar.js"></script>
         <script src="lib/thml_grammar.js"></script>

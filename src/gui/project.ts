@@ -3,18 +3,18 @@
 /// <reference path="../../lib/ccs.d.ts" />
 /// <reference path="property.ts" />
 
-enum InputMode {CCS, TCCS}
+enum InputMode { CCS, PCCS, TCCS }
 
 class Project {
-    private static instance : Project = null;
-    private defaultTitle : string = "Untitled Project";
-    private defaultCCS : string = "";
-    private id : number = null;
-    private $projectTitle : JQuery = $("#project-title");
-    private ccs : string;
-    private properties : Property.Property[] = Array();
-    private changed : boolean = false;
-    private inputMode : InputMode = InputMode.CCS;
+    private static instance: Project = null;
+    private defaultTitle: string = "Untitled Project";
+    private defaultCCS: string = "";
+    private id: number = null;
+    private $projectTitle: JQuery = $("#project-title");
+    private ccs: string;
+    private properties: Property.Property[] = Array();
+    private changed: boolean = false;
+    private inputMode: InputMode = InputMode.CCS;
 
     public constructor() {
         if (Project.instance) {
@@ -24,11 +24,11 @@ class Project {
         }
 
         this.reset();
-        this.$projectTitle.keypress(function(e) {return e.which != 13}); // Disable line breaks. Can still be copy/pasted.
+        this.$projectTitle.keypress(function(e) { return e.which != 13 }); // Disable line breaks. Can still be copy/pasted.
         this.$projectTitle.focusout(() => this.onTitleChanged());
     }
 
-    public static getInstance() : Project {
+    public static getInstance(): Project {
         if (Project.instance === null) {
             Project.instance = new Project();
         }
@@ -36,11 +36,11 @@ class Project {
         return Project.instance;
     }
 
-    public reset() : void {
+    public reset(): void {
         this.update(null, this.defaultTitle, this.defaultCCS, Array(), "CCS");
     }
 
-    public update(id : number, title : string, ccs : string, properties : any[], inputMode : string) : void {
+    public update(id: number, title: string, ccs: string, properties: any[], inputMode: string): void {
         this.setId(id);
         this.setTitle(title);
         this.setCCS(ccs);
@@ -51,23 +51,23 @@ class Project {
         $(document).trigger("ccs-changed");
     }
 
-    public getId() : number {
+    public getId(): number {
         return this.id;
     }
 
-    public setId(id : number) : void {
+    public setId(id: number): void {
         this.id = id;
     }
 
-    public getTitle() : string {
+    public getTitle(): string {
         return this.$projectTitle.text();
     }
 
-    public setTitle(title : string) : void {
+    public setTitle(title: string): void {
         this.$projectTitle.text(title);
     }
 
-    private onTitleChanged() : void {
+    private onTitleChanged(): void {
         var title = this.$projectTitle.text();
 
         if (title === "") {
@@ -77,19 +77,19 @@ class Project {
         }
     }
 
-    public getCCS() : string {
+    public getCCS(): string {
         return this.ccs;
     }
 
-    public setCCS(ccs : string) : void {
+    public setCCS(ccs: string): void {
         this.ccs = ccs;
     }
 
-    public getProperties() : Property.Property[] {
+    public getProperties(): Property.Property[] {
         return this.properties;
     }
 
-    public setProperties(properties : any[]) : void {
+    public setProperties(properties: any[]): void {
         this.properties = Array();
 
         for (var i = 0; i < properties.length; i++) {
@@ -101,11 +101,11 @@ class Project {
         }
     }
 
-    public addProperty(property : Property.Property) : void {
+    public addProperty(property: Property.Property): void {
         this.properties.push(property);
     }
 
-    public addPropertyAfter(id : number, property : Property.Property) : void {
+    public addPropertyAfter(id: number, property: Property.Property): void {
         for (var i = 0; i < this.properties.length; i++) {
             if (this.properties[i].getId() === id) {
                 this.properties.splice(i + 1, 0, property);
@@ -113,7 +113,7 @@ class Project {
         }
     }
 
-    public deleteProperty(property : Property.Property) : void {
+    public deleteProperty(property: Property.Property): void {
         var id = property.getId();
 
         for (var i = 0; i < this.properties.length; i++) {
@@ -124,7 +124,7 @@ class Project {
         }
     }
 
-    public rearrangeProperties(newPositions : number[]) {
+    public rearrangeProperties(newPositions: number[]) {
         if (!newPositions.every(pos => pos >= 0 && pos < this.properties.length)) {
             throw "Invalid rearrangement of properties"
         }
@@ -160,23 +160,26 @@ class Project {
         return result;
     }
 
-    private createFormulaSetFromProperty(property : Property.HML) : HML.FormulaSet {
+    private createFormulaSetFromProperty(property: Property.HML): HML.FormulaSet {
         var formulaSet = new HML.FormulaSet;
         if (this.inputMode === InputMode.CCS) {
-            HMLParser.parse(property.getDefinitions(), {ccs: CCS, hml: HML, formulaSet: formulaSet});
-            HMLParser.parse(property.getTopFormula(), {startRule: "TopFormula", ccs: CCS, hml: HML, formulaSet: formulaSet});
+            HMLParser.parse(property.getDefinitions(), { ccs: CCS, hml: HML, formulaSet: formulaSet });
+            HMLParser.parse(property.getTopFormula(), { startRule: "TopFormula", ccs: CCS, hml: HML, formulaSet: formulaSet });
+        } else if (this.inputMode === InputMode.PCCS) {
+            HMLParser.parse(property.getDefinitions(), { ccs: CCS, pccs: PCCS, hml: HML, formulaSet: formulaSet });
+            HMLParser.parse(property.getTopFormula(), { startRule: "TopFormula", ccs: CCS, pccs: PCCS, hml: HML, formulaSet: formulaSet });
         } else if (this.inputMode === InputMode.TCCS) {
-            THMLParser.parse(property.getDefinitions(), {ccs: CCS, tccs: TCCS, hml: HML, formulaSet: formulaSet});
-            THMLParser.parse(property.getTopFormula(), {startRule: "TopFormula", ccs: CCS, tccs: TCCS, hml: HML, formulaSet: formulaSet});
+            THMLParser.parse(property.getDefinitions(), { ccs: CCS, tccs: TCCS, hml: HML, formulaSet: formulaSet });
+            THMLParser.parse(property.getTopFormula(), { startRule: "TopFormula", ccs: CCS, tccs: TCCS, hml: HML, formulaSet: formulaSet });
         }
         return formulaSet;
     }
 
-    public isChanged() : boolean {
+    public isChanged(): boolean {
         return this.changed;
     }
 
-    public setChanged(changed : boolean) : void {
+    public setChanged(changed: boolean): void {
         // Changed from false to true.
         if (changed !== this.changed && changed === true) {
             $(document).trigger("ccs-changed");
@@ -185,37 +188,42 @@ class Project {
         this.changed = changed;
     }
 
-    public getInputMode() : InputMode {
+    public getInputMode(): InputMode {
         return this.inputMode;
     }
-    
-    private updateInputModeToggle() : void {
+
+    private updateInputModeToggle(): void {
         $("#input-mode").find("input[value=" + InputMode[this.inputMode] + "]").click();
     }
-    
-    public setInputMode(inputMode : InputMode) : void {
+
+    public setInputMode(inputMode: InputMode): void {
         this.inputMode = inputMode;
     }
 
-    public getGraph() : CCS.Graph {
+    public getGraph(): CCS.Graph {
         var graph;
 
-        if (this.inputMode === InputMode.CCS) {
-            graph = new CCS.Graph();
-            CCSParser.parse(this.ccs, {ccs: CCS, graph: graph});
-        } else {
-            graph = new TCCS.Graph();
-            TCCSParser.parse(this.ccs, {ccs: CCS, tccs: TCCS, graph: graph});
+        switch (this.inputMode) {
+            case InputMode.CCS:
+                graph = new CCS.Graph();
+                CCSParser.parse(this.ccs, { ccs: CCS, graph: graph });
+                break;
+            case InputMode.PCCS:
+                graph = new PCCS.Graph();
+                PCCSParser.parse(this.ccs, { ccs: CCS, pccs: PCCS, graph: graph });
+            case InputMode.TCCS:
+            default:
+                graph = new TCCS.Graph();
+                TCCSParser.parse(this.ccs, { ccs: CCS, tccs: TCCS, graph: graph });
         }
-
         return graph;
     }
 
-    public isSaved() : boolean {
+    public isSaved(): boolean {
         return this.ccs === "";
     }
 
-    public toJSON() : any {
+    public toJSON(): any {
         var properties = Array();
         for (var i = 0; i < this.properties.length; i++) {
             properties.push(this.properties[i].toJSON());
