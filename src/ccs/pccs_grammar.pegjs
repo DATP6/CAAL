@@ -51,8 +51,8 @@ Summation
 	// / P:Composition { return P; }
 
 Probabilistic
-	// = P:Composition _ Prob:Probability _ Q:Probabilistic { return Q instanceof pccs.ProbabilisticProcess ? g.newProbabilisticProcess(Prob, [P].concat(Q.subProcesses)) : g.newProbabilisticProcess(Prob, [P, Q]); }
-	= P:Composition _ "?" _ Q:Probabilistic { return Q instanceof pccs.ProbabilisticProcess ? g.newProbabilisticProcess(1, [P].concat(Q.subProcesses)) : g.newProbabilisticProcess(1, [P, Q]); }
+	= P:Composition _ Prob:Probability _ Q:Probabilistic { return Q instanceof pccs.ProbabilisticProcess ? g.newProbabilisticProcess(Prob, [P].concat(Q.subProcesses)) : g.newProbabilisticProcess(Prob, [P, Q]); }
+	// = P:Composition _ "?" _ Q:Probabilistic { return Q instanceof pccs.ProbabilisticProcess ? g.newProbabilisticProcess(1, [P].concat(Q.subProcesses)) : g.newProbabilisticProcess(1, [P, Q]); }
 	// = P:Composition _ Prob:Probability _ Q:Probabilistic { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
 	/ P:Composition { return P; }
 	// = P:Composition { return P; }

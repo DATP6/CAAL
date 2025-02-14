@@ -9,7 +9,7 @@ module PCCS {
     export class Graph extends CCS.Graph {
         constructor() {
             super();
-            this.unguardedRecursionChecker = new Traverse.TCCSUnguardedRecursionChecker();
+            this.unguardedRecursionChecker = new Traverse.PCCSUnguardedRecursionChecker();
         }
 
         public newProbabilisticProcess(probability: number, subProcesses: CCS.Process[]) {
@@ -49,6 +49,20 @@ module PCCS {
                 });
             }
             return transitionSet;
+        }
+    }
+}
+
+module Traverse {
+    export class PCCSUnguardedRecursionChecker extends Traverse.UnguardedRecursionChecker implements PCCS.ProcessDispatchHandler<boolean> {
+        dispatchProbabilisticProcess(process : PCCS.ProbabilisticProcess) {
+            var isUnguarded = false;
+            process.subProcesses.forEach(subProc => {
+                if (subProc.dispatchOn(this)) {
+                    isUnguarded = true;
+                }
+            });
+            return isUnguarded;
         }
     }
 }

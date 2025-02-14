@@ -211,6 +211,7 @@ class Project {
             case InputMode.PCCS:
                 graph = new PCCS.Graph();
                 PCCSParser.parse(this.ccs, { ccs: CCS, pccs: PCCS, graph: graph });
+                break;
             case InputMode.TCCS:
             default:
                 graph = new TCCS.Graph();
