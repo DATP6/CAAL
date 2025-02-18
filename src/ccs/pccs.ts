@@ -36,8 +36,8 @@ module PCCS {
 
     export class StrictSuccessorGenerator extends CCS.StrictSuccessorGenerator implements ProcessDispatchHandler<CCS.TransitionSet> {
 
-        constructor(protected tccsgraph: Graph, cache?) {
-            super(tccsgraph, cache);
+        constructor(protected pccsgraph: Graph, cache?) {
+            super(pccsgraph, cache);
         }
 
         public dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.TransitionSet {

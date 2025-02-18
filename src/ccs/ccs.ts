@@ -885,6 +885,12 @@ module CCS {
             if (settings.reduce) {
                 treeReducer = new Traverse.ProcessTreeReducer(graph);
             }
+        } else if (settings.inputMode === "PCCS") {
+            succGenerator = new PCCS.StrictSuccessorGenerator(<PCCS.Graph>graph);
+
+            if (settings.reduce) {
+                treeReducer = new Traverse.ProcessTreeReducer(<PCCS.Graph>graph);
+            }
         } else {
             succGenerator = new TCCS.StrictSuccessorGenerator(<TCCS.Graph>graph);
 
@@ -899,7 +905,7 @@ module CCS {
         }
 
 
-        if (settings.inputMode === "CCS") {
+        if (settings.inputMode !== "TCCS") {
             if (settings.succGen === "weak") {
                 succGenerator = new Traverse.WeakSuccessorGenerator(succGenerator);
             }

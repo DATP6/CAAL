@@ -65,6 +65,9 @@ module Activity {
                 if (this.project.getInputMode() === InputMode.CCS) {
                     this.formulaEditor.getSession().setMode("ace/mode/hml");
                     this.definitionsEditor.getSession().setMode("ace/mode/hml");
+                } else if (this.project.getInputMode() === InputMode.TCCS) {
+                    this.formulaEditor.getSession().setMode("ace/mode/thml");
+                    this.definitionsEditor.getSession().setMode("ace/mode/thml");
                 } else {
                     this.formulaEditor.getSession().setMode("ace/mode/thml");
                     this.definitionsEditor.getSession().setMode("ace/mode/thml");

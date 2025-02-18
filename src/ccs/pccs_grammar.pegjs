@@ -1,6 +1,5 @@
 
 {
-	console.log("Loading pccs grammar")
 	function extractLabelList(f, rest) {
 		var restLabels;
 		if (rest === undefined) return [f];
