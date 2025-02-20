@@ -137,6 +137,20 @@ var examples : any[] = [
         inputMode: "CCS"
     },
     {
+        title: "Probabilistic Packet Transmission",
+        ccs: [
+            "Sender = acc.'send.(ack.Sender 0.8 lost.Sender);",
+            "",
+            "Channel = send.('ack.Channel 0.8 'lost.Channel);",
+            "",
+            "Network = (Sender | Channel) \\ {send, ack, lost};",
+            "",
+            "Spec = acc.Spec;"
+        ].join("\n"),
+        properties: [],
+        inputMode: "PCCS"
+    },
+    {
         title: "Lightswitch",
         ccs: [
             "Off = press.Light;",

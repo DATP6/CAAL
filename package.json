@@ -21,6 +21,6 @@
     "release": "./node_modules/.bin/jake -q -f build.js || exit 1; OPENSSL_CONF=/etc/ssl ./node_modules/.bin/node-qunit-phantomjs ./test/test.html || exit 1; rm -f release.tar.gz; tar -zcf release.tar.gz lib/ css/ fonts/ docs/ index.html help.html contact.html about.html LICENSE README.md server.js;",
     "release-notest": "./node_modules/.bin/jake -q -f build.js || exit 1; rm -f release.tar.gz; tar -zcf release.tar.gz lib/ css/ fonts/ docs/ index.html help.html contact.html about.html LICENSE README.md server.js;"
   },
-  "authors": "Jacob K. Wortmann, Jesper R. Andersen, Mathias M. Hansen, Nicklas Andersen, Simon R. Olesen, Søren Enevoldsen, Asbjørn R. Eriksen, Jens Tinggaard",
+  "authors": "Jacob K. Wortmann, Jesper R. Andersen, Mathias M. Hansen, Nicklas Andersen, Simon R. Olesen, Søren Enevoldsen, Asbjørn R. Eriksen, Jens Tinggaard, Mikkel B. Jørgensen",
   "license": "MIT"
 }

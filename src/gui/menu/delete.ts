@@ -44,8 +44,10 @@ class Delete extends MenuItem {
     private showProjects() : void {
         var projects = this.storage.getObj("projects");
         var $ccsProjects = $("#ccs-delete-list");
+        var $pccsProjects = $("#pccs-delete-list");
         var $tccsProjects = $("#tccs-delete-list");
         var ccsFound = false;
+        var pccsFound = false;
         var tccsFound = false;
 
         $("li.delete").remove();
@@ -67,6 +69,9 @@ class Delete extends MenuItem {
                 if (projects[i].inputMode.toLowerCase() === "ccs") {
                     ccsFound = true;
                     $ccsProjects.after(html);
+                } else if (projects[i].inputMode.toLowerCase() === "pccs") {
+                    pccsFound = true;
+                    $pccsProjects.after(html);
                 } else if (projects[i].inputMode.toLowerCase() === "tccs") {
                     tccsFound = true;
                     $tccsProjects.after(html);
@@ -79,6 +84,7 @@ class Delete extends MenuItem {
         }
 
         $ccsProjects.toggle(ccsFound);
-        $tccsProjects.toggle(tccsFound).prev().toggle(ccsFound && tccsFound);
+        $pccsProjects.toggle(pccsFound).prev().toggle(ccsFound && pccsFound);
+        $tccsProjects.toggle(tccsFound).prev().toggle(ccsFound && tccsFound && pccsFound);
     }
 }
