@@ -67,6 +67,31 @@ module Traverse {
         }
     }
 
+    export class PCCSNotationVisitor extends Traverse.CCSNotationVisitor implements CCS.ProcessVisitor<string>, PCCS.ProcessDispatchHandler<string> {
+        public dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
+            var result = this.cache[process.id],
+                subStr;
+            if (!result) {
+                subStr = process.subProcesses.map(subProc => subProc.dispatchOn(this));
+                result = this.cache[process.id] = subStr.join(" ⊕0." + process.probability.toString() + " ");
+            }
+            return result
+        }
+
+        // override default action prefix in order to have parenthesis around probabalistic processes
+        dispatchActionPrefixProcess(process : CCS.ActionPrefixProcess) {
+            var result = this.cache[process.id],
+                subStr;
+            if (!result) {
+                subStr = process.nextProcess.dispatchOn(this);
+                subStr = wrapIfInstanceOf(subStr, process.nextProcess, [CCS.SummationProcess, CCS.CompositionProcess, PCCS.ProbabilisticProcess]);
+                result = this.cache[process.id] = process.action.toString(true) + "." + subStr;
+            }
+            return result;
+        }
+    }
+
+
     export class PCCSProcessTreeReducer extends Traverse.ProcessTreeReducer implements CCS.ProcessVisitor<CCS.Process>, PCCS.ProcessDispatchHandler<CCS.Process> {
 
         constructor(private pccsgraph: PCCS.Graph) {

@@ -79,7 +79,7 @@ module Activity {
     }
     
     export class ProcessTooltip extends Tooltip {
-        private visitor : Traverse.TCCSNotationVisitor;
+        private visitor : Traverse.CCSNotationVisitor;
         private graph : CCS.Graph;
         
         constructor($container : JQuery) {
@@ -115,6 +115,12 @@ module Activity {
         
         public setGraph(graph : CCS.Graph) : void {
             this.graph = graph;
+            if (graph instanceof PCCS.Graph) {
+                this.visitor = new Traverse.PCCSNotationVisitor()
+            } else {
+                // this is the default - even for CCS
+                this.visitor = new Traverse.TCCSNotationVisitor()
+            }
             this.visitor.clearCache();
         }
     }
