@@ -350,9 +350,23 @@ module Activity {
                         this.createProbabilisticNode(subProcess);
                     }
                 });
-                this.uiGraph.showTransitions(fromProcess.id, fromProcess.subProcesses[0].id, [{ label: "0." + probability.toString(), datas: { probability: true } }]);
-                this.uiGraph.showTransitions(fromProcess.id, fromProcess.subProcesses[1].id, [{ label: "0." + (10-probability).toString(), datas: { probability: true } }]);
+                probability = probability
+                this.uiGraph.showTransitions(fromProcess.id, fromProcess.subProcesses[0].id, [{ label: "0." + probability, datas: { probability: true } }]);
+                this.uiGraph.showTransitions(fromProcess.id, fromProcess.subProcesses[1].id, [{ label: "0." + this.invertProbability(probability), datas: { probability: true } }]);
             }
+        }
+
+        private invertProbability(decimals) {
+            let factor = 10 ** decimals.length;
+    
+            let num = parseInt(decimals, 10);
+            let complement = (factor - num).toString();
+
+            while (complement.length < decimals.length) {
+                complement += "0"; // Add leading zeros
+            }
+
+            return complement;
         }
 
         private updateStatusTable(transitions: CCS.Transition[]): void {

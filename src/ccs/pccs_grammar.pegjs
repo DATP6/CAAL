@@ -92,7 +92,7 @@ Identifier "identifier"
 IdentifierRest
 	= rest:[A-Za-z0-9?!_'\-#^]*  { return rest; }
 
-Probability = "0"? "." N:[0-9] { return N; } 
+Probability = "0"? "." N:("0"*[1-9][0-9]*)  { return N; } 
 
 Action "action"
 	= ['] label:Label { return new ccs.Action(label, true); }

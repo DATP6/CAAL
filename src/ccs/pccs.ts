@@ -13,15 +13,23 @@ module PCCS {
             this.unguardedRecursionChecker = new Traverse.PCCSUnguardedRecursionChecker();
         }
 
-        public newProbabilisticProcess(probability: number, subProcesses: CCS.Process[]) {
-            let result = new ProbabilisticProcess(probability, subProcesses);
+        public newProbabilisticProcess(probability: Array<any>, subProcesses: CCS.Process[]) {
+            var probabilityString = "";
+            probability.forEach(element => {
+                if (element instanceof Array) {
+                    probabilityString += element.join("");
+                } else {
+                    probabilityString += element;
+                }
+            });
+            let result = new ProbabilisticProcess(probabilityString, subProcesses);
             return this.processes[result.id] = result;
         }
     }
 
     export class ProbabilisticProcess implements CCS.Process {
         private ccs: string;
-        constructor(public probability: number, public subProcesses: CCS.Process[]) {
+        constructor(public probability: string, public subProcesses: CCS.Process[]) {
         }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchProbabilisticProcess(this);
