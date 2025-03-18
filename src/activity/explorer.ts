@@ -304,28 +304,55 @@ module Activity {
 
             var allTransitions = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
             var data = this.uiGraph.getProcessDataObject(process.id.toString());
-
             if (!data || data.status === "unexpanded") {
                 this.toggleFreeze(false);
 
                 for (var fromId in allTransitions) {
                     var fromProcess = this.graph.processById(fromId);
-                    this.showProcess(fromProcess);
-                    this.showProcessAsExplored(fromProcess);
-                    var groupedByTargetProcessId = ArrayUtil.groupBy(allTransitions[fromId].toArray(), t => t.targetProcess.id);
-
-                    Object.keys(groupedByTargetProcessId).forEach(strProcId => {
-                        var group = groupedByTargetProcessId[strProcId];
-                        var data = group.map(t => { return { label: t.action.toString() } });
-                        this.showProcess(this.graph.processById(strProcId));
-                        this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
-                    });
+                    
+                   
+                    if (fromProcess instanceof PCCS.ProbabilisticProcess) {
+                        this.createProbabilisticNode(fromProcess);
+                    } else {
+                        this.showProcess(fromProcess);
+                        this.showProcessAsExplored(fromProcess);
+                        var groupedByTargetProcessId = ArrayUtil.groupBy(allTransitions[fromId].toArray(), t => t.targetProcess.id);
+                        Object.keys(groupedByTargetProcessId).forEach(strProcId => {
+                            var group = groupedByTargetProcessId[strProcId];
+                                var data = group.map(t => { return { label: t.action.toString() } });
+                                this.showProcess(this.graph.processById(strProcId));
+                                this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
+                        });
+                    }
                 }
             }
 
             this.updateStatusTable(allTransitions[process.id]);
             this.uiGraph.setSelected(process.id.toString());
             this.centerProcess(process);
+        }
+
+        private createProbabilisticNode(fromProcess: CCS.Process): void {
+            if (fromProcess instanceof PCCS.ProbabilisticProcess) {
+                this.uiGraph.showProcess(fromProcess, { label: this.graph.getLabel(fromProcess), probabalisticNode: true });
+                this.showProcessAsExplored(fromProcess);
+                var probability = fromProcess.probability;
+                fromProcess["subProcesses"].forEach(subProcess => {
+                    if (subProcess instanceof CCS.ActionPrefixProcess) {
+                        console.log(typeof subProcess);
+                        console.log(subProcess);
+                        this.uiGraph.showProcess(subProcess, { label: this.graph.getLabel(subProcess), status: "unexpanded" })
+                        this.showProcessAsExplored(subProcess); 
+                        this.uiGraph.showProcess(subProcess["nextProcess"], { label: this.graph.getLabel(subProcess["nextProcess"]), status: "unexpanded" })
+                        this.showProcessAsExplored(subProcess);
+                        this.uiGraph.showTransitions(subProcess.id, subProcess["nextProcess"].id, [{ label: subProcess["action"].toString() }]);
+                    } else if (fromProcess instanceof PCCS.ProbabilisticProcess) {
+                        this.createProbabilisticNode(subProcess);
+                    }
+                });
+                this.uiGraph.showTransitions(fromProcess.id, fromProcess.subProcesses[0].id, [{ label: "0." + probability.toString(), datas: { probability: true } }]);
+                this.uiGraph.showTransitions(fromProcess.id, fromProcess.subProcesses[1].id, [{ label: "0." + (10-probability).toString(), datas: { probability: true } }]);
+            }
         }
 
         private updateStatusTable(transitions: CCS.Transition[]): void {
