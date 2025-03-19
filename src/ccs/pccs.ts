@@ -1,4 +1,5 @@
 /// <reference path="ccs.ts" />
+/// <reference path="reducedparsetree.ts" />
 
 module PCCS {
 
@@ -63,6 +64,23 @@ module Traverse {
                 }
             });
             return isUnguarded;
+        }
+    }
+
+    export class PCCSProcessTreeReducer extends Traverse.ProcessTreeReducer implements CCS.ProcessVisitor<CCS.Process>, PCCS.ProcessDispatchHandler<CCS.Process> {
+
+        constructor(private pccsgraph: PCCS.Graph) {
+            super(pccsgraph);
+        }
+
+        // NOTE: this implementation may not be complete, it is just yanked from the PCCSUnguardedRecursionChecker
+        // Look at dispatchSummationProcess in reducedparsetree.ts for inspiration
+        // The implementation depends on how we process multiple probabalistic processes.
+        dispatchProbabilisticProcess(process : PCCS.ProbabilisticProcess) {
+            process.subProcesses.forEach(subProc => {
+                subProc.dispatchOn(this)
+            });
+            return process
         }
     }
 }

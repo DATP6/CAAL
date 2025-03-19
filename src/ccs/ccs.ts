@@ -889,7 +889,7 @@ module CCS {
             succGenerator = new PCCS.StrictSuccessorGenerator(<PCCS.Graph>graph);
 
             if (settings.reduce) {
-                treeReducer = new Traverse.ProcessTreeReducer(<PCCS.Graph>graph);
+                treeReducer = new Traverse.PCCSProcessTreeReducer(<PCCS.Graph>graph);
             }
         } else {
             succGenerator = new TCCS.StrictSuccessorGenerator(<TCCS.Graph>graph);
