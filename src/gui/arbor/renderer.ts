@@ -50,7 +50,12 @@ class Renderer {
         this.particleSystem.eachNode((node : Node, pt : Point) => {
             // node: {mass:#, p:{x,y}, name:"", data:{}}
             // pt:   {x:#, y:#}  node position in screen coords
-            this.drawRectNode(node, pt);
+            console.log(node)
+            if (node.data.probabilityDistrubution === true) {
+                this.drawDot(node, pt);
+            } else {
+                this.drawRectNode(node, pt);
+            }
         });
 
         // draw the edges
@@ -59,6 +64,11 @@ class Renderer {
             // pt1:  {x:#, y:#}  source position in screen coords
             // pt2:  {x:#, y:#}  target position in screen coords
             // draw a line from pt1 to pt2
+            if (edge.data.datas[0]?.dashed) { // if the edge is a probabilistic edge, draw a dashed line.
+                this.ctx.setLineDash([5, 5]);
+            } else {
+                this.ctx.setLineDash([]);
+            }
             var arrowLength = 13;
             var arrowWidth = 6;
             var chevronColor = "#4D4D4D";
@@ -226,6 +236,20 @@ class Renderer {
         this.ctx.clearRect(-arrowLength/2,1/2, arrowLength/2,1); // delete some of the edge s already there (so the point isn't hidden)
         this.drawChevron(arrowLength, arrowWidth, chevronColor); // draw the chevron
     }
+
+    /**
+     * Draws the dot of the node
+     * @param {Node}  node
+     * @param {Point} pt
+     */
+    private drawDot(node:Node, pt: Point): void {
+        this.ctx.fillStyle = 'black'; // Set the fill color to black
+        this.ctx.beginPath(); // Start a new path
+        this.ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2); // Draw a circle at (pt.x, pt.y) with a radius of 5
+        this.ctx.fill(); // Fill the circle with the current fill style (black)
+        this.nodeBoxes[node.name] = [pt.x-5, pt.y-5, 10, 10]; // Save the bounds of the node-rect for drawing the edges correctly.
+    }
+
     /**
      * Draws the rectangle of the node
      * @param {Node}  node

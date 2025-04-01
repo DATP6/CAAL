@@ -309,6 +309,12 @@ module Traverse {
             var transitionSet = this.succGenerator.getSuccessors(processId);
             return this.reduceSuccessors(transitionSet);
         }
+        
+        // getProbabilityDistrubution(processId : ccs.ProcessId) : PCCS.ProbabilityDistribution {
+        //     var distributions = this.succGenerator.getProbabilityDistrubution(processId);
+        //     // TODO: Implement reducing probability distributions
+        //     return distributions;
+        // }
 
         private reduceSuccessors(transitionSet : ccs.TransitionSet) {
             var result = new ccs.TransitionSet();

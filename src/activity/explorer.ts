@@ -296,13 +296,18 @@ module Activity {
 
         private showProcess(process: CCS.Process): void {
             if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            this.uiGraph.showProcess(process.id, { label: this.graph.getLabel(process), status: "unexpanded" });
+            this.uiGraph.showProcess(process.id, { label: this.graph.getLabel(process), status: "unexpanded", probabilityDistrubution: false });
+        }
+
+        private showProbabilityDistrubution (process: string): void {
+            // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
+            this.uiGraph.showProcess("PROB" + process, { probabilityDistrubution: true });
         }
 
         private expand(process: CCS.Process): void {
             this.selectedProcess = process;
 
-            var allTransitions = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
+            var [allTransitions, probdist] = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
             var data = this.uiGraph.getProcessDataObject(process.id.toString());
 
             if (!data || data.status === "unexpanded") {
@@ -317,8 +322,21 @@ module Activity {
                     Object.keys(groupedByTargetProcessId).forEach(strProcId => {
                         var group = groupedByTargetProcessId[strProcId];
                         var data = group.map(t => { return { label: t.action.toString() } });
-                        this.showProcess(this.graph.processById(strProcId));
-                        this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
+
+                        if (Object.keys(probdist).length !== 0) {
+                            this.showProbabilityDistrubution(strProcId); // ej fix det prob fis her
+                            this.uiGraph.showTransitions(fromProcess.id, "PROB" + strProcId, data);
+                            probdist[strProcId].dist.forEach((probTransition) => {
+                                data = [{ label: probTransition.probability, dashed: true }];
+                                this.showProcess(probTransition.targetProcess);
+                                
+                                this.uiGraph.showTransitions("PROB" + strProcId, probTransition.targetProcess.id, data);
+                            });
+                        } else {
+                            this.showProcess(this.graph.processById(strProcId));
+                            this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
+                        }
+
                     });
                 }
             }
