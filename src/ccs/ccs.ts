@@ -591,6 +591,13 @@ module CCS {
             }
             return this.action.toString() + "->" + this.targetProcess.id;
         }
+
+        getTargetProcesses(): Process[] {
+            if (this.targetProcess instanceof PCCS.ProbabilisticProcess) {
+                return this.targetProcess.getTargetProcesses();
+            }
+            return [this.targetProcess];
+        }
     }
 
     export class TransitionSet {
@@ -931,28 +938,20 @@ module CCS {
             queue = [[1, process]],
             depth, fromProcess, transitions;
 
-        var probDist = {};
 
         for (var i = 0; i < queue.length; i++) {
             depth = queue[i][0];
             fromProcess = queue[i][1];
             if (succGen["succGenerator"] instanceof PCCS.StrictSuccessorGenerator) {
                 result[fromProcess.id] = transitions = succGen["succGenerator"].getSuccessors(fromProcess.id);
-                let probDistGen = succGen["succGenerator"]["probabilityDistubutionGenerator"]
-                console.log(result[fromProcess.id]);
-                transitions.forEach(t => {
-                    probDist[t.targetProcess.id] = probDistGen.getProbabilityDistribution(t.targetProcess.id);
-                    console.log("probdist", probDist)
-                });
 
-                for(var dist in probDist) {
-                    probDist[dist].getTargetProcesses().forEach(p => {
-                        if (!result[p.id] && depth < maxDepth) {
-                        // queue.push([depth + 1, t.targetProcess]);
-                        queue.push([depth + 1, p]);
+                transitions.forEach(t => {
+                    t.getTargetProcesses().forEach(p => {
+                        if (!result[t.targetProcess.id] && depth < maxDepth) {
+                            queue.push([depth + 1, p]);
                         }
                     });
-                }
+                });
             } else {
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
 
@@ -964,7 +963,7 @@ module CCS {
             }
         }
 
-        return [result, probDist];
+        return result;
     }
 
     export function reachableProcessIterator(initialProcess: ProcessId, succGen: SuccessorGenerator) {

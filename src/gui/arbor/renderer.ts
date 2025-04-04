@@ -50,7 +50,6 @@ class Renderer {
         this.particleSystem.eachNode((node : Node, pt : Point) => {
             // node: {mass:#, p:{x,y}, name:"", data:{}}
             // pt:   {x:#, y:#}  node position in screen coords
-            console.log(node)
             if (node.data.probabilityDistrubution === true) {
                 this.drawDot(node, pt);
             } else {

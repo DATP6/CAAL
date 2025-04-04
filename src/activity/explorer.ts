@@ -301,13 +301,13 @@ module Activity {
 
         private showProbabilityDistrubution (process: string): void {
             // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            this.uiGraph.showProcess("PROB" + process, { probabilityDistrubution: true });
+            this.uiGraph.showProcess(process, { probabilityDistrubution: true });
         }
 
         private expand(process: CCS.Process): void {
             this.selectedProcess = process;
 
-            var [allTransitions, probdist] = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
+            var allTransitions = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
             var data = this.uiGraph.getProcessDataObject(process.id.toString());
 
             if (!data || data.status === "unexpanded") {
@@ -322,21 +322,27 @@ module Activity {
                     Object.keys(groupedByTargetProcessId).forEach(strProcId => {
                         var group = groupedByTargetProcessId[strProcId];
                         var data = group.map(t => { return { label: t.action.toString() } });
+                        var targetProcess = group[0].targetProcess;
 
-                        if (Object.keys(probdist).length !== 0) {
-                            this.showProbabilityDistrubution(strProcId); // ej fix det prob fis her
-                            this.uiGraph.showTransitions(fromProcess.id, "PROB" + strProcId, data);
-                            probdist[strProcId].dist.forEach((probTransition) => {
-                                data = [{ label: probTransition.probability, dashed: true }];
-                                this.showProcess(probTransition.targetProcess);
-                                
-                                this.uiGraph.showTransitions("PROB" + strProcId, probTransition.targetProcess.id, data);
-                            });
+                        if (this.project.getInputMode() === InputMode.PCCS) {
+                            if (targetProcess instanceof PCCS.ProbabilisticProcess) {
+                                this.showProbabilityDistrubution(strProcId); // Show dot
+                                this.uiGraph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
+                                targetProcess.dist.forEach(target => { // for each target process in the distrubution, create transition from dot to target
+                                    this.showProcess(this.graph.processById(target.targetProcess.id));
+                                    this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
+                                });
+                            } else { // if transition is a Dirac we still show the dot betweem fromProcess and targetProcess in PCCS
+                                // TODO: "PROB:" prefix is a bit of a hack. Maybe change to a better solution." 
+                                this.showProbabilityDistrubution("PROB:" + strProcId);
+                                this.uiGraph.showTransitions(fromProcess.id, "PROB:" + strProcId, data);
+                                this.showProcess(this.graph.processById(strProcId));
+                                this.uiGraph.showTransitions("PROB:" + strProcId, strProcId, [{ dashed: true, label: "1" }]);
+                            }
                         } else {
-                            this.showProcess(this.graph.processById(strProcId));
+                            this.showProcess(targetProcess);
                             this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
                         }
-
                     });
                 }
             }

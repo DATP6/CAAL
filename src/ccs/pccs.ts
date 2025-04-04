@@ -22,26 +22,72 @@ module PCCS {
                     probabilityString += element;
                 }
             });
-            let result = new ProbabilisticProcess(probabilityString, subProcesses);
+            // TODO: make probablities fractions instead of strings
+            let distribution: { targetProcess: CCS.Process, probability: string }[] = [];
+            distribution.push({ targetProcess: subProcesses[0], probability: probabilityString });
+            distribution.push({ targetProcess: subProcesses[1], probability: (10 - parseInt(probabilityString)).toString() });
+            let result = new ProbabilisticProcess(distribution);
             return this.processes[result.id] = result;
         }
     }
 
     export class ProbabilisticProcess implements CCS.Process {
         private ccs: string;
-        constructor(public probability: string, public subProcesses: CCS.Process[]) {
+        public dist: { targetProcess: CCS.Process; probability: string }[] = [];
+        
+        constructor(dist?: { targetProcess: CCS.Process; probability: string }[]) {
+            this.dist = dist || [];
         }
+            
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchProbabilisticProcess(this);
         }
+
         toString() {
             if (this.ccs) return this.ccs;
-            return this.ccs = this.subProcesses.map(p => "(" + p.toString() + ")").join(" + ");
+            return this.ccs = this.dist.map(p => "(" + p.targetProcess.toString() + ", " + p.probability + ")").join(" + ");
         }
+
         get id() {
             return this.toString();
         }
-    }
+
+        public addProbabilities(probDist: ProbabilisticProcess, scalar: string) {
+            probDist.dist.forEach(outcome => {
+                this.dist.push(outcome);
+            });
+        }
+
+        public convexCombination(oldTarget: { targetProcess: CCS.Process; probability: string }, newTarget: CCS.Process) {
+            if (newTarget instanceof ProbabilisticProcess) {
+                newTarget.scaleDist(oldTarget.probability);
+                newTarget.dist.forEach(outcome => {
+                    this.dist.push(outcome);
+                });
+                this.dist = this.dist.filter(target => target != oldTarget); // remove the old target
+            }
+        }
+
+        getTargetById(targetId: string): { targetProcess: CCS.Process; probability: string } | null {
+            this.dist.forEach(target => {
+                if (target.targetProcess.id == targetId) {
+                    return target.targetProcess;
+                }
+            });
+            return null;
+        }
+
+        private scaleDist(scalar: string) {
+            this.dist.forEach(outcome => {
+                outcome.probability = (parseFloat('0.' + outcome.probability) * parseFloat('0.' + scalar)).toFixed(3).toString().slice(2);
+            });
+        } 
+
+        public getTargetProcesses(): CCS.Process[] {
+            return this.dist.map(entry => entry.targetProcess);
+        }
+
+   }
 
     export class StrictSuccessorGenerator extends CCS.StrictSuccessorGenerator implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet> {
         public probabilityDistubutionGenerator;
@@ -56,46 +102,52 @@ module PCCS {
             return new CCS.TransitionSet();
         }
 
-        // dispatchSummationProcess(process: CCS.SummationProcess) {
-        // TODO: maybe we can call the probabilityDistubutionGenerator here? and just make the target process be the probability distribution? 
-        //     return 
-        // }
+        dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess): CCS.TransitionSet {
+            var transitionSet = this.cache[process.id];
+            if (!transitionSet) {
+                // generate the next process with probability distribution generator as the process could be probabilistic
+                var nextProcess = this.probabilityDistubutionGenerator.getProbabilityDistribution(process.nextProcess.id);
+                transitionSet = this.cache[process.id] = new CCS.TransitionSet([new CCS.Transition(process.action, nextProcess)]);
+            }
+            return transitionSet;
+        }
+
     }
 
-    export class probabilityDistubutionGenerator implements PCCS.ProcessDispatchHandler<ProbabilityDistribution> {
-        private cache: { [id: string]: ProbabilityDistribution } = {};
+    export class probabilityDistubutionGenerator implements PCCS.ProcessDispatchHandler<CCS.Process> {
+        private cache: { [id: string]: CCS.Process } = {};
 
         constructor(public graph: Graph, cache?) {
             this.cache = cache || {};
         }
 
-        getProbabilityDistribution(processId: CCS.ProcessId): ProbabilityDistribution {
+        getProbabilityDistribution(processId: CCS.ProcessId): CCS.Process {
             var process = this.graph.processById(processId);
             return this.cache[process.id] = process.dispatchOn(this);
         }
 
-        dispatchProbabilisticProcess(process: ProbabilisticProcess): ProbabilityDistribution {
-            let probDist = new ProbabilityDistribution(process);
-            probDist.addProbabilities(process.subProcesses[0].dispatchOn(this), process.probability);
-            probDist.addProbabilities(process.subProcesses[1].dispatchOn(this), this.invertProbability(process.probability));
-            return probDist;
+        dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.Process {
+            process.dist.forEach(target => {
+                process.convexCombination(target, target.targetProcess.dispatchOn(this));
+            })
+            return process;
         }
 
-        public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess): ProbabilityDistribution {
-            return new ProbabilityDistribution(process, [{ targetProcess: process, probability: '1' }]);
+        public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess): CCS.Process {
+            return process;
         }
 
         dispatchNullProcess(process: CCS.NullProcess) {
-            return new ProbabilityDistribution(process, [{ targetProcess: process, probability: '1' }]);
+            return process;
         }
 
         dispatchNamedProcess(process: CCS.NamedProcess) {
-            return process.subProcess.dispatchOn(this);
+            return process;
         }
 
         dispatchSummationProcess(process: CCS.SummationProcess) {
             // if any of the subProcesses are probabilistic, we need to handle them
-            return process.subProcesses[0].dispatchOn(this).addProbabilities(process.subProcesses[1].dispatchOn(this), '1');
+            return process;
         }
 
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
@@ -112,51 +164,7 @@ module PCCS {
         }
 
         private invertProbability(prob: string) {
-
             return (1 - parseFloat('0.' + prob)).toFixed(3).toString().slice(2);
-        }
-    }
-
-
-
-    export class ProbabilityDistribution{
-        public id: CCS.Process;
-        public action : string;
-        public dist: { targetProcess: CCS.Process; probability: string }[] = [];
-
-        constructor(id: CCS.Process, dist?: { targetProcess: CCS.Process; probability: string }[]) {
-            this.id = id;        
-            if (dist) {
-                this.dist = dist;
-            }
-        }
-
-        public isValid() {
-            // Check if the sum of the probabilities is 1
-            // TODO: needs to work in int instead of float to avoid floating point errors
-            var sum = 0;
-            for (var key in this.dist) {
-                sum += parseFloat('0.' + this.dist[key]);
-            }
-            return sum == 1;
-        }
-
-        public addProbabilities(probDist: ProbabilityDistribution, scalar: string) {
-            probDist.scaleDist(scalar);
-            probDist.dist.forEach(outcome => {
-                this.dist.push(outcome);
-            });
-        }
-
-        private scaleDist(scalar: string) {
-            this.dist.forEach(outcome => {
-                //TODO: change to int to avoid floating point errors :)
-                outcome.probability = (parseFloat('0.' + outcome.probability) * parseFloat('0.' + scalar)).toFixed(3).toString().slice(2);
-            });
-        }
-
-        getTargetProcesses(): CCS.Process[] {
-            return this.dist.map(entry => entry.targetProcess);
         }
     }
 }
@@ -165,12 +173,12 @@ module Traverse {
     export class PCCSUnguardedRecursionChecker extends Traverse.UnguardedRecursionChecker implements PCCS.ProcessDispatchHandler<boolean> {
         dispatchProbabilisticProcess(process : PCCS.ProbabilisticProcess) {
             var isUnguarded = false;
-            process.subProcesses.forEach(subProc => {
-                if (subProc.dispatchOn(this)) {
+            process.dist.forEach(target => {
+                if (target.targetProcess.dispatchOn(this)) {
                     isUnguarded = true;
                 }
             });
-            return isUnguarded;
+            return true;
         }
     }
 
@@ -184,9 +192,8 @@ module Traverse {
         // Look at dispatchSummationProcess in reducedparsetree.ts for inspiration
         // The implementation depends on how we process multiple probabalistic processes.
         dispatchProbabilisticProcess(process : PCCS.ProbabilisticProcess) {
-            process.subProcesses.forEach(subProc => {
-                console.log(process, subProc)
-                subProc.dispatchOn(this)
+            process.dist.forEach(target => {
+                target.targetProcess.dispatchOn(this)
             });
             return process
         }
