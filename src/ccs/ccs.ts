@@ -253,6 +253,15 @@ module CCS {
         constructor() {
         }
 
+        addProcesses(processes: Process[]) {
+            console.log("added processes", processes);
+            processes.forEach(process => {
+                console.log("added process", process);
+                this.processes[process.id] = process;
+            });
+            console.log(this.processes)
+        }
+
         newNamedProcess(processName: string, process: Process) {
             var namedProcess = this.namedProcesses[processName];
             if (!namedProcess) {

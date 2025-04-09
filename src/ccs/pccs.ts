@@ -71,7 +71,6 @@ module PCCS {
         // EACH NEW PROCESS SHOULD BE ADDED TO GRAPH OBJECT SO THAT WE CAN USE GETPROCESS_BY_ID() 
         public convexCombination(process: ProbabilisticProcess) {
             this.dist.forEach(target => {
-                console.log("target", target);
                 let combinedProcesses = new ProbabilisticProcess();
                 process.dist.forEach(otherTarget => {
                     if (target.targetProcess instanceof CCS.SummationProcess && otherTarget.targetProcess instanceof CCS.SummationProcess) {
@@ -84,7 +83,6 @@ module PCCS {
                 });
                 this.splitProbability(target, combinedProcesses);
             });
-            console.log("this probproc", this);
         }
 
         getTargetById(targetId: string): { targetProcess: CCS.Process; probability: string } | null {
@@ -117,7 +115,6 @@ module PCCS {
         }
 
         dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.TransitionSet{
-            console.log("dispatchProbabilisticProcess hope this is the first process and if not, we have a problem");
             return new CCS.TransitionSet();
         }
 
@@ -173,10 +170,9 @@ module PCCS {
             let probProcess = new PCCS.ProbabilisticProcess([{ targetProcess: new CCS.SummationProcess([]), probability: "1" }]);
 
             process.subProcesses.forEach(subProcess => {
-                console.log("subprocess", subProcess);
                 probProcess.convexCombination(subProcess.dispatchOn(this));
             });
-            console.log(probProcess)
+            this.graph.addProcesses(probProcess.getTargetProcesses());
 
             return probProcess;
         }
