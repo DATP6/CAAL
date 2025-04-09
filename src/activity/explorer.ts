@@ -325,20 +325,12 @@ module Activity {
                         var targetProcess = group[0].targetProcess;
 
                         if (this.project.getInputMode() === InputMode.PCCS) {
-                            if (targetProcess instanceof PCCS.ProbabilisticProcess) {
-                                this.showProbabilityDistrubution(strProcId); // Show dot
-                                this.uiGraph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
-                                targetProcess.dist.forEach(target => { // for each target process in the distrubution, create transition from dot to target
-                                    this.showProcess(this.graph.processById(target.targetProcess.id));
-                                    this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
-                                });
-                            } else { // if transition is a Dirac we still show the dot betweem fromProcess and targetProcess in PCCS
-                                // TODO: "PROB:" prefix is a bit of a hack. Maybe change to a better solution." 
-                                this.showProbabilityDistrubution("PROB:" + strProcId);
-                                this.uiGraph.showTransitions(fromProcess.id, "PROB:" + strProcId, data);
-                                this.showProcess(this.graph.processById(strProcId));
-                                this.uiGraph.showTransitions("PROB:" + strProcId, strProcId, [{ dashed: true, label: "1" }]);
-                            }
+                            this.showProbabilityDistrubution(strProcId); // Show dot
+                            this.uiGraph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
+                            targetProcess.dist.forEach(target => { // for each target process in the distrubution, create transition from dot to target
+                                this.showProcess(this.graph.processById(target.targetProcess.id));
+                                this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
+                            });
                         } else {
                             this.showProcess(targetProcess);
                             this.uiGraph.showTransitions(fromProcess.id, strProcId, data);

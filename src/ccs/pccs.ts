@@ -58,7 +58,7 @@ module PCCS {
             });
         }
 
-        public convexCombination(oldTarget: { targetProcess: CCS.Process; probability: string }, newTarget: CCS.Process) {
+        public splitProbability(oldTarget: { targetProcess: CCS.Process; probability: string }, newTarget: CCS.Process) {
             if (newTarget instanceof ProbabilisticProcess) {
                 newTarget.scaleDist(oldTarget.probability);
                 newTarget.dist.forEach(outcome => {
@@ -66,6 +66,25 @@ module PCCS {
                 });
                 this.dist = this.dist.filter(target => target != oldTarget); // remove the old target
             }
+        }
+
+        // EACH NEW PROCESS SHOULD BE ADDED TO GRAPH OBJECT SO THAT WE CAN USE GETPROCESS_BY_ID() 
+        public convexCombination(process: ProbabilisticProcess) {
+            this.dist.forEach(target => {
+                console.log("target", target);
+                let combinedProcesses = new ProbabilisticProcess();
+                process.dist.forEach(otherTarget => {
+                    if (target.targetProcess instanceof CCS.SummationProcess && otherTarget.targetProcess instanceof CCS.SummationProcess) {
+                        let combination = { targetProcess: new CCS.SummationProcess(target.targetProcess.subProcesses.concat(otherTarget.targetProcess.subProcesses)), probability: otherTarget.probability };
+                        combinedProcesses.dist.push(combination);
+                    } else if (target.targetProcess instanceof CCS.SummationProcess && otherTarget.targetProcess instanceof CCS.ActionPrefixProcess) {
+                        let combination = { targetProcess: new CCS.SummationProcess(target.targetProcess.subProcesses.concat(otherTarget.targetProcess)), probability: otherTarget.probability };
+                        combinedProcesses.dist.push(combination);
+                    }
+                });
+                this.splitProbability(target, combinedProcesses);
+            });
+            console.log("this probproc", this);
         }
 
         getTargetById(targetId: string): { targetProcess: CCS.Process; probability: string } | null {
@@ -114,6 +133,8 @@ module PCCS {
 
     }
 
+
+    // TODO: this class should use the cache to avoid recomputing the same process multiple times
     export class probabilityDistubutionGenerator implements PCCS.ProcessDispatchHandler<CCS.Process> {
         private cache: { [id: string]: CCS.Process } = {};
 
@@ -128,26 +149,36 @@ module PCCS {
 
         dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.Process {
             process.dist.forEach(target => {
-                process.convexCombination(target, target.targetProcess.dispatchOn(this));
+                process.splitProbability(target, target.targetProcess.dispatchOn(this));
             })
             return process;
         }
 
         public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess): CCS.Process {
-            return process;
+            // return this.graph.newProbabilisticProcess(["1"], [process]); // adding it to the graph causes error. pls fix :)
+            return new ProbabilisticProcess([{targetProcess: process, probability: "1"}]);
         }
 
         dispatchNullProcess(process: CCS.NullProcess) {
-            return process;
+            // return process;
+            return new ProbabilisticProcess([{targetProcess: process, probability: "1"}]);
         }
 
         dispatchNamedProcess(process: CCS.NamedProcess) {
-            return process;
+            // return process;
+            return new ProbabilisticProcess([{targetProcess: process, probability: "1"}]);
         }
 
         dispatchSummationProcess(process: CCS.SummationProcess) {
-            // if any of the subProcesses are probabilistic, we need to handle them
-            return process;
+            let probProcess = new PCCS.ProbabilisticProcess([{ targetProcess: new CCS.SummationProcess([]), probability: "1" }]);
+
+            process.subProcesses.forEach(subProcess => {
+                console.log("subprocess", subProcess);
+                probProcess.convexCombination(subProcess.dispatchOn(this));
+            });
+            console.log(probProcess)
+
+            return probProcess;
         }
 
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
@@ -161,10 +192,6 @@ module PCCS {
 
         dispatchRelabellingProcess(process: CCS.RelabellingProcess) {
             return process.subProcess.dispatchOn(this); 
-        }
-
-        private invertProbability(prob: string) {
-            return (1 - parseFloat('0.' + prob)).toFixed(3).toString().slice(2);
         }
     }
 }
