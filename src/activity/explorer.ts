@@ -296,7 +296,12 @@ module Activity {
 
         private showProcess(process: CCS.Process): void {
             if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            this.uiGraph.showProcess(process.id, { label: this.graph.getLabel(process), status: "unexpanded" });
+            this.uiGraph.showProcess(process.id, { label: this.graph.getLabel(process), status: "unexpanded", probabilityDistrubution: false });
+        }
+
+        private showProbabilityDistrubution (process: string): void {
+            // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
+            this.uiGraph.showProcess(process, { probabilityDistrubution: true });
         }
 
         private expand(process: CCS.Process): void {
@@ -317,8 +322,19 @@ module Activity {
                     Object.keys(groupedByTargetProcessId).forEach(strProcId => {
                         var group = groupedByTargetProcessId[strProcId];
                         var data = group.map(t => { return { label: t.action.toString() } });
-                        this.showProcess(this.graph.processById(strProcId));
-                        this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
+                        var targetProcess = group[0].targetProcess;
+
+                        if (this.project.getInputMode() === InputMode.PCCS) {
+                            this.showProbabilityDistrubution(strProcId); // Show dot
+                            this.uiGraph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
+                            targetProcess.dist.forEach(target => { // for each target process in the distrubution, create transition from dot to target
+                                this.showProcess(this.graph.processById(target.targetProcess.id));
+                                this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
+                            });
+                        } else {
+                            this.showProcess(targetProcess);
+                            this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
+                        }
                     });
                 }
             }

@@ -133,8 +133,10 @@ class Load extends MenuItem {
     private showProjects() : void {
         var projects = this.storage.getObj("projects");
         var $ccsProjects = $("#ccs-projects-list");
+        var $pccsProjects = $("#pccs-projects-list");
         var $tccsProjects = $("#tccs-projects-list");
         var ccsFound = false;
+        var pccsFound = false;
         var tccsFound = false;
 
         $("li.project").remove();
@@ -153,6 +155,9 @@ class Load extends MenuItem {
                 if (projects[i].inputMode.toLowerCase() === "ccs") {
                     ccsFound = true;
                     $ccsProjects.after(html);
+                } else if (projects[i].inputMode.toLowerCase() === "pccs") {
+                    pccsFound = true;
+                    $pccsProjects.after(html);
                 } else if (projects[i].inputMode.toLowerCase() === "tccs") {
                     tccsFound = true;
                     $tccsProjects.after(html);
@@ -163,13 +168,16 @@ class Load extends MenuItem {
         }
 
         $ccsProjects.toggle(ccsFound).prev().toggle(ccsFound);
+        $pccsProjects.toggle(pccsFound).prev().toggle(pccsFound);
         $tccsProjects.toggle(tccsFound).prev().toggle(tccsFound);
     }
 
     private showExamples() : void {
         var $ccsExamples = $("#ccs-examples-list");
+        var $pccsExamples = $("#pccs-examples-list");
         var $tccsExamples = $("#tccs-examples-list");
         var ccsFound = false;
+        var pccsFound = false;
         var tccsFound = false;
 
         if (examples) {
@@ -181,6 +189,9 @@ class Load extends MenuItem {
                 if (examples[i].inputMode.toLowerCase() === "ccs") {
                     ccsFound = true;
                     $ccsExamples.after(html);
+                } else if (examples[i].inputMode.toLowerCase() === "pccs") {
+                    pccsFound = true;
+                    $pccsExamples.after(html);
                 } else if (examples[i].inputMode.toLowerCase() === "tccs") {
                     tccsFound = true;
                     $tccsExamples.after(html);
@@ -191,6 +202,7 @@ class Load extends MenuItem {
         }
 
         $ccsExamples.toggle(ccsFound).prev().toggle(ccsFound);
+        $pccsExamples.toggle(pccsFound).prev().toggle(pccsFound);
         $tccsExamples.toggle(tccsFound).prev().toggle(tccsFound);
     }
 }

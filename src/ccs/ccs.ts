@@ -253,6 +253,15 @@ module CCS {
         constructor() {
         }
 
+        addProcesses(processes: Process[]) {
+            console.log("added processes", processes);
+            processes.forEach(process => {
+                console.log("added process", process);
+                this.processes[process.id] = process;
+            });
+            console.log(this.processes)
+        }
+
         newNamedProcess(processName: string, process: Process) {
             var namedProcess = this.namedProcesses[processName];
             if (!namedProcess) {
@@ -591,6 +600,13 @@ module CCS {
             }
             return this.action.toString() + "->" + this.targetProcess.id;
         }
+
+        getTargetProcesses(): Process[] {
+            if (this.targetProcess instanceof PCCS.ProbabilisticProcess) {
+                return this.targetProcess.getTargetProcesses();
+            }
+            return [this.targetProcess];
+        }
     }
 
     export class TransitionSet {
@@ -889,7 +905,7 @@ module CCS {
             succGenerator = new PCCS.StrictSuccessorGenerator(<PCCS.Graph>graph);
 
             if (settings.reduce) {
-                treeReducer = new Traverse.ProcessTreeReducer(<PCCS.Graph>graph);
+                treeReducer = new Traverse.PCCSProcessTreeReducer(<PCCS.Graph>graph);
             }
         } else {
             succGenerator = new TCCS.StrictSuccessorGenerator(<TCCS.Graph>graph);
@@ -931,16 +947,29 @@ module CCS {
             queue = [[1, process]],
             depth, fromProcess, transitions;
 
+
         for (var i = 0; i < queue.length; i++) {
             depth = queue[i][0];
             fromProcess = queue[i][1];
-            result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
+            if (succGen["succGenerator"] instanceof PCCS.StrictSuccessorGenerator) {
+                result[fromProcess.id] = transitions = succGen["succGenerator"].getSuccessors(fromProcess.id);
 
-            transitions.forEach(t => {
-                if (!result[t.targetProcess.id] && depth < maxDepth) {
-                    queue.push([depth + 1, t.targetProcess]);
-                }
-            });
+                transitions.forEach(t => {
+                    t.getTargetProcesses().forEach(p => {
+                        if (!result[t.targetProcess.id] && depth < maxDepth) {
+                            queue.push([depth + 1, p]);
+                        }
+                    });
+                });
+            } else {
+                result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
+
+                transitions.forEach(t => {
+                    if (!result[t.targetProcess.id] && depth < maxDepth) {
+                        queue.push([depth + 1, t.targetProcess]);
+                    }
+                });
+            }
         }
 
         return result;

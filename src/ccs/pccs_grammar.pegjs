@@ -50,7 +50,7 @@ Summation
 	// / P:Composition { return P; }
 
 Probabilistic
-	= P:Composition _ Prob:Probability _ Q:Probabilistic { return Q instanceof pccs.ProbabilisticProcess ? g.newProbabilisticProcess(Prob, [P].concat(Q.subProcesses)) : g.newProbabilisticProcess(Prob, [P, Q]); }
+	= P:Composition _ Prob:Probability _ Q:Probabilistic { return g.newProbabilisticProcess(Prob, [P, Q]); }
 	// = P:Composition _ "?" _ Q:Probabilistic { return Q instanceof pccs.ProbabilisticProcess ? g.newProbabilisticProcess(1, [P].concat(Q.subProcesses)) : g.newProbabilisticProcess(1, [P, Q]); }
 	// = P:Composition _ Prob:Probability _ Q:Probabilistic { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
 	/ P:Composition { return P; }
@@ -92,7 +92,7 @@ Identifier "identifier"
 IdentifierRest
 	= rest:[A-Za-z0-9?!_'\-#^]*  { return rest; }
 
-Probability = "0"? "." N:[0-9] { return N; } 
+Probability = "0"? "." N:("0"*[1-9][0-9]*)  { return N; } 
 
 Action "action"
 	= ['] label:Label { return new ccs.Action(label, true); }

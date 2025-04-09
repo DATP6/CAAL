@@ -3,10 +3,11 @@
 
 declare var CCSParser;
 declare var TCCSParser;
+declare var PCCSParser;
 declare var HMLParser;
 declare var THMLParser;
 
-importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js");
+importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../pccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js");
 
 var messageHandlers : any = {};
 var graph;
@@ -29,6 +30,9 @@ messageHandlers.program = data => {
     } else if (inputMode === "TCCS") {
         graph = new TCCS.Graph();
         TCCSParser.parse(data.program, {ccs: CCS, tccs: TCCS, graph: graph});
+    } else if (inputMode === "PCCS") {
+        graph = new PCCS.Graph();
+        PCCSParser.parse(data.program, {ccs: CCS, pccs: PCCS, graph: graph});
     }
 };
 
