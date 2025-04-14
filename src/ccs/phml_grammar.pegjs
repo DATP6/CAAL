@@ -3,10 +3,10 @@
 */
 
 Start
-    = Declarations End
+    = Declarations
 
 Declarations
-    = Declaration Whitespace Declarations
+    = Declaration _ Declarations
         / Declaration
 
 Declaration
@@ -79,5 +79,9 @@ Whitespace "whitespace"
 
 Comment "comment" = "*" [^\r\n]* "\r"? "\n"?
 
-End
-    = ";"
+//Useful utility
+_ = (Whitespace / Newline)* Comment _
+  / (Whitespace / Newline)*
+
+Newline "newline"
+    = "\r\n" / "\n" / "\r"
