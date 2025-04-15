@@ -1,79 +1,97 @@
-/* Grammar for Probabilistic Hennessey Milner Logic (PHML)
-*  
-*/
+/* Grammar for Probabilistic Hennessey Milner Logic (PHML)*/
+
 {
 	function strFirstAndRest(first, rest) {
 		return first + rest.join('');
 	}
 
     var ccs = options.ccs,
-        phml = options.phml,
-        formulas = options.formulaSet || new phml.FormulaSet();
+        hml = options.hml,
+        formulas = options.formulaSet || new hml.FormulaSet();
 }
 
-Start
-    = Definitions {return formulas};
-    / _ {return formulas};
+start
+	= Ps:Statements _ { return formulas; }
+	/ F:SimpleFormula _ ";" _ { return formulas; } //TODO: Hack until multiple versions of syntax checker.
+	/ _ { return formulas; }
 
-Definitions
-    = Definition ";" Definitions
-    / Definition
-    / Formula 
+Statements = P:FixedPoint _ ";" Qs:Statements { return [P].concat(Qs); }
+		   / P:FixedPoint _ (";" _)? { return [P]; }
 
-Definition
-    = Variable "_" Context "=" Phi
-    / Variable "_" Context "=" Formula 
+TopFormula = F:SimpleFormula _ ";"_ { formulas.setTopFormula(F); return F;} 
 
-Formulas 
-    = Formula Whitespace Formulas
-    / Formula
-Formula
-    = Disjunction
+SimpleFormula = P:Disjunction _ { var f = formulas.unnamedMinFixedPoint(P); return f; }
 
-Disjunction
-    = Conjunction(Whitespace "or" Whitespace Disjunction) *
-    / Conjunction(Whitespace "or" Whitespace Phi)*
+SimplePhiFormula = P:PhiDisjunction _ {return P;}
 
-Conjunction 
-	= Subterm(Whitespace "and" Whitespace Conjunction) *
+FixedPoint = _ V:Variable _ [mM][aA][xX] "=" _ P:Disjunction { return formulas.newMaxFixedPoint(V, P); }
+		   / _ V:Variable _ [mM][iI][nN] "=" _ P:Disjunction { return formulas.newMinFixedPoint(V, P); }
+           / _ V:Variable _ [mM][aA][xX] "=" _ Pd:PhiDisjunction { return formulas.newMaxFixedPoint(V, Pd); }
+           / _ V:Variable _ [mM][iI][nN] "=" _ Pd:PhiDisjunction { return formulas.newMinFixedPoint(V, Pd); }
+           
 
-Subterm //TODO: Rename to something more appropriate 
-    = Phi_prob_term
-    / Modal_prefix Atomic_term 
-    / Modal_prefix Variable
-    / Variable 
-    / Atomic_term
+Disjunction = P:Conjunction Whitespace _ "or" Whitespace _ Q:Disjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
+			/ P:Conjunction { return P; }
 
-Phi 
-    = Phi_disjunction
+Conjunction = M:Modal Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([M].concat(P.subFormulas)) : formulas.newConj([M, P]); }
+			/ M:Modal { return M; }
 
-Phi_disjunction
-    = Phi_conjunction(Whitespace "or" Whitespace Disjunction)*
+PhiDisjunction = P:PhiConjunction Whitespace _ "or" Whitespace _ Q:PhiDisjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
+			/ P:PhiConjunction { return P; }
 
-Phi_conjunction
-    = Phi_prob_term(Whitespace "and" Whitespace Conjunction)*
+PhiConjunction = M:Modal Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([M].concat(P.subFormulas)) : formulas.newConj([M, P]); }
+			/ M:Modal { return M; }
 
-Phi_prob_term
-    = Modal_prefix Diamond "_" Relational_op "_" Probability Phi_prob_term Variable
-    / Modal_prefix Diamond "_" Relational_op "_" Probability  Formula
+PhiConjunction
+    = PhiProbTerm Whitespace _ "and" Whitespace Conjunction
+    / PhiProbTerm
 
-Variable
-	= [A-Z][A-Z,a-z,0-9]*
+Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:Modal { return formulas.newWeakForAll(AM, F); }
+	  / _ "<" _ "<" _ AM:ActionList _ ">" _ ">" _ F:Modal { return formulas.newWeakExists(AM, F); }
+      / _ "[" _ AM:ActionList _ "]" _ F:Modal { return formulas.newStrongForAll(AM, F); }
+	  / _ "<" _ AM:ActionList _ ">" _ F:Modal { return formulas.newStrongExists(AM, F); }
+	  / Unary
 
-Labels 
-    = Label Whitespace Labels 
-    / Label
-Label 
-    = [A-Z,a-z]+
-    / [-]
+PhiProbTerm
+    = Modal Diamond _ Relational_op _ Probability Phi_prob_term Variable
+    / Modal Diamond _ Relational_op _ Probability Formula
 
-Modal_prefix
-    = "<" Labels ">" 
-    / "[" Labels "]"
+//Order important!
+Unary "term"
+      = ParenFormula
+	  / _ "tt" { return formulas.newTrue(); }
+	  / _ "ff" { return formulas.newFalse(); }
+	  / _ V:Variable { return formulas.referVariable(V); }
+	  / _ "T" { return formulas.newTrue(); }
+	  / _ "F" { return formulas.newFalse(); }
 
-Atomic_term
-    = "tt"
-    / "ff"
+ParenFormula = _ "(" _ F:Disjunction _ ")" { return F; }
+
+Variable "variable"
+	= letter:[A-EG-SU-Z] rest:IdentifierRestSym* { return strFirstAndRest(letter, rest); }
+	/ letter:[FT] rest:IdentifierRestSym+ { return strFirstAndRest(letter, rest); }
+
+IdentifierRestSym
+	= [A-Za-z0-9?!_'\-#]
+
+ActionList = A:Action _ "," _ AM:ActionList { return AM.add(A); }
+		   / A:Action { return new hml.SingleActionMatcher(A); }
+		   / "-" { return new hml.AllActionMatcher(); }
+
+Action "action"
+    = ['] label:Label { return new ccs.Action(label, true); }
+    / label:Label { return new ccs.Action(label, false); }
+
+//Valid name for actions
+Label "label"
+    = first:[a-z] rest:IdentifierRestSym* { return strFirstAndRest(first, rest); }
+
+
+/**** Utiliy Section ****/ 
+Whitespace "whitespace"
+    = [ \t]
+
+Comment "comment" = "*" [^\r\n]* "\r"? "\n"?
 
 Diamond 
     = "<>"
@@ -88,23 +106,3 @@ Relational_op
     / "=="
     / ">="
     / ">"
-Context 
-    = [Mm][Ii][Nn]
-    / [Mm][Aa][Xx]
-
-Whitespace "whitespace"
-    = [ \t]
-
-Comment "comment"
- = "*" [^\r\n]* "\r"? "\n"?
-
-//Useful utility
-_ = (Whitespace / Newline)* Comment _
-  / (Whitespace / Newline)*
-
-Newline "newline"
-    = "\r\n" / "\n" / "\r"
-
-
-// Test String: 
-// X_min=<->tt and [-]<>_==_0.1<error><>_==_1Y or <->tt and [-]X;Y_max=<->tt and [-]<>_==_1Y;<->tt;
