@@ -1,31 +1,43 @@
 /* Grammar for Probabilistic Hennessey Milner Logic (PHML)
 *  
 */
+{
+	function strFirstAndRest(first, rest) {
+		return first + rest.join('');
+	}
+
+    var ccs = options.ccs,
+        phml = options.phml,
+        formulas = options.formulaSet || new phml.FormulaSet();
+}
 
 Start
-    = Declarations
+    = Definitions {return formulas};
+    / _ {return formulas};
 
-Declarations
-    = Declaration _ Declarations
-        / Declaration
+Definitions
+    = Definition ";" Definitions
+    / Definition
+    / Formula 
 
-Declaration
-    = Variable "_max=" Phi
-    / Variable"_min=" Phi
-    / Variable "_max=" Formula
-    / Variable"_min=" Formula
+Definition
+    = Variable "_" Context "=" Phi
+    / Variable "_" Context "=" Formula 
 
+Formulas 
+    = Formula Whitespace Formulas
+    / Formula
 Formula
     = Disjunction
 
 Disjunction
-    = Conjunction(Whitespace "OR" Whitespace Disjunction) *
-    / Conjunction(Whitespace "OR" Whitespace Phi)*
+    = Conjunction(Whitespace "or" Whitespace Disjunction) *
+    / Conjunction(Whitespace "or" Whitespace Phi)*
 
-    Conjunction 
-	= Modal(Whitespace "AND" Whitespace Conjunction) *
+Conjunction 
+	= Subterm(Whitespace "and" Whitespace Conjunction) *
 
-Modal
+Subterm //TODO: Rename to something more appropriate 
     = Phi_prob_term
     / Modal_prefix Atomic_term 
     / Modal_prefix Variable
@@ -36,17 +48,17 @@ Phi
     = Phi_disjunction
 
 Phi_disjunction
-    = Phi_conjunction(Whitespace "OR" Whitespace Disjunction)*
+    = Phi_conjunction(Whitespace "or" Whitespace Disjunction)*
 
 Phi_conjunction
-    = Phi_prob_term(Whitespace "AND" Whitespace Conjunction)*
+    = Phi_prob_term(Whitespace "and" Whitespace Conjunction)*
 
 Phi_prob_term
-    = Modal_prefix Diamond "_" Probability Phi_prob_term Variable
-    / Modal_prefix Diamond "_" Probability Formula
+    = Modal_prefix Diamond "_" Relational_op "_" Probability Phi_prob_term Variable
+    / Modal_prefix Diamond "_" Relational_op "_" Probability  Formula
 
 Variable
-	= [A-Z]
+	= [A-Z][A-Z,a-z,0-9]*
 
 Labels 
     = Label Whitespace Labels 
@@ -59,10 +71,6 @@ Modal_prefix
     = "<" Labels ">" 
     / "[" Labels "]"
 
-Logic_op
-    = "AND"
-    / "OR"
-
 Atomic_term
     = "tt"
     / "ff"
@@ -74,10 +82,21 @@ Probability
     = [0]"."[0-9]*
     / [1]
 
+Relational_op 
+    = "<"
+    / "<="
+    / "=="
+    / ">="
+    / ">"
+Context 
+    = [Mm][Ii][Nn]
+    / [Mm][Aa][Xx]
+
 Whitespace "whitespace"
     = [ \t]
 
-Comment "comment" = "*" [^\r\n]* "\r"? "\n"?
+Comment "comment"
+ = "*" [^\r\n]* "\r"? "\n"?
 
 //Useful utility
 _ = (Whitespace / Newline)* Comment _
@@ -85,3 +104,7 @@ _ = (Whitespace / Newline)* Comment _
 
 Newline "newline"
     = "\r\n" / "\n" / "\r"
+
+
+// Test String: 
+// X_min=<->tt and [-]<>_==_0.1<error><>_==_1Y or <->tt and [-]X;Y_max=<->tt and [-]<>_==_1Y;<->tt;
