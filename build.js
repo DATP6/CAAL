@@ -20,6 +20,9 @@ pegjs(tccsGrammar, _P('src/ccs/tccs_grammar.pegjs'), 'TCCSParser');
 var pccsGrammar = _P('lib/pccs_grammar.js');
 pegjs(pccsGrammar, _P('src/ccs/pccs_grammar.pegjs'), 'PCCSParser');
 
+var phmlGrammar = _P('lib/phml_grammar.js');
+pegjs(phmlGrammar, _P('src/ccs/phml_grammar.pegjs'), 'PHMLParser', ["--allowed-start-rules", "start,TopFormula"]);
+
 var hmlGrammar = _P('lib/hml_grammar.js');
 pegjs(hmlGrammar, _P('src/ccs/hml_grammar.pegjs'), 'HMLParser', ['--allowed-start-rules', 'start,TopFormula']);
 
@@ -48,7 +51,7 @@ var workerVerifier = _P('lib/workers/verifier.js');
 createTscFileTask(workerVerifier, [_P('src/workers/verifier.ts')]);
 
 // build ace
-task('ace-integration', [ccsTargetFile, ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar], function () {
+task('ace-integration', [ccsTargetFile, ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar], function () {
     jake.mkdirP('modules/ace/lib/ace/mode/ccs');
     var moduleHeader = 'define(function(require, exports, module) {\n';
     toWrap = [
