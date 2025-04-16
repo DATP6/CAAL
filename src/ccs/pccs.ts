@@ -1,5 +1,6 @@
 /// <reference path="ccs.ts" />
 /// <reference path="reducedparsetree.ts" />
+/// <reference path="../data/multiset.ts" />
 
 module PCCS {
 
@@ -13,54 +14,40 @@ module PCCS {
             this.unguardedRecursionChecker = new Traverse.PCCSUnguardedRecursionChecker();
         }
 
-        public newProbabilisticProcess(probability: Array<any>, subProcesses: CCS.Process[]) {
-            var probabilityString = "";
-            probability.forEach(element => {
-                if (element instanceof Array) {
-                    probabilityString += element.join("");
-                } else {
-                    probabilityString += element;
-                }
-            });
-            // TODO: make probablities fractions instead of strings
-            let distribution: { targetProcess: CCS.Process, probability: string }[] = [];
-            distribution.push({ targetProcess: subProcesses[0], probability: probabilityString });
-            distribution.push({ targetProcess: subProcesses[1], probability: (10 - parseInt(probabilityString)).toString() });
-            let result = new ProbabilisticProcess(distribution);
+        public newProbabilisticProcess(probability: { num: number, den: number }, subProcesses: CCS.Process[]) {
+            let entry1 = { proc: subProcesses[0], weight: probability.num };
+            let entry2 = { proc: subProcesses[1], weight: probability.den - probability.num };
+            let dist = new MultiSetUtil.MultiSet([entry1, entry2]);
+            let result = new ProbabilisticProcess(dist);
             return this.processes[result.id] = result;
         }
     }
 
     export class ProbabilisticProcess implements CCS.Process {
         private ccs: string;
-        public dist: { targetProcess: CCS.Process; probability: string }[] = [];
-        
-        constructor(dist?: { targetProcess: CCS.Process; probability: string }[]) {
-            this.dist = dist || [];
+        public dist: MultiSetUtil.MultiSet;
+
+        constructor(dist: MultiSetUtil.MultiSet) {
+            this.dist = dist;
         }
-            
+
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchProbabilisticProcess(this);
         }
 
         toString() {
+            // TODO: This is just a placeholder, we need to implement a proper toString method
             if (this.ccs) return this.ccs;
-            return this.ccs = this.dist.map(p => "(" + p.targetProcess.toString() + ", " + p.probability + ")").join(" + ");
+            return this.ccs = this.dist.entries.map(p => "(" + p.proc.toString() + ", " + p.weight + ")").join(" + ");
         }
 
         get id() {
             return this.toString();
         }
 
-        public addProbabilities(probDist: ProbabilisticProcess, scalar: string) {
-            probDist.dist.forEach(outcome => {
-                this.dist.push(outcome);
-            });
-        }
-
-        public splitProbability(oldTarget: { targetProcess: CCS.Process; probability: string }, newTarget: CCS.Process) {
-            if (newTarget instanceof ProbabilisticProcess) {
-                newTarget.scaleDist(oldTarget.probability);
+        private flattenProbability(oldEntry: CCS.Process, newEntry: CCS.Process) {
+            if (newEntry instanceof ProbabilisticProcess && oldEntry instanceof ProbabilisticProcess) {
+                newEntry.scaleDist(oldEntry.dist.entries.weight);
                 newTarget.dist.forEach(outcome => {
                     this.dist.push(outcome);
                 });
@@ -68,20 +55,20 @@ module PCCS {
             }
         }
 
-        // EACH NEW PROCESS SHOULD BE ADDED TO GRAPH OBJECT SO THAT WE CAN USE GETPROCESS_BY_ID() 
-        public convexCombination(process: ProbabilisticProcess) {
-            this.dist.forEach(target => {
-                let combinedProcesses = new ProbabilisticProcess();
-                process.dist.forEach(otherTarget => {
-                    if (target.targetProcess instanceof CCS.SummationProcess && otherTarget.targetProcess instanceof CCS.SummationProcess) {
-                        let combination = { targetProcess: new CCS.SummationProcess(target.targetProcess.subProcesses.concat(otherTarget.targetProcess.subProcesses)), probability: otherTarget.probability };
-                        combinedProcesses.dist.push(combination);
-                    } else if (target.targetProcess instanceof CCS.SummationProcess && otherTarget.targetProcess instanceof CCS.ActionPrefixProcess) {
-                        let combination = { targetProcess: new CCS.SummationProcess(target.targetProcess.subProcesses.concat(otherTarget.targetProcess)), probability: otherTarget.probability };
-                        combinedProcesses.dist.push(combination);
+        // TODO: EACH NEW PROCESS SHOULD BE ADDED TO GRAPH OBJECT SO THAT WE CAN USE GETPROCESS_BY_ID()
+        private convexCombination(process: ProbabilisticProcess) {
+            let combinedProcesses = new ProbabilisticProcess(new MultiSetUtil.MultiSet([]));
+            this.dist.entries.forEach(entry => {
+                process.dist.entries.forEach(targetEntry => {
+                    if (entry.proc instanceof CCS.SummationProcess && targetEntry.proc instanceof CCS.SummationProcess) {
+                        let combination = { proc: new CCS.SummationProcess(entry.proc.subProcesses.concat(targetEntry.proc.subProcesses)), weight: targetEntry.weight };
+                        combinedProcesses.dist.entries.push(combination);
+                    } else if (entry.proc instanceof CCS.SummationProcess && targetEntry.proc instanceof CCS.ActionPrefixProcess) {
+                        let combination = { proc: new CCS.SummationProcess(entry.proc.subProcesses.concat(targetEntry.proc)), weight: targetEntry.weight };
+                        combinedProcesses.dist.entries.push(combination);
                     }
                 });
-                this.splitProbability(target, combinedProcesses);
+                this.flattenProbability(entry.proc, combinedProcesses);
             });
         }
 
@@ -98,13 +85,13 @@ module PCCS {
             this.dist.forEach(outcome => {
                 outcome.probability = (parseFloat('0.' + outcome.probability) * parseFloat('0.' + scalar)).toFixed(3).toString().slice(2);
             });
-        } 
+        }
 
-        public getTargetProcesses(): CCS.Process[] {
+        private getTargetProcesses(): CCS.Process[] {
             return this.dist.map(entry => entry.targetProcess);
         }
 
-   }
+    }
 
     export class StrictSuccessorGenerator extends CCS.StrictSuccessorGenerator implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet> {
         public probabilityDistubutionGenerator;
@@ -114,7 +101,7 @@ module PCCS {
             this.probabilityDistubutionGenerator = new PCCS.probabilityDistubutionGenerator(graph, cache);
         }
 
-        dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.TransitionSet{
+        dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.TransitionSet {
             return new CCS.TransitionSet();
         }
 
@@ -145,29 +132,32 @@ module PCCS {
         }
 
         dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.Process {
-            process.dist.forEach(target => {
-                process.splitProbability(target, target.targetProcess.dispatchOn(this));
+            process.dist.entries.forEach(entry => {
+                process.flattenProbability(entry.proc, entry.proc.dispatchOn(this));
             })
             return process;
         }
 
         public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess): CCS.Process {
+            // TODO: fix graph?
             // return this.graph.newProbabilisticProcess(["1"], [process]); // adding it to the graph causes error. pls fix :)
-            return new ProbabilisticProcess([{targetProcess: process, probability: "1"}]);
+            let dist = new MultiSetUtil.MultiSet([{ proc: process, weight: 1 }]);
+            return new ProbabilisticProcess(dist);
         }
 
         dispatchNullProcess(process: CCS.NullProcess) {
             // return process;
-            return new ProbabilisticProcess([{targetProcess: process, probability: "1"}]);
+            return new ProbabilisticProcess([{ targetProcess: process, probability: "1" }]);
         }
 
         dispatchNamedProcess(process: CCS.NamedProcess) {
             // return process;
-            return new ProbabilisticProcess([{targetProcess: process, probability: "1"}]);
+            return new ProbabilisticProcess([{ targetProcess: process, probability: "1" }]);
         }
 
         dispatchSummationProcess(process: CCS.SummationProcess) {
-            let probProcess = new PCCS.ProbabilisticProcess([{ targetProcess: new CCS.SummationProcess([]), probability: "1" }]);
+            let proc = new MultiSetUtil.MultiSet([{ proc: new CCS.SummationProcess([]), weight: 1 }]);
+            let probProcess = new ProbabilisticProcess(proc);
 
             process.subProcesses.forEach(subProcess => {
                 probProcess.convexCombination(subProcess.dispatchOn(this));
@@ -179,7 +169,7 @@ module PCCS {
 
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
             // if any of the subProcesses are probabilistic, we need to handle them
-            return process.subProcesses[0].dispatchOn(this).addProbabilities(process.subProcesses[1].dispatchOn(this), '1');
+            return this.graph.newProbabilisticProcess(["1"], [process]);
         }
 
         dispatchRestrictionProcess(process: CCS.RestrictionProcess) {
@@ -187,14 +177,14 @@ module PCCS {
         }
 
         dispatchRelabellingProcess(process: CCS.RelabellingProcess) {
-            return process.subProcess.dispatchOn(this); 
+            return process.subProcess.dispatchOn(this);
         }
     }
 }
 
 module Traverse {
     export class PCCSUnguardedRecursionChecker extends Traverse.UnguardedRecursionChecker implements PCCS.ProcessDispatchHandler<boolean> {
-        dispatchProbabilisticProcess(process : PCCS.ProbabilisticProcess) {
+        dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
             var isUnguarded = false;
             process.dist.forEach(target => {
                 if (target.targetProcess.dispatchOn(this)) {
@@ -214,7 +204,7 @@ module Traverse {
         // NOTE: this implementation may not be complete, it is just yanked from the PCCSUnguardedRecursionChecker
         // Look at dispatchSummationProcess in reducedparsetree.ts for inspiration
         // The implementation depends on how we process multiple probabalistic processes.
-        dispatchProbabilisticProcess(process : PCCS.ProbabilisticProcess) {
+        dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
             process.dist.forEach(target => {
                 target.targetProcess.dispatchOn(this)
             });
