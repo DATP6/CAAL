@@ -39,22 +39,28 @@ Conjunction = M:Modal Whitespace _ "and" Whitespace _ P:Conjunction { return P i
 PhiDisjunction = P:PhiConjunction Whitespace _ "or" Whitespace _ Q:PhiDisjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
 			/ P:PhiConjunction { return P; }
 
-PhiConjunction = M:Modal Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([M].concat(P.subFormulas)) : formulas.newConj([M, P]); }
-			/ M:Modal { return M; }
+PhiConjunction = Pt:PhiProbTerm Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([Pt].concat(P.subFormulas)) : formulas.newConj([Pt, P]); }
+			/ Pt:PhiProbTerm { return Pt; }
 
-PhiConjunction
-    = PhiProbTerm Whitespace _ "and" Whitespace Conjunction
-    / PhiProbTerm
-
-Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:Modal { return formulas.newWeakForAll(AM, F); }
-	  / _ "<" _ "<" _ AM:ActionList _ ">" _ ">" _ F:Modal { return formulas.newWeakExists(AM, F); }
-      / _ "[" _ AM:ActionList _ "]" _ F:Modal { return formulas.newStrongForAll(AM, F); }
-	  / _ "<" _ AM:ActionList _ ">" _ F:Modal { return formulas.newStrongExists(AM, F); }
+Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return formulas.newWeakForAll(AM, F); }
+	  / _ "<" _ "<" _ AM:ActionList _ ">" _ ">" _ F:SimplePhiFormula { return formulas.newWeakExists(AM, F); }
+      / _ "[" _ AM:ActionList _ "]" _ F:SimplePhiFormula { return formulas.newStrongForAll(AM, F); }
+	  / _ "<" _ AM:ActionList _ ">" _ F:SimpleFormula { return formulas.newStrongExists(AM, F); }
 	  / Unary
 
 PhiProbTerm
-    = Modal Diamond _ Relational_op _ Probability Phi_prob_term Variable
-    / Modal Diamond _ Relational_op _ Probability Formula
+    = Diamond _ R:Relational_op P:Probability _ S:SimpleFormula {return formulas.newDiamondFormula(R,P,S);}
+	/ PhiParenFormula 
+
+PhiUnary 
+	= PhiParenFormula
+	/ _ "tt" { return formulas.newTrue(); }
+	/ _ "ff" { return formulas.newFalse(); }
+	/ _ "T" { return formulas.newTrue(); }
+	/ _ "F" { return formulas.newFalse(); }
+
+PhiParenFormula
+	= _ "(" _ F:PhiDisjunction _ ")" { return F; }
 
 //Order important!
 Unary "term"
