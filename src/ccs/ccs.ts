@@ -1,5 +1,6 @@
 /// <reference path="../../lib/util.d.ts" />
 /// <reference path="unguarded_recursion.ts" />
+/// <reference path="pccs.ts" />
 
 module CCS {
 
@@ -792,7 +793,7 @@ module CCS {
                                 if (leftTransition.action.getLabel() === rightTransition.action.getLabel() &&
                                     leftTransition.action.isComplement() !== rightTransition.action.isComplement()) {
                                     //Need to construct entire set of new process.
-                                    var targetSubprocesses = process.subProcesses.slice(0);
+                                    var targetSubprocesses = process.subProcesses.slice(0)
                                     targetSubprocesses[i] = leftTransition.targetProcess;
                                     targetSubprocesses[j] = rightTransition.targetProcess;
                                     transitionSet.add(new Transition(new Action("tau", false),
@@ -819,7 +820,7 @@ module CCS {
         dispatchActionPrefixProcess(process: ActionPrefixProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
-                //process.nextProcess.dispatchOn(this).clone();
+                // TODO: Find distribution for nextProcess
                 transitionSet = this.cache[process.id] = new TransitionSet([new Transition(process.action, process.nextProcess)]);
             }
             return transitionSet;
