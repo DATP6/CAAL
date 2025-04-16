@@ -81,7 +81,7 @@ var mainTargetFile = _P('lib/main.js');
 var mainSourceFiles = ['src/main.ts'].map(_P);
 createTscFileTask(mainTargetFile, mainSourceFiles, { definitionFile: true, sourceMap: true }, 'Compile Main', addVersion);
 
-task('grammars', [ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar]);
+task('grammars', [ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar]);
 
 task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', workerVerifier, mainTargetFile], function () {
     console.log('Done Building');
