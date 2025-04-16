@@ -101,16 +101,74 @@ module PCCS {
             this.probabilityDistubutionGenerator = new PCCS.probabilityDistubutionGenerator(graph, cache);
         }
 
+        /** 
+        * WARN: PLEASE NEVER CALL THIS, PLEASE 
+        * @deprecated 
+        */
         dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.TransitionSet {
-            return new CCS.TransitionSet();
+            throw new Error("Probabilistic processes should never be dispatched");
         }
 
         dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess): CCS.TransitionSet {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
                 // generate the next process with probability distribution generator as the process could be probabilistic
-                var nextProcess = this.probabilityDistubutionGenerator.getProbabilityDistribution(process.nextProcess.id);
-                transitionSet = this.cache[process.id] = new CCS.TransitionSet([new CCS.Transition(process.action, nextProcess)]);
+                var nextDistribution = this.probabilityDistubutionGenerator.getProbabilityDistribution(process.nextProcess);
+                transitionSet = this.cache[process.id] = new CCS.TransitionSet([new CCS.Transition(process.action, nextDistribution)]);
+            }
+            return transitionSet;
+        }
+
+        dispatchCompositionProcess(process: CCS.CompositionProcess) {
+            var transitionSet = this.cache[process.id],
+                leftSet, rightSet;
+            if (!transitionSet) {
+                transitionSet = this.cache[process.id] = new TransitionSet();
+                var subTransitionSets = process.subProcesses.map(subProc => subProc.dispatchOn(this));
+                //COM3s
+                for (var i = 0; i < subTransitionSets.length - 1; i++) {
+                    for (var j = i + 1; j < subTransitionSets.length; j++) {
+                        //For each pairs in  P1 | P2 | P3 | P4, find COM3 transitions.
+                        var left = subTransitionSets[i];
+                        var right = subTransitionSets[j];
+                        left.forEach(leftTransition => {
+                            right.forEach(rightTransition => {
+                                // If they are able to synchronise
+                                if (leftTransition.action.getLabel() === rightTransition.action.getLabel() &&
+                                    leftTransition.action.isComplement() !== rightTransition.action.isComplement()) {
+                                    //Need to construct entire set of new process.
+                                    var targetSubprocesses = process.subProcesses.slice(0).map(x => x) // TODO: Map all elements to distributions of those elements
+                                    // Transition the 2 synchonising processes, leave the rest be (by adding a tau action)
+                                    // TODO: Change targetProcess to distribution
+                                    targetSubprocesses[i] = leftTransition.targetProcess;
+                                    targetSubprocesses[j] = rightTransition.targetProcess;
+                                    // TODO: Now we need to combine these to a single distribution instead of n different distributions
+                                    // This is a fold operation, as we claim it can be done in steps. So for D1 | D2 | D3 | D4 do:
+                                    // D12 | D3 | D4
+                                    // D123 | D4
+                                    // D1234
+                                    // This works because parallelisation is both associative and commutative
+
+                                    // Finally add the tau transition for this synchonisation
+                                    transitionSet.add(new Transition(new Action("tau", false),
+                                        this.graph.newCompositionProcess(targetSubprocesses)));
+                                }
+                            });
+                        });
+                    }
+                }
+                //COM1/2s
+                subTransitionSets.forEach((subTransitionSet, index) => {
+                    subTransitionSet.forEach(subTransition => {
+                        var targetSubprocesses = process.subProcesses.slice(0).map(x => x);// TODO: Map like fold
+                        //Only the index of the subprocess will have changed.
+                        //TODO: Change targetProcess to distribution
+                        targetSubprocesses[index] = subTransition.targetProcess;
+                        // TODO: Do fold as in sync
+                        transitionSet.add(new Transition(subTransition.action.clone(),
+                            this.graph.newCompositionProcess(targetSubprocesses)));
+                    });
+                });
             }
             return transitionSet;
         }
@@ -119,40 +177,37 @@ module PCCS {
 
 
     // TODO: this class should use the cache to avoid recomputing the same process multiple times
-    export class probabilityDistubutionGenerator implements PCCS.ProcessDispatchHandler<CCS.Process> {
+    export class probabilityDistubutionGenerator implements PCCS.ProcessDispatchHandler<PCCS.ProbabilisticProcess> {
         private cache: { [id: string]: CCS.Process } = {};
 
-        constructor(public graph: Graph, cache?) {
+        constructor(public graph: Graph, private getProcessbyName: (s: string) => CCS.Process, cache?) {
             this.cache = cache || {};
         }
 
-        getProbabilityDistribution(processId: CCS.ProcessId): CCS.Process {
-            var process = this.graph.processById(processId);
+        getProbabilityDistribution(process: CCS.Process): PCCS.ProbabilisticProcess {
             return this.cache[process.id] = process.dispatchOn(this);
         }
 
-        dispatchProbabilisticProcess(process: ProbabilisticProcess): CCS.Process {
+        dispatchProbabilisticProcess(process: ProbabilisticProcess) {
+            // TODO: flatten this
             process.dist.entries.forEach(entry => {
                 process.flattenProbability(entry.proc, entry.proc.dispatchOn(this));
             })
             return process;
         }
 
-        public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess): CCS.Process {
-            // TODO: fix graph?
-            // return this.graph.newProbabilisticProcess(["1"], [process]); // adding it to the graph causes error. pls fix :)
+        public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess) {
             let dist = new MultiSetUtil.MultiSet([{ proc: process, weight: 1 }]);
             return new ProbabilisticProcess(dist);
         }
 
         dispatchNullProcess(process: CCS.NullProcess) {
-            // return process;
-            return new ProbabilisticProcess([{ targetProcess: process, probability: "1" }]);
+            return new ProbabilisticProcess(new MultiSetUtil.MultiSet([{ proc: process, weight: 1 }]));
         }
 
         dispatchNamedProcess(process: CCS.NamedProcess) {
-            // return process;
-            return new ProbabilisticProcess([{ targetProcess: process, probability: "1" }]);
+            const distribution = new MultiSetUtil.MultiSet([{ proc: this.getProcessbyName(process.name).dispatchOn(this), weight: 1 }]);
+            return new ProbabilisticProcess(distribution);
         }
 
         dispatchSummationProcess(process: CCS.SummationProcess) {
