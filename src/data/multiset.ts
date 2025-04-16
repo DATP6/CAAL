@@ -34,5 +34,17 @@ module MultiSetUtil {
 
         return new MultiSet([...aEntries, ...bEntries]);
     }
+
+    export const crossCombination = (op: (procs: CCS.Process[]) => CCS.Process, left: MultiSet, right: MultiSet): MultiSet => {
+        const crossCombinedMS = new MultiSet([]);
+        for (const leftEntry of left.getEntries()) {
+            for (const rightEntry of right.getEntries()) {
+                const newProc = op([leftEntry.proc, rightEntry.proc]);
+                crossCombinedMS.add({ proc: newProc, weight: leftEntry.weight * rightEntry.weight });
+            }
+        }
+
+        return crossCombinedMS;
+    }
 }
 
