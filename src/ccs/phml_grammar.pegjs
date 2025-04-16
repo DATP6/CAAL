@@ -103,8 +103,7 @@ Diamond
     = "<>"
 
 Probability
-    = [0]"."[0-9]*
-    / [1]
+    = [0-9]+"/"[1-9]+
 
 Relational_op 
     = "<"
