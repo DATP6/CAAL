@@ -256,6 +256,10 @@ module Traverse {
             this.clearCache();
         }
 
+        dispatchDiamondFormula(formula: hml.DiamondFormula): string {
+            throw new Error("Method not implemented.");
+        }
+
         clearCache() {
             this.cache = Object.create(null);
         }
@@ -414,6 +418,10 @@ module Traverse {
         constructor(private hmlFormulaSet : HML.FormulaSet) {
         }
 
+        dispatchDiamondFormula(formula: hml.DiamondFormula): hml.Formula[] {
+            throw new Error("Method not implemented.");
+        }
+
         visit(formula : HML.Formula) {
             return formula.dispatchOn(this);
         }
@@ -547,6 +555,10 @@ module Traverse {
             var subFormulas = formula.subFormulas.map(subF => subF.dispatchOn(this));
             return subFormulas.length > 1 ? this.prevSet.newConj(subFormulas) : subFormulas[0];
         }
+        
+        dispatchDiamondFormula(formula : hml.DiamondFormula) {
+            return formula
+        }
 
         dispatchTrueFormula(formula : hml.TrueFormula) {
             return this.prevSet.newTrue();
@@ -639,6 +651,10 @@ module Traverse {
                 formulaSet.getTopFormula().dispatchOn(this);
             }
             formulaSet.getTopLevelFormulas().forEach(formula => formula.dispatchOn(this));
+        }
+        
+        dispatchDiamondFormula(formula: hml.DiamondFormula) {
+            return formula
         }
 
         dispatchDisjFormula(formula : hml.DisjFormula) {
