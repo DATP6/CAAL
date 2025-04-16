@@ -6,6 +6,7 @@ declare var TCCSParser;
 declare var PCCSParser;
 declare var HMLParser;
 declare var THMLParser;
+declare var PHMLParser;
 
 importScripts(
     '../ccs_grammar.js',

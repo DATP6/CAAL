@@ -128,7 +128,7 @@ createTscFileTask(
     addVersion
 );
 
-task('grammars', [ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar]);
+task('grammars', [ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar]);
 
 task(
     'all',
