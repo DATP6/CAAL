@@ -48,6 +48,8 @@ Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return fo
 	  / _ "<" _ AM:ActionList _ ">" _ F:SimpleFormula { return formulas.newStrongExists(AM, F); }
 	  / Unary
 
+
+// Additions
 PhiProbTerm
     = Diamond _ R:Relational_op P:Probability _ S:SimpleFormula {return formulas.newDiamondFormula(R,P,S);}
 	/ PhiParenFormula 
@@ -61,6 +63,7 @@ PhiUnary
 
 PhiParenFormula
 	= _ "(" _ F:PhiDisjunction _ ")" { return F; }
+// ----
 
 //Order important!
 Unary "term"
@@ -84,20 +87,25 @@ ActionList = A:Action _ "," _ AM:ActionList { return AM.add(A); }
 		   / A:Action { return new hml.SingleActionMatcher(A); }
 		   / "-" { return new hml.AllActionMatcher(); }
 
+/**** Utiliy Section ****/ 
 Action "action"
     = ['] label:Label { return new ccs.Action(label, true); }
     / label:Label { return new ccs.Action(label, false); }
 
-//Valid name for actions
 Label "label"
     = first:[a-z] rest:IdentifierRestSym* { return strFirstAndRest(first, rest); }
 
-
-/**** Utiliy Section ****/ 
 Whitespace "whitespace"
     = [ \t]
 
 Comment "comment" = "*" [^\r\n]* "\r"? "\n"?
+
+//Useful utility
+_ = (Whitespace / Newline)* Comment _
+  / (Whitespace / Newline)*
+
+Newline "newline"
+    = "\r\n" / "\n" / "\r"
 
 Diamond 
     = "<>"
@@ -111,3 +119,4 @@ Relational_op
     / "=="
     / ">="
     / ">"
+
