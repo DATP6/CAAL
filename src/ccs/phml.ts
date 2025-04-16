@@ -1,7 +1,7 @@
 /// <reference path="../../lib/util.d.ts" />
 /// <reference path="ccs.ts" />
 
-module HML {
+module PHML {
     
     import ccs = CCS;
     import DGMod = DependencyGraph;
