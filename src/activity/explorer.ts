@@ -299,7 +299,7 @@ module Activity {
             this.uiGraph.showProcess(process.id, { label: this.graph.getLabel(process), status: "unexpanded", probabilityDistrubution: false });
         }
 
-        private showProbabilityDistrubution (process: string): void {
+        private showProbabilityDistrubution(process: string): void {
             // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
             this.uiGraph.showProcess(process, { probabilityDistrubution: true });
         }
@@ -308,6 +308,7 @@ module Activity {
             this.selectedProcess = process;
 
             var allTransitions = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
+            console.log("Transitions", allTransitions)
             var data = this.uiGraph.getProcessDataObject(process.id.toString());
 
             if (!data || data.status === "unexpanded") {
@@ -322,15 +323,31 @@ module Activity {
                     Object.keys(groupedByTargetProcessId).forEach(strProcId => {
                         var group = groupedByTargetProcessId[strProcId];
                         var data = group.map(t => { return { label: t.action.toString() } });
-                        var targetProcess = group[0].targetProcess;
+                        var targetProcess: PCCS.ProbabilisticProcess = group[0].targetProcess;
+
+                        console.log("Target process for", strProcId, targetProcess);
 
                         if (this.project.getInputMode() === InputMode.PCCS) {
                             this.showProbabilityDistrubution(strProcId); // Show dot
                             this.uiGraph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
-                            targetProcess.dist.forEach(target => { // for each target process in the distrubution, create transition from dot to target
-                                this.showProcess(this.graph.processById(target.targetProcess.id));
-                                this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
+                            targetProcess.dist.getProbabilities().forEach((x) => { // for each target process in the distrubution, create transition from dot to target
+
+                                console.log("x:", x)
+
+                                const { proc, probability } = x;
+                                this.showProcess(proc);
+
+                                if (isNaN(probability)) {
+                                    console.log("NaN prop for", proc)
+                                }
+                                this.uiGraph.showTransitions(strProcId, proc.id, [{ dashed: true, label: probability }]);
+                                // this.showProcess(this.graph.processById(target.targetProcess.id));
+                                // this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
                             });
+                            // targetProcess.dist.forEach(target => { // for each target process in the distrubution, create transition from dot to target
+                            //     this.showProcess(this.graph.processById(target.targetProcess.id));
+                            //     this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
+                            // });
                         } else {
                             this.showProcess(targetProcess);
                             this.uiGraph.showTransitions(fromProcess.id, strProcId, data);
