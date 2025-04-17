@@ -1,32 +1,37 @@
-/// <reference path="../ccs/ccs.ts" />
 module MultiSetUtil {
 
-    type Entry = { proc: CCS.Process, weight: number };
+    // INFO: This is mostly generic simply to avoid cyclical references. This way we do not have to know about the CCS module
+    export type Entry<T> = { proc: T, weight: number };
 
-    export class MultiSet {
-        private map: Record<string, Entry>
+    export class MultiSet<T> {
+        private map: Map<T, number>
 
-        constructor(entries: Entry[]) {
-            this.map = {};
+        constructor(entries: Entry<T>[]) {
+            this.map = new Map();
             entries.forEach(e => this.add(e));
         }
 
-        public getEntries() {
-            return Object.values(this.map);
+        public getEntries(): Entry<T>[] {
+            return Array.from(this.map.entries()).map(([key, val]) => ({ proc: key, weight: val }));
+        }
+
+        public getProbabilities(): (Entry<T> & { probability: number })[] {
+            const size = this.size();
+            return this.getEntries().map(e => ({ ...e, probability: e.weight / size }))
         }
 
         public size() {
             return this.getEntries().map(x => x.weight).reduce((acc, curr) => acc + curr, 0);
         }
 
-        public add(entry: Entry) {
-            const current = this.map[entry.proc.id] ?? { proc: entry.proc, weight: 0 };
-            current.weight += entry.weight;
-            this.map[entry.proc.id] = current;
+        public add(entry: Entry<T>) {
+            let weight = this.map.get(entry.proc) ?? 0;
+            weight += entry.weight;
+            this.map.set(entry.proc, weight);
         }
     }
 
-    export const weightedUnion = (setA: MultiSet, weightA: number, setB: MultiSet, weightB: number) => {
+    export const weightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
         const aSize = setA.size();
         const bSize = setB.size();
         const aEntries = setA.getEntries().map(x => ({ proc: x.proc, weight: x.weight * bSize * weightA }));
@@ -35,8 +40,8 @@ module MultiSetUtil {
         return new MultiSet([...aEntries, ...bEntries]);
     }
 
-    export const crossCombination = (op: (procs: CCS.Process[]) => CCS.Process, left: MultiSet, right: MultiSet): MultiSet => {
-        const crossCombinedMS = new MultiSet([]);
+    export const crossCombination = <T>(op: (procs: T[]) => T, left: MultiSet<T>, right: MultiSet<T>): MultiSet<T> => {
+        const crossCombinedMS = new MultiSet<T>([]);
         for (const leftEntry of left.getEntries()) {
             for (const rightEntry of right.getEntries()) {
                 const newProc = op([leftEntry.proc, rightEntry.proc]);
