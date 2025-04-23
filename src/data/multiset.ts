@@ -4,15 +4,15 @@ module MultiSetUtil {
     export type Entry<T> = { proc: T, weight: number };
 
     export class MultiSet<T> {
-        private map: Map<T, number>
+        private _map: Map<T, number>
 
         constructor(entries: Entry<T>[]) {
-            this.map = new Map();
+            this._map = new Map();
             entries.forEach(e => this.add(e));
         }
 
         public getEntries(): Entry<T>[] {
-            return Array.from(this.map.entries()).map(([key, val]) => ({ proc: key, weight: val }));
+            return Array.from(this._map.entries()).map(([key, val]) => ({ proc: key, weight: val }));
         }
 
         public getProbabilities(): (Entry<T> & { probability: number })[] {
@@ -25,13 +25,27 @@ module MultiSetUtil {
         }
 
         public add(entry: Entry<T>) {
-            let weight = this.map.get(entry.proc) ?? 0;
+            let weight = this._map.get(entry.proc) ?? 0;
             weight += entry.weight;
-            this.map.set(entry.proc, weight);
+            this._map.set(entry.proc, weight);
+        }
+
+        public map(mapper: (entry: Entry<T>, index: number, entries: Entry<T>[]) => Entry<T>) {
+            // Quick and dirty implementation. Can definitly be optimised
+            const entries = this.getEntries();
+            return new MultiSet(entries.map(mapper));
+        }
+
+        public clone() {
+            return new MultiSet(this.getEntries());
         }
     }
 
     export const weightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
+        if (weightA === 0)
+            return setB.clone()
+        if (weightB === 0)
+            return setA.clone()
         const aSize = setA.size();
         const bSize = setB.size();
         const aEntries = setA.getEntries().map(x => ({ proc: x.proc, weight: x.weight * bSize * weightA }));
@@ -41,6 +55,11 @@ module MultiSetUtil {
     }
 
     export const crossCombination = <T>(op: (procs: T[]) => T, left: MultiSet<T>, right: MultiSet<T>): MultiSet<T> => {
+        if (left.size() === 0)
+            return right;
+        if (right.size() === 0)
+            return left;
+
         const crossCombinedMS = new MultiSet<T>([]);
         for (const leftEntry of left.getEntries()) {
             for (const rightEntry of right.getEntries()) {
