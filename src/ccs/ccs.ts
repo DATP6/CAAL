@@ -950,8 +950,10 @@ module CCS {
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
 
                 transitions.forEach(t => {
-                    if (!(t.targetProcess instanceof PCCS.ProbabilisticProcess))
+                    if (!(t.targetProcess instanceof PCCS.ProbabilisticProcess)) {
+                        console.log("Unknown target process in t:", t);
                         throw new Error("Probabilistic transition did not result in a distribution")
+                    }
 
                     t.targetProcess.getTargetProcesses().forEach(p => {
                         if (!result[t.targetProcess.id] && depth < maxDepth) {
@@ -959,14 +961,6 @@ module CCS {
                         }
                     })
                 })
-
-                // transitions.forEach(t => {
-                //     t.argetProcesses().forEach(p => {
-                //         if (!result[t.targetProcess.id] && depth < maxDepth) {
-                //             queue.push([depth + 1, p]);
-                //         }
-                //     });
-                // });
             } else {
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
 
