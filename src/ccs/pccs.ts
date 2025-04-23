@@ -100,6 +100,7 @@ module PCCS {
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
+                console.log("[SSG Composition] In:", process);
                 transitionSet = this.cache[process.id] = new CCS.TransitionSet();
                 var subTransitionSets = process.subProcesses.map(subProc => subProc.dispatchOn(this));
                 // var defaultDistributions: Distribution[] = process.subProcesses.map(
@@ -130,7 +131,7 @@ module PCCS {
                                     // D1234
                                     // This works because parallelisation is both associative and commutative
                                     const finalDistribution = targetDistributions.reduce(
-                                        (acc, curr) => MultiSetUtil.crossCombination((p) => new CCS.CompositionProcess(p), acc, curr),
+                                        (acc, curr) => MultiSetUtil.crossCombination((p) => this.graph.newCompositionProcess(p), acc, curr),
                                         newDistribution([])
                                     )
 
@@ -153,14 +154,53 @@ module PCCS {
                         targetDistributions[index] = this.probabilityDistributionGenerator.getProbabilityDistribution(subTransition.targetProcess);
                         // Do fold as in sync
                         const finalDistribution = targetDistributions.reduce(
-                            (acc, curr) => MultiSetUtil.crossCombination((p) => new CCS.CompositionProcess(p), acc, curr),
+                            (acc, curr) => MultiSetUtil.crossCombination((p) => this.graph.newCompositionProcess(p), acc, curr),
                             new MultiSetUtil.MultiSet<CCS.Process>([])
                         )
 
                         // Finally add the tau transition for this synchonisation
-                        transitionSet.add(new CCS.Transition(new CCS.Action("tau", false),
+                        transitionSet.add(new CCS.Transition(subTransition.action.clone(),
                             this.graph.newDistributionProcess(finalDistribution)));
                     });
+                });
+                console.log("[SSG Composition] Out:", transitionSet)
+            }
+            return transitionSet;
+        }
+
+        dispatchRestrictionProcess(process: CCS.RestrictionProcess) {
+            var transitionSet = this.cache[process.id],
+                subTransitionSet;
+            if (!transitionSet) {
+                transitionSet = this.cache[process.id] = new CCS.TransitionSet();
+                subTransitionSet = process.subProcess.dispatchOn(this).clone();
+                subTransitionSet.applyRestrictionSet(process.restrictedLabels);
+                // Restrict each process in remaining distributions
+                subTransitionSet.forEach(transition => {
+                    // TODO: Find a way to make this cast typesafe
+                    const target = transition.targetProcess as ProbabilisticProcess;
+                    const restrictedDist = target.dist.map((e) => ({ ...e, proc: this.graph.newRestrictedProcess(e, process.restrictedLabels) }));
+                    const restrictedProcess = this.graph.newDistributionProcess(restrictedDist);
+                    transitionSet.add(new CCS.Transition(transition.action.clone(), restrictedProcess));
+                });
+            }
+            return transitionSet;
+        }
+
+        dispatchRelabellingProcess(process: CCS.RelabellingProcess) {
+            var transitionSet = this.cache[process.id],
+                subTransitionSet;
+            if (!transitionSet) {
+                transitionSet = this.cache[process.id] = new CCS.TransitionSet();
+                subTransitionSet = process.subProcess.dispatchOn(this).clone();
+                subTransitionSet.applyRelabelSet(process.relabellings);
+                // Relabel each process in distributions
+                subTransitionSet.forEach(transition => {
+                    // TODO: Find a way to make this cast typesafe
+                    const target = transition.targetProcess as ProbabilisticProcess;
+                    const restrictedDist = target.dist.map((e) => ({ ...e, proc: this.graph.newRelabelingProcess(e, process.relabellings) }));
+                    const relabeledProcess = this.graph.newDistributionProcess(restrictedDist);
+                    transitionSet.add(new CCS.Transition(transition.action.clone(), relabeledProcess));
                 });
             }
             return transitionSet;
@@ -227,16 +267,24 @@ module PCCS {
         }
 
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
+            console.log("[PDG Composition] In:", process)
             const dist: Distribution = process.subProcesses.map(p => p.dispatchOn(this)).reduce(
                 (curr, acc) => MultiSetUtil.crossCombination((p: CCS.Process[]) => this.graph.newCompositionProcess(p), curr, acc),
                 newDistribution([])
             )
+            console.log("[PDG Composition] Out", dist);
             return dist;
         }
 
         dispatchRestrictionProcess(process: CCS.RestrictionProcess) {
             // TODO: Implement in accordance with semantics
-            return process.subProcess.dispatchOn(this);
+            console.log("[PDG Restriction] In:", process)
+            const dist: Distribution = process.subProcess.dispatchOn(this);
+            console.log("[PDG Restriction] Via:", dist)
+
+            const restrictedDist = dist.map(e => ({ ...e, proc: this.graph.newRestrictedProcess(e, process.restrictedLabels) }));
+            console.log("[PDG Restriction] To:", restrictedDist)
+            return restrictedDist;
         }
 
         dispatchRelabellingProcess(process: CCS.RelabellingProcess) {
