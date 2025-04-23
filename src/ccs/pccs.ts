@@ -100,7 +100,6 @@ module PCCS {
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
-                console.log("[SSG Composition] In:", process);
                 transitionSet = this.cache[process.id] = new CCS.TransitionSet();
                 var subTransitionSets = process.subProcesses.map(subProc => subProc.dispatchOn(this));
                 // var defaultDistributions: Distribution[] = process.subProcesses.map(
@@ -163,7 +162,6 @@ module PCCS {
                             this.graph.newDistributionProcess(finalDistribution)));
                     });
                 });
-                console.log("[SSG Composition] Out:", transitionSet)
             }
             return transitionSet;
         }
@@ -179,7 +177,7 @@ module PCCS {
                 subTransitionSet.forEach(transition => {
                     // TODO: Find a way to make this cast typesafe
                     const target = transition.targetProcess as ProbabilisticProcess;
-                    const restrictedDist = target.dist.map((e) => ({ ...e, proc: this.graph.newRestrictedProcess(e, process.restrictedLabels) }));
+                    const restrictedDist = target.dist.map((e) => ({ ...e, proc: this.graph.newRestrictedProcess(e.proc, process.restrictedLabels) }));
                     const restrictedProcess = this.graph.newDistributionProcess(restrictedDist);
                     transitionSet.add(new CCS.Transition(transition.action.clone(), restrictedProcess));
                 });
@@ -198,7 +196,7 @@ module PCCS {
                 subTransitionSet.forEach(transition => {
                     // TODO: Find a way to make this cast typesafe
                     const target = transition.targetProcess as ProbabilisticProcess;
-                    const restrictedDist = target.dist.map((e) => ({ ...e, proc: this.graph.newRelabelingProcess(e, process.relabellings) }));
+                    const restrictedDist = target.dist.map((e) => ({ ...e, proc: this.graph.newRelabelingProcess(e.proc, process.relabellings) }));
                     const relabeledProcess = this.graph.newDistributionProcess(restrictedDist);
                     transitionSet.add(new CCS.Transition(transition.action.clone(), relabeledProcess));
                 });
@@ -295,6 +293,7 @@ module PCCS {
 }
 
 module Traverse {
+    export type Distribution = MultiSetUtil.MultiSet<CCS.Process>;
     export class PCCSUnguardedRecursionChecker extends Traverse.UnguardedRecursionChecker implements PCCS.ProcessDispatchHandler<boolean> {
         dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
             var isUnguarded = false;
@@ -313,14 +312,12 @@ module Traverse {
             super(pccsgraph);
         }
 
-        // NOTE: this implementation may not be complete, it is just yanked from the PCCSUnguardedRecursionChecker
-        // Look at dispatchSummationProcess in reducedparsetree.ts for inspiration
-        // The implementation depends on how we process multiple probabalistic processes.
         dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
-            process.dist.getEntries().forEach(({ proc: target, ..._ }) => {
-                target.dispatchOn(this);
+            let newDistribution: Distribution = new MultiSetUtil.MultiSet<CCS.Process>([]);
+            process.dist.getEntries().forEach((e) => {
+                newDistribution.add({ proc: e.proc.dispatchOn(this), weight: e.weight });
             });
-            return process
+            return this.pccsgraph.newDistributionProcess(newDistribution);
         }
     }
 }
