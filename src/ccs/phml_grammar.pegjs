@@ -1,5 +1,7 @@
 /* Grammar for Probabilistic Hennessey Milner Logic (PHML)*/
 
+import { error } from "jquery";
+
 {
 	function strFirstAndRest(first, rest) {
 		return first + rest.join('');
@@ -11,18 +13,19 @@
 }
 
 start
-	= Ps:Statements _ { return formulas; }
-	/ F:SimpleFormula _ ";" _ { return formulas; } //TODO: Hack until multiple versions of syntax checker.
-	/ _ { return formulas; }
+	= Ps:Statements _ {console.log("STATEMENTS"); return formulas; }
+	/ F:SimpleFormula _ ";" _ { console.log("SIMPLEFORMULA"); return formulas; } //TODO: Hack until multiple versions of syntax checker.
+	/ _ {console.log("WHITESPACE"); return formulas; }
 
-Statements = P:FixedPoint _ ";" Qs:Statements { return [P].concat(Qs); }
-		   / P:FixedPoint _ (";" _)? { return [P]; }
+Statements = P:FixedPoint _ ";" Qs:Statements {console.log("FIXEDPOINT"); return [P].concat(Qs); }
+		   / P:FixedPoint _ (";" _)? { console.log("FIXEDPOINT2"); return [P]; }
 
-TopFormula = F:SimpleFormula _ ";"_ { formulas.setTopFormula(F); return F;} 
+TopFormula = F:SimplePhiFormula _ ";" _ { console.log("SIMPLEPHI"); formulas.setTopFormula(F); return F;} 
+		   / F:SimpleFormula _ ";"_ { console.log("SIMPLEFORMULA"); formulas.setTopFormula(F); return F; } 
 
 SimpleFormula = P:Disjunction _ { var f = formulas.unnamedMinFixedPoint(P); return f; }
 
-SimplePhiFormula = P:PhiDisjunction _ {return P;}
+SimplePhiFormula = P:PhiDisjunction _ {console.log("PHIDISJUNCTION"); return P;}
 
 FixedPoint = _ V:Variable _ [mM][aA][xX] "=" _ P:Disjunction { return formulas.newMaxFixedPoint(V, P); }
 		   / _ V:Variable _ [mM][iI][nN] "=" _ P:Disjunction { return formulas.newMinFixedPoint(V, P); }
@@ -36,22 +39,22 @@ Disjunction = P:Conjunction Whitespace _ "or" Whitespace _ Q:Disjunction { retur
 Conjunction = M:Modal Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([M].concat(P.subFormulas)) : formulas.newConj([M, P]); }
 			/ M:Modal { return M; }
 
-PhiDisjunction = P:PhiConjunction Whitespace _ "or" Whitespace _ Q:PhiDisjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
+PhiDisjunction = P:PhiConjunction Whitespace _ "or" Whitespace _ Q:PhiDisjunction {console.log("PHIDISJUNCTION"); return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
 			/ P:PhiConjunction { return P; }
 
-PhiConjunction = Pt:PhiProbTerm Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([Pt].concat(P.subFormulas)) : formulas.newConj([Pt, P]); }
+PhiConjunction = Pt:PhiProbTerm Whitespace _ "and" Whitespace _ P:Conjunction {console.log("PHICONJUNCTION"); return P instanceof hml.ConjFormula ? formulas.newConj([Pt].concat(P.subFormulas)) : formulas.newConj([Pt, P]); }
 			/ Pt:PhiProbTerm { return Pt; }
 
 Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return formulas.newWeakForAll(AM, F); }
 	  / _ "<" _ "<" _ AM:ActionList _ ">" _ ">" _ F:SimplePhiFormula { return formulas.newWeakExists(AM, F); }
       / _ "[" _ AM:ActionList _ "]" _ F:SimplePhiFormula { return formulas.newStrongForAll(AM, F); }
-	  / _ "<" _ AM:ActionList _ ">" _ F:SimplePhiFormula { return formulas.newStrongExists(AM, F); }
+	  / _ "<" _ AM:ActionList _ ">" _ F:SimplePhiFormula { console.log("STRONGEXISTS"); return formulas.newStrongExists(AM, F); }
 	  / Unary
 
 
 // Additions
 PhiProbTerm
-    = Diamond _ R:Relational_op P:Probability _ S:SimpleFormula {return formulas.newDiamondFormula(R,P,S);}
+    = Diamond _ R:Relational_op P:Probability _ S:SimpleFormula {console.log(R,P,S); throw "PHIPROBTERM" ; return formulas.newDiamondFormula(R,P,S);}
 	/ PhiParenFormula 
 
 PhiUnary 
