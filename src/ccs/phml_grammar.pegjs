@@ -45,7 +45,7 @@ PhiConjunction = Pt:PhiProbTerm Whitespace _ "and" Whitespace _ P:Conjunction { 
 Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return formulas.newWeakForAll(AM, F); }
 	  / _ "<" _ "<" _ AM:ActionList _ ">" _ ">" _ F:SimplePhiFormula { return formulas.newWeakExists(AM, F); }
       / _ "[" _ AM:ActionList _ "]" _ F:SimplePhiFormula { return formulas.newStrongForAll(AM, F); }
-	  / _ "<" _ AM:ActionList _ ">" _ F:SimpleFormula { return formulas.newStrongExists(AM, F); }
+	  / _ "<" _ AM:ActionList _ ">" _ F:SimplePhiFormula { return formulas.newStrongExists(AM, F); }
 	  / Unary
 
 
