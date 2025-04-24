@@ -107,16 +107,19 @@ _ = (Whitespace / Newline)* Comment _
 Newline "newline"
     = "\r\n" / "\n" / "\r"
 
+Integer
+    = I:[0-9]+ { return formulas.newInteger(I); }
+
 Diamond 
     = "<>"
 
 Probability
-    = [0-9]+"/"[1-9]+
+    = N:Integer"/"D:Integer { return formulas.newProbability(N, D) }
 
 Relational_op 
-    = "<"
-    / "<="
-    / "=="
-    / ">="
-    / ">"
+    = S:"<" { return formulas.newRelationalOp(S); }
+    / S:"<=" { return formulas.newRelationalOp(S); }
+    / S:"==" { return formulas.newRelationalOp(S); }
+    / S:">=" { return formulas.newRelationalOp(S); }
+    / S:">" { return formulas.newRelationalOp(S); }
 
