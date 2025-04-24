@@ -70,6 +70,7 @@ module DependencyGraph {
         }
 
         dispatchDiamondFormula(formula: hml.DiamondFormula) {
+            console.log(`Dispatching: ${formula.toString()}`);
             throw new Error("Method not implemented.");
         }
 
