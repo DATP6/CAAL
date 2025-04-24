@@ -73,8 +73,7 @@ module PCCS {
 
     export class StrictSuccessorGenerator
         extends CCS.StrictSuccessorGenerator
-        implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet>
-    {
+        implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet> {
         public probabilityDistributionGenerator: probabilityDistributionGenerator;
 
         constructor(
@@ -358,8 +357,7 @@ module Traverse {
     export type Distribution = MultiSetUtil.MultiSet<CCS.Process>;
     export class PCCSUnguardedRecursionChecker
         extends Traverse.UnguardedRecursionChecker
-        implements PCCS.ProcessDispatchHandler<boolean>
-    {
+        implements PCCS.ProcessDispatchHandler<boolean> {
         dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
             var isUnguarded = false;
             process.dist.getEntries().forEach(({ proc: target, ..._ }) => {
@@ -373,8 +371,7 @@ module Traverse {
 
     export class PCCSProcessTreeReducer
         extends Traverse.ProcessTreeReducer
-        implements CCS.ProcessVisitor<CCS.Process>, PCCS.ProcessDispatchHandler<CCS.Process>
-    {
+        implements CCS.ProcessVisitor<CCS.Process>, PCCS.ProcessDispatchHandler<CCS.Process> {
         constructor(private pccsgraph: PCCS.Graph) {
             super(pccsgraph);
         }

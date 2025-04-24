@@ -71,7 +71,7 @@ module DependencyGraph {
             private strongSuccGen: ccs.SuccessorGenerator,
             private weakSuccGen: ccs.SuccessorGenerator,
             private formulaSet: hml.FormulaSet
-        ) {}
+        ) { }
 
         getHyperEdges(node: MuCalculusNode): Hyperedge[] {
             this.currentNode = node;
@@ -276,7 +276,7 @@ module DependencyGraph {
         ZERO = 2;
         ONE = 3;
 
-        constructor(private nodeSuccGen) {}
+        constructor(private nodeSuccGen) { }
 
         solve(solveNode?): void {
             if (solveNode != undefined) {

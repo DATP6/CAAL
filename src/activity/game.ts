@@ -178,9 +178,15 @@ module Activity {
                 if (this.project.getInputMode() === InputMode.CCS) {
                     this.$ccsGameTypes.show();
                     this.$tccsGameTypes.hide();
-                } else {
+                    this.$pccsGameTypes.hide();
+                } else if (this.project.getInputMode() === InputMode.TCCS) {
                     this.$ccsGameTypes.hide();
                     this.$tccsGameTypes.show();
+                    this.$pccsGameTypes.hide();
+                } else {
+                    this.$ccsGameTypes.hide();
+                    this.$tccsGameTypes.hide();
+                    this.$pccsGameTypes.show();
                 }
 
                 this.changed = false;
@@ -1562,8 +1568,8 @@ module Activity {
                         winner instanceof Computer
                             ? 'You ({3}) have'
                             : winner.getPlayType() === PlayType.Attacker
-                              ? 'Defender has'
-                              : 'Attacker has'
+                                ? 'Defender has'
+                                : 'Attacker has'
                 },
                 2: { text: winner instanceof Computer ? 'lose' : 'win' },
                 3: { text: winner.getPlayType() === PlayType.Attacker ? 'defender' : 'attacker' }
