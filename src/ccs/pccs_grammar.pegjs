@@ -43,14 +43,7 @@ Assignment
 Process = Summation
 
 Summation
-	= P:Probabilistic _ "+" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
-	// = P:Probabilistic _ "?" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
-	/ P:Probabilistic { return P; }
-	// = P:Composition _ "+" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
-	// / P:Composition { return P; }
-
-Probabilistic
-	= P:Composition _ Prob:Probability _ Q:Probabilistic { return g.newProbabilisticProcess(Prob, [P, Q]); }
+	= P:Composition _ "+" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
 	/ P:Composition { return P; }
 
 Composition
@@ -77,7 +70,11 @@ Relabel
 
 ParenProcess
 	= "(" _ P:Process _ ")" { return P; }
+	/ "(" _ P:Probabilistic _ ")" { return P; } // Require a parentheses around probabilistic processes
 	/ P:ConstantProcess { return P; }
+
+Probabilistic
+	= P:Process _ Prob:Probability _ Q:Process{ return g.newProbabilisticProcess(Prob, [P, Q]); }
 
 ConstantProcess
 	= "0" { return g.getNullProcess(); }
