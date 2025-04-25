@@ -1,76 +1,75 @@
 module Activity {
-
     export class Verifier extends Activity {
-        private graph : CCS.Graph;
-        private timer : number;
-        private queue : Property.Property[];
+        private graph: CCS.Graph;
+        private timer: number;
+        private queue: Property.Property[];
         private verifyingProperty = null;
-        private formulaEditor : any;
-        private definitionsEditor : any;
+        private formulaEditor: any;
+        private definitionsEditor: any;
 
-        constructor(container : string, button : string) {
+        constructor(container: string, button: string) {
             super(container, button);
 
             this.queue = [];
 
-            $("#add-property").on("click", () => this.showPropertyModal());
-            $("#verify-all").on("click", () => this.verifyAll());
-            $("#verify-stop").on("click", () => this.stopVerify());
-            $("input[name=property-type]").on("change", () => this.showSelectedPropertyType());
+            $('#add-property').on('click', () => this.showPropertyModal());
+            $('#verify-all').on('click', () => this.verifyAll());
+            $('#verify-stop').on('click', () => this.stopVerify());
+            $('input[name=property-type]').on('change', () => this.showSelectedPropertyType());
 
-            var $propertyTable = $("#property-table-properties");
+            var $propertyTable = $('#property-table-properties');
             (<any>$propertyTable).sortable({
-                axis: "y",
+                axis: 'y',
                 stop: (event, ui) => {
-                    var newPositions = this.project.getProperties().map(prop => {
+                    var newPositions = this.project.getProperties().map((prop) => {
                         return $propertyTable.children().index(prop.getRow());
                     });
                     this.project.rearrangeProperties(newPositions);
                 }
             });
 
-            this.formulaEditor = ace.edit("hml-formula-editor");
-            this.formulaEditor.setTheme("ace/theme/crisp");
-            this.formulaEditor.getSession().setMode("ace/mode/hml");
+            this.formulaEditor = ace.edit('hml-formula-editor');
+            this.formulaEditor.setTheme('ace/theme/crisp');
+            this.formulaEditor.getSession().setMode('ace/mode/hml');
             this.formulaEditor.setOptions({
                 enableBasicAutocompletion: true,
                 showPrintMargin: false,
                 highlightActiveLine: false,
                 fontSize: 16,
-                fontFamily: "Inconsolata",
+                fontFamily: 'Inconsolata',
                 showLineNumbers: false,
                 maxLines: 1
             });
 
-            this.definitionsEditor = ace.edit("hml-definitions-editor");
-            this.definitionsEditor.setTheme("ace/theme/crisp");
-            this.definitionsEditor.getSession().setMode("ace/mode/hml");
+            this.definitionsEditor = ace.edit('hml-definitions-editor');
+            this.definitionsEditor.setTheme('ace/theme/crisp');
+            this.definitionsEditor.getSession().setMode('ace/mode/hml');
             this.definitionsEditor.getSession().setUseWrapMode(true);
             this.definitionsEditor.setOptions({
                 enableBasicAutocompletion: true,
                 showPrintMargin: false,
                 highlightActiveLine: false,
                 fontSize: 16,
-                fontFamily: "Inconsolata",
+                fontFamily: 'Inconsolata',
                 showLineNumbers: false,
                 maxLines: 4
             });
         }
 
-        public onShow() : void {
+        public onShow(): void {
             if (this.changed) {
                 this.changed = false;
                 this.graph = this.project.getGraph();
 
                 if (this.project.getInputMode() === InputMode.CCS) {
-                    this.formulaEditor.getSession().setMode("ace/mode/hml");
-                    this.definitionsEditor.getSession().setMode("ace/mode/hml");
+                    this.formulaEditor.getSession().setMode('ace/mode/hml');
+                    this.definitionsEditor.getSession().setMode('ace/mode/hml');
                 } else if (this.project.getInputMode() === InputMode.TCCS) {
-                    this.formulaEditor.getSession().setMode("ace/mode/thml");
-                    this.definitionsEditor.getSession().setMode("ace/mode/thml");
+                    this.formulaEditor.getSession().setMode('ace/mode/thml');
+                    this.definitionsEditor.getSession().setMode('ace/mode/thml');
                 } else {
-                    this.formulaEditor.getSession().setMode("ace/mode/thml");
-                    this.definitionsEditor.getSession().setMode("ace/mode/thml");
+                    this.formulaEditor.getSession().setMode('ace/mode/thml');
+                    this.definitionsEditor.getSession().setMode('ace/mode/thml');
                 }
 
                 var properties = this.project.getProperties();
@@ -84,18 +83,18 @@ module Activity {
             }
         }
 
-        public onHide() : void {
+        public onHide(): void {
             this.stopVerify();
         }
 
         private icons = {
-            "checkmark": "<i class=\"fa fa-check-circle fa-lg text-success\"></i>",
-            "cross": "<i class=\"fa fa-times-circle fa-lg text-danger\"></i>",
-            "triangle": "<i class=\"fa fa-exclamation-triangle fa-lg text-danger\"></i>",
-            "questionmark" : "<i class=\"fa fa-question-circle fa-lg \"></i>"
-        }
+            checkmark: '<i class="fa fa-check-circle fa-lg text-success"></i>',
+            cross: '<i class="fa fa-times-circle fa-lg text-danger"></i>',
+            triangle: '<i class="fa fa-exclamation-triangle fa-lg text-danger"></i>',
+            questionmark: '<i class="fa fa-question-circle fa-lg "></i>'
+        };
 
-        private getStatusIcon(status) : string {
+        private getStatusIcon(status): string {
             switch (status) {
                 case PropertyStatus.unknown:
                     return this.icons.questionmark;
@@ -108,8 +107,8 @@ module Activity {
             }
         }
 
-        private displayProperty(property : Property.Property) : void {
-            var $row = $("<tr>");
+        private displayProperty(property: Property.Property): void {
+            var $row = $('<tr>');
             //Hack - force evaluation of readyness
             property.isReadyForVerification();
             var statusIcon = $(this.getStatusIcon(property.getStatus()));
@@ -120,42 +119,42 @@ module Activity {
                 statusIcon.tooltip();
             }
 
-            $row.append($("<td>").append(statusIcon));
+            $row.append($('<td>').append(statusIcon));
 
-            var $time = $("<td>").append(property.getElapsedTime());
+            var $time = $('<td>').append(property.getElapsedTime());
             property.setTimeCell($time);
             $row.append($time);
 
-            var $description = $("<td>").append(property.getDescription());
-            $description.on("dblclick", {property: property}, (e) => this.showPropertyModal(e));
+            var $description = $('<td>').append(property.getDescription());
+            $description.on('dblclick', { property: property }, (e) => this.showPropertyModal(e));
             $row.append($description);
 
-            var $verify = $("<i>").addClass("fa fa-play-circle fa-lg verify-property");
-            $verify.on("click", {property: property}, (e) => this.verify(e));
-            $row.append($("<td>").append($verify));
+            var $verify = $('<i>').addClass('fa fa-play-circle fa-lg verify-property');
+            $verify.on('click', { property: property }, (e) => this.verify(e));
+            $row.append($('<td>').append($verify));
 
-            var $edit = $("<i>").addClass("fa fa-pencil fa-lg");
-            $edit.on("click", {property: property}, (e) => this.showPropertyModal(e));
-            $row.append($("<td>").append($edit));
+            var $edit = $('<i>').addClass('fa fa-pencil fa-lg');
+            $edit.on('click', { property: property }, (e) => this.showPropertyModal(e));
+            $row.append($('<td>').append($edit));
 
-            var $delete = $("<i>").addClass("fa fa-trash fa-lg");
-            $delete.on("click", {property: property}, (e) => this.deleteProperty(e));
-            $row.append($("<td>").append($delete));
+            var $delete = $('<i>').addClass('fa fa-trash fa-lg');
+            $delete.on('click', { property: property }, (e) => this.deleteProperty(e));
+            $row.append($('<td>').append($delete));
 
-            var $options = $("<i>").addClass("fa fa-bars fa-lg");
-            $row.append($("<td>").append(this.generateContextMenu(property, $options)));
+            var $options = $('<i>').addClass('fa fa-bars fa-lg');
+            $row.append($('<td>').append(this.generateContextMenu(property, $options)));
 
             if (property.getRow()) {
                 property.getRow().replaceWith($row);
             } else {
-                $("#property-table tbody").append($row);
+                $('#property-table tbody').append($row);
             }
 
             property.setRow($row);
         }
 
-        private displayProperties() : void {
-            $("#property-table tbody").empty();
+        private displayProperties(): void {
+            $('#property-table tbody').empty();
             var properties = this.project.getProperties();
 
             for (var i = 0; i < properties.length; i++) {
@@ -164,9 +163,9 @@ module Activity {
             }
         }
 
-        private generateContextMenu(property : Property.Property, $element : JQuery) : JQuery {
+        private generateContextMenu(property: Property.Property, $element: JQuery): JQuery {
             var status = property.getStatus();
-            var $ul = $("<ul>");
+            var $ul = $('<ul>');
 
             if (status === PropertyStatus.unknown || status === PropertyStatus.invalid) {
             } else {
@@ -174,139 +173,155 @@ module Activity {
                 if (gameConfiguration) {
                     var startGame = () => {
                         if (property instanceof Property.HML) {
-                            Main.activityHandler.selectActivity("hmlgame", gameConfiguration);
+                            Main.activityHandler.selectActivity('hmlgame', gameConfiguration);
                         } else {
-                            Main.activityHandler.selectActivity("game", gameConfiguration);
+                            Main.activityHandler.selectActivity('game', gameConfiguration);
                         }
-                    }
+                    };
 
-                    $ul.append($("<li>").append($("<a>").append("Play Game"))
-                        .on("click", () => startGame()));
+                    $ul.append(
+                        $('<li>')
+                            .append($('<a>').append('Play Game'))
+                            .on('click', () => startGame())
+                    );
                 }
 
-                if (status === PropertyStatus.unsatisfied && property instanceof Property.DistinguishingFormula && property.getTime() !== "untimed") {
+                if (
+                    status === PropertyStatus.unsatisfied &&
+                    property instanceof Property.DistinguishingFormula &&
+                    property.getTime() !== 'untimed'
+                ) {
                     var generateFormula = (properties) => {
                         if (properties) {
                             this.project.addPropertyAfter(property.getId(), properties.secondProperty);
                             this.project.addPropertyAfter(property.getId(), properties.firstProperty);
                             this.displayProperties();
                         }
-                    }
+                    };
 
-                    $ul.append($("<li>").append($("<a>").append("Generate Distinguishing Formula"))
-                        .on("click", () => property.generateDistinguishingFormula(generateFormula)));
+                    $ul.append(
+                        $('<li>')
+                            .append($('<a>').append('Generate Distinguishing Formula'))
+                            .on('click', () => property.generateDistinguishingFormula(generateFormula))
+                    );
                 }
             }
 
-            if ($ul.find("li").length > 0) {
-                $ul.addClass("dropdown-menu pull-right");
-                $element.attr("data-toggle", "dropdown");
-                return $("<div>").addClass("relative").append($element).append($ul);
+            if ($ul.find('li').length > 0) {
+                $ul.addClass('dropdown-menu pull-right');
+                $element.attr('data-toggle', 'dropdown');
+                return $('<div>').addClass('relative').append($element).append($ul);
             } else {
-                return $element.addClass("text-muted");
+                return $element.addClass('text-muted');
             }
         }
 
-        private setPropertyModalOptions() : void {
+        private setPropertyModalOptions(): void {
             var processes = this.graph.getNamedProcesses().reverse();
-            var $lists = $("#firstProcess").add($("#secondProcess")).add($("#hmlProcess")).empty();
+            var $lists = $('#firstProcess').add($('#secondProcess')).add($('#hmlProcess')).empty();
 
             for (var i = 0; i < processes.length; i++) {
-                var $option = $("<option></option>").append(processes[i]);
+                var $option = $('<option></option>').append(processes[i]);
                 $lists.append($option);
             }
 
-            $("#secondProcess").find("option:nth-child(2)").prop("selected", true);
+            $('#secondProcess').find('option:nth-child(2)').prop('selected', true);
 
-            $("#ccsTransition").toggle(this.project.getInputMode() === InputMode.CCS);
-            $("#tccsTransition").toggle(this.project.getInputMode() === InputMode.TCCS);
+            $('#ccsTransition').toggle(this.project.getInputMode() === InputMode.CCS);
+            $('#tccsTransition').toggle(this.project.getInputMode() === InputMode.TCCS);
         }
 
-        private showPropertyModal(e? : any) : void {
-            $("#save-property").off("click");
+        private showPropertyModal(e?: any): void {
+            $('#save-property').off('click');
 
-            $("#propertyComment").val("");
-            this.formulaEditor.setValue("");
-            this.definitionsEditor.setValue("");
+            $('#propertyComment').val('');
+            this.formulaEditor.setValue('');
+            this.definitionsEditor.setValue('');
 
             if (e) {
                 var property = e.data.property;
 
-                $("#propertyComment").val(property.getComment());
+                $('#propertyComment').val(property.getComment());
 
                 if (property instanceof Property.HML) {
-                    $("#hmlProcess").val(property.getProcess());
+                    $('#hmlProcess').val(property.getProcess());
                     this.formulaEditor.setValue(property.getTopFormula(), 1);
                     this.definitionsEditor.setValue(property.getDefinitions(), 1);
-                    this.setSelectedPropertyType("hml-formula");
+                    this.setSelectedPropertyType('hml-formula');
                 } else {
                     if (this.project.getInputMode() === InputMode.CCS) {
-                        $("#ccsTransition [value=" + property.getType() + "]").prop("selected", true);
+                        $('#ccsTransition [value=' + property.getType() + ']').prop('selected', true);
                     } else {
-                        $("#tccsTransition [value=" + property.getType() + "][data-time=" + property.getTime() + "]").prop("selected", true);
+                        $(
+                            '#tccsTransition [value=' + property.getType() + '][data-time=' + property.getTime() + ']'
+                        ).prop('selected', true);
                     }
 
-                    $("#relationType").val(property.getClassName());
-                    $("#firstProcess").val(property.getFirstProcess());
-                    $("#secondProcess").val(property.getSecondProcess());
-                    this.setSelectedPropertyType("relation");
+                    $('#relationType').val(property.getClassName());
+                    $('#firstProcess').val(property.getFirstProcess());
+                    $('#secondProcess').val(property.getSecondProcess());
+                    this.setSelectedPropertyType('relation');
                 }
 
-                $("#save-property").on("click", e.data, (e) => this.saveProperty(e));
+                $('#save-property').on('click', e.data, (e) => this.saveProperty(e));
             } else {
-                $("#save-property").on("click", () => this.saveProperty());
+                $('#save-property').on('click', () => this.saveProperty());
             }
 
             this.formulaEditor.focus();
-            $("#property-modal").modal("show");
+            $('#property-modal').modal('show');
         }
 
-        private getSelectedPropertyType() : string {
-            return $("input[name=property-type]:checked").val();
+        private getSelectedPropertyType(): string {
+            return $('input[name=property-type]:checked').val();
         }
 
-        private setSelectedPropertyType(value : string) : void {
-            $("input[name=property-type][value=" + value + "]").prop("checked", true).trigger("change");
+        private setSelectedPropertyType(value: string): void {
+            $('input[name=property-type][value=' + value + ']')
+                .prop('checked', true)
+                .trigger('change');
         }
 
-        private showSelectedPropertyType() : void {
-            if (this.getSelectedPropertyType() === "relation") {
-                $("#add-hml-formula").fadeOut(200, () => $("#add-relation").fadeIn(200));
+        private showSelectedPropertyType(): void {
+            if (this.getSelectedPropertyType() === 'relation') {
+                $('#add-hml-formula').fadeOut(200, () => $('#add-relation').fadeIn(200));
             } else {
-                $("#add-relation").fadeOut(200, () => $("#add-hml-formula").fadeIn(200, () => this.formulaEditor.focus()));
+                $('#add-relation').fadeOut(200, () =>
+                    $('#add-hml-formula').fadeIn(200, () => this.formulaEditor.focus())
+                );
             }
         }
 
-        private saveProperty(e? : any) : void {
+        private saveProperty(e?: any): void {
             var propertyName, options;
 
-            if (this.getSelectedPropertyType() === "relation") {
-                propertyName = $("#relationType option:selected").val();
+            if (this.getSelectedPropertyType() === 'relation') {
+                propertyName = $('#relationType option:selected').val();
                 options = {
-                    firstProcess: $("#firstProcess option:selected").val(),
-                    secondProcess: $("#secondProcess option:selected").val(),
+                    firstProcess: $('#firstProcess option:selected').val(),
+                    secondProcess: $('#secondProcess option:selected').val(),
                     type: null,
                     time: null
                 };
 
                 if (this.project.getInputMode() === InputMode.CCS) {
-                    options["type"] = $("#ccsTransition option:selected").val();
+                    options['type'] = $('#ccsTransition option:selected').val();
                 } else {
-                    options["type"] = $("#tccsTransition option:selected").val();
-                    options["time"] = $("#tccsTransition option:selected").data("time");
+                    options['type'] = $('#tccsTransition option:selected').val();
+                    options['time'] = $('#tccsTransition option:selected').data('time');
                 }
             } else {
-                propertyName = "HML";
+                propertyName = 'HML';
                 options = {
-                    process: $("#hmlProcess option:selected").val(),
+                    process: $('#hmlProcess option:selected').val(),
                     topFormula: this.formulaEditor.getValue(),
                     definitions: this.definitionsEditor.getValue()
                 };
             }
 
-            options["comment"] = $("#propertyComment").val();
+            options['comment'] = $('#propertyComment').val();
 
-            var property = new window["Property"][propertyName](options);
+            var property = new window['Property'][propertyName](options);
             this.project.addProperty(property);
 
             if (e) {
@@ -317,12 +332,14 @@ module Activity {
             this.displayProperty(property);
         }
 
-        private deleteProperty(e) : void {
+        private deleteProperty(e): void {
             this.project.deleteProperty(e.data.property);
-            e.data.property.getRow().fadeOut(200, function() {$(this).remove()});
+            e.data.property.getRow().fadeOut(200, function () {
+                $(this).remove();
+            });
         }
 
-        private verify(e) : void {
+        private verify(e): void {
             if (this.verifyingProperty == null) {
                 this.verifyingProperty = e.data.property;
                 this.disableVerification();
@@ -330,21 +347,21 @@ module Activity {
             }
         }
 
-        private verifyNext() : void {
+        private verifyNext(): void {
             if (this.queue.length > 0) {
                 var property = this.queue.shift();
-                this.verify({data: {property: property}});
+                this.verify({ data: { property: property } });
             }
         }
 
-        private verifyAll() : void {;
+        private verifyAll(): void {
             this.queue = [];
             var properties = this.project.getProperties();
             properties.forEach((property) => this.queue.push(property));
             this.verifyNext();
         }
 
-        private stopVerify() : void {
+        private stopVerify(): void {
             if (this.verifyingProperty != null) {
                 this.verifyingProperty.abortVerification();
                 this.enableVerification();
@@ -354,23 +371,23 @@ module Activity {
             }
         }
 
-        private verificationEnded(property : Property.Property) {
+        private verificationEnded(property: Property.Property) {
             this.verifyingProperty = null;
             this.enableVerification();
             this.displayProperty(property);
             this.verifyNext();
         }
 
-        private enableVerification() : void {
-            $(".verify-property").removeClass("text-muted");
-            $("#verify-all").prop("disabled", false);
-            $("#verify-stop").prop("disabled", true);
+        private enableVerification(): void {
+            $('.verify-property').removeClass('text-muted');
+            $('#verify-all').prop('disabled', false);
+            $('#verify-stop').prop('disabled', true);
         }
 
-        private disableVerification() : void {
-            $(".verify-property").addClass("text-muted");
-            $("#verify-all").prop("disabled", true);
-            $("#verify-stop").prop("disabled", false);
+        private disableVerification(): void {
+            $('.verify-property').addClass('text-muted');
+            $('#verify-all').prop('disabled', true);
+            $('#verify-stop').prop('disabled', false);
         }
     }
 }

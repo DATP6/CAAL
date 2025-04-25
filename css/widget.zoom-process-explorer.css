@@ -1,10 +1,10 @@
 div.widget-zoom-process-explorer {
-	border: 1px solid #e7e7e7;
+    border: 1px solid #e7e7e7;
     overflow: auto;
     position: relative;
 }
 
-div.widget-zoom-process-explorer input[type=range] {
+div.widget-zoom-process-explorer input[type='range'] {
     position: absolute;
     top: 10px;
     left: 10px;
@@ -13,7 +13,7 @@ div.widget-zoom-process-explorer input[type=range] {
 }
 
 div.widget-zoom-process-explorer div.button-row {
-	top: 10px;
+    top: 10px;
     position: absolute;
 }
 
