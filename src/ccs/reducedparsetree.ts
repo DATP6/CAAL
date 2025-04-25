@@ -3,20 +3,20 @@
 /// <reference path="ccs.ts" />
 
 module Traverse {
-
     import ccs = CCS;
 
-    export class ProcessTreeReducer implements ccs.ProcessVisitor<ccs.Process>, ccs.ProcessDispatchHandler<ccs.Process> {
-        protected cache : {[id : number] : ccs.Process} = Object.create(null);
+    export class ProcessTreeReducer
+        implements ccs.ProcessVisitor<ccs.Process>, ccs.ProcessDispatchHandler<ccs.Process>
+    {
+        protected cache: { [id: number]: ccs.Process } = Object.create(null);
 
-        constructor(public graph : ccs.Graph) {
-        }
+        constructor(public graph: ccs.Graph) {}
 
-        visit(process : ccs.Process) : ccs.Process {
+        visit(process: ccs.Process): ccs.Process {
             return process.dispatchOn(this);
         }
 
-        dispatchNullProcess(process : ccs.NullProcess) {
+        dispatchNullProcess(process: ccs.NullProcess) {
             var resultProcess = this.cache[process.id];
             if (!resultProcess) {
                 resultProcess = this.cache[process.id] = process;
@@ -24,16 +24,16 @@ module Traverse {
             return resultProcess;
         }
 
-        dispatchNamedProcess(process : ccs.NamedProcess) {
+        dispatchNamedProcess(process: ccs.NamedProcess) {
             return process;
         }
 
-        dispatchSummationProcess(process : ccs.SummationProcess) {
+        dispatchSummationProcess(process: ccs.SummationProcess) {
             var resultProcess = this.cache[process.id];
             if (!resultProcess) {
-                var subProcesses : Array<CCS.Process> = process.subProcesses.map(subProc => subProc.dispatchOn(this));
-                subProcesses = subProcesses.filter(subProc => !(subProc instanceof ccs.NullProcess));
-                subProcesses = ArrayUtil.sortAndRemoveDuplicates(subProcesses, p => p.id);
+                var subProcesses: Array<CCS.Process> = process.subProcesses.map((subProc) => subProc.dispatchOn(this));
+                subProcesses = subProcesses.filter((subProc) => !(subProc instanceof ccs.NullProcess));
+                subProcesses = ArrayUtil.sortAndRemoveDuplicates(subProcesses, (p) => p.id);
                 if (subProcesses.length === 0) {
                     return this.graph.getNullProcess();
                 }
@@ -45,11 +45,11 @@ module Traverse {
             return resultProcess;
         }
 
-        dispatchCompositionProcess(process : ccs.CompositionProcess) {
+        dispatchCompositionProcess(process: ccs.CompositionProcess) {
             var resultProcess = this.cache[process.id];
             if (!resultProcess) {
-                var subProcesses = process.subProcesses.map(subProc => subProc.dispatchOn(this));
-                subProcesses = subProcesses.filter(subProc => !(subProc instanceof ccs.NullProcess));
+                var subProcesses = process.subProcesses.map((subProc) => subProc.dispatchOn(this));
+                subProcesses = subProcesses.filter((subProc) => !(subProc instanceof ccs.NullProcess));
                 if (subProcesses.length === 0) {
                     return this.graph.getNullProcess();
                 }
@@ -61,7 +61,7 @@ module Traverse {
             return resultProcess;
         }
 
-        dispatchActionPrefixProcess(process : ccs.ActionPrefixProcess) {
+        dispatchActionPrefixProcess(process: ccs.ActionPrefixProcess) {
             var resultProcess = this.cache[process.id];
             if (!resultProcess) {
                 var nextProcess = process.nextProcess.dispatchOn(this);
@@ -70,7 +70,7 @@ module Traverse {
             return resultProcess;
         }
 
-        dispatchRestrictionProcess(process : ccs.RestrictionProcess) {
+        dispatchRestrictionProcess(process: ccs.RestrictionProcess) {
             var resultProcess = this.cache[process.id];
             if (!resultProcess) {
                 var subProcess = process.subProcess.dispatchOn(this);
@@ -96,18 +96,23 @@ module Traverse {
             return resultProcess;
         }
 
-        dispatchRelabellingProcess(process : ccs.RelabellingProcess) {
+        dispatchRelabellingProcess(process: ccs.RelabellingProcess) {
             var resultProcess = this.cache[process.id];
             if (!resultProcess) {
                 const subProcess = process.subProcess.dispatchOn(this);
                 if (subProcess instanceof ccs.NullProcess) return subProcess; // 0 [f] => 0
-                if (subProcess instanceof ccs.RelabellingProcess) { // P [f1] [f2] => P [f2 . f1]
-                    const newRelabels = ccs.RelabellingSet.FromComposition(subProcess.relabellings, process.relabellings);
+                if (subProcess instanceof ccs.RelabellingProcess) {
+                    // P [f1] [f2] => P [f2 . f1]
+                    const newRelabels = ccs.RelabellingSet.FromComposition(
+                        subProcess.relabellings,
+                        process.relabellings
+                    );
                     resultProcess = this.graph.newRelabelingProcess(subProcess.subProcess, newRelabels);
                 } else {
                     resultProcess = this.graph.newRelabelingProcess(subProcess, process.relabellings);
                 }
-                if (resultProcess.relabellings.isEmpty()) { // P [] => P
+                if (resultProcess.relabellings.isEmpty()) {
+                    // P [] => P
                     resultProcess = resultProcess.subProcess;
                 }
                 this.cache[process.id] = resultProcess;
@@ -117,23 +122,29 @@ module Traverse {
     }
 
     class AbstractTransition {
-        constructor(public fromId : ccs.ProcessId, public action : ccs.Action, public toId : ccs.ProcessId) {
-        }
+        constructor(
+            public fromId: ccs.ProcessId,
+            public action: ccs.Action,
+            public toId: ccs.ProcessId
+        ) {}
     }
 
     class FromData {
-        constructor(public prev : FromData, public action : ccs.Action, public to : ccs.Process) {
-        }
+        constructor(
+            public prev: FromData,
+            public action: ccs.Action,
+            public to: ccs.Process
+        ) {}
     }
 
-    function compareAction(left : ccs.Action, right : ccs.Action) : number {
+    function compareAction(left: ccs.Action, right: ccs.Action): number {
         if (left.isComplement() !== right.isComplement()) return <any>left.isComplement() - <any>right.isComplement();
         if (left.getLabel() < right.getLabel()) return -1;
         if (right.getLabel() < left.getLabel()) return 1;
         return 0;
     }
 
-    function compareTransitionTuple(left : AbstractTransition, right : AbstractTransition) : number {
+    function compareTransitionTuple(left: AbstractTransition, right: AbstractTransition): number {
         var fromIdDiff = left.fromId.localeCompare(right.fromId);
         if (fromIdDiff !== 0) return fromIdDiff;
         var toIdDiff = left.toId.localeCompare(right.toId);
@@ -142,21 +153,22 @@ module Traverse {
     }
 
     export class AbstractingSuccessorGenerator implements ccs.SuccessorGenerator {
-        
-        private abstractions : ccs.Action[];
-        public strictSuccGenerator : ccs.SuccessorGenerator;
+        private abstractions: ccs.Action[];
+        public strictSuccGenerator: ccs.SuccessorGenerator;
         public cache;
-        
-        private fromTable : MapUtil.Map<AbstractTransition, FromData> =
-                new MapUtil.OrderedMap<AbstractTransition, FromData>(compareTransitionTuple);
 
-        constructor(abstractions : ccs.Action[], strictSuccGenerator : ccs.SuccessorGenerator, cache?) {
+        private fromTable: MapUtil.Map<AbstractTransition, FromData> = new MapUtil.OrderedMap<
+            AbstractTransition,
+            FromData
+        >(compareTransitionTuple);
+
+        constructor(abstractions: ccs.Action[], strictSuccGenerator: ccs.SuccessorGenerator, cache?) {
             this.abstractions = abstractions;
             this.strictSuccGenerator = strictSuccGenerator;
             this.cache = cache || {};
         }
 
-        public getAbstractions() : ccs.Action[] {
+        public getAbstractions(): ccs.Action[] {
             return this.abstractions;
         }
 
@@ -164,15 +176,15 @@ module Traverse {
             return this.strictSuccGenerator.getGraph();
         }
 
-        getProcessByName(processName : string) : ccs.Process {
+        getProcessByName(processName: string): ccs.Process {
             return this.strictSuccGenerator.getProcessByName(processName);
         }
 
-        getProcessById(processId : ccs.ProcessId) : ccs.Process { 
+        getProcessById(processId: ccs.ProcessId): ccs.Process {
             return this.strictSuccGenerator.getProcessById(processId);
         }
 
-        getSuccessors(sourceProcessId : ccs.ProcessId) : ccs.TransitionSet {
+        getSuccessors(sourceProcessId: ccs.ProcessId): ccs.TransitionSet {
             if (this.cache[sourceProcessId]) return this.cache[sourceProcessId];
 
             var result = new ccs.TransitionSet();
@@ -181,7 +193,7 @@ module Traverse {
             var stage2Processes = [];
 
             var isAbstraction = (action) => {
-                return this.abstractions.some(abstraction => abstraction.equals(action));
+                return this.abstractions.some((abstraction) => abstraction.equals(action));
             };
 
             // Precondition: there must be non abstraction
@@ -190,30 +202,39 @@ module Traverse {
                 return fromData.action;
             };
 
-            var addTransitions = (
-                    prevFromData : FromData,
-                    fromProcess : ccs.Process,
-                    isStageTwo : boolean) => {
+            var addTransitions = (prevFromData: FromData, fromProcess: ccs.Process, isStageTwo: boolean) => {
                 var strongSuccessors = this.strictSuccGenerator.getSuccessors(fromProcess.id);
-                strongSuccessors.forEach(transition => {
+                strongSuccessors.forEach((transition) => {
                     var isActionAbstract = isAbstraction(transition.action);
                     //No loops yet with abstractions
-                    if (!isActionAbstract || fromProcess.id !== transition.targetProcess.id) {       
+                    if (!isActionAbstract || fromProcess.id !== transition.targetProcess.id) {
                         var targetId = transition.targetProcess.id;
                         var newFromData = new FromData(prevFromData, transition.action, transition.targetProcess);
                         if (!isStageTwo) {
-                            if (isActionAbstract) { // ...  --1/tau--> X
-                                this.abstractions.forEach(abstraction => {
-                                    this.fromTable.set(new AbstractTransition(sourceProcessId, abstraction, targetId), newFromData);
+                            if (isActionAbstract) {
+                                // ...  --1/tau--> X
+                                this.abstractions.forEach((abstraction) => {
+                                    this.fromTable.set(
+                                        new AbstractTransition(sourceProcessId, abstraction, targetId),
+                                        newFromData
+                                    );
                                 });
                                 stage1Processes.push(newFromData);
-                            } else {  // ... --a--> X
-                                this.fromTable.set(new AbstractTransition(sourceProcessId, transition.action, targetId), newFromData);
+                            } else {
+                                // ... --a--> X
+                                this.fromTable.set(
+                                    new AbstractTransition(sourceProcessId, transition.action, targetId),
+                                    newFromData
+                                );
                                 stage2Processes.push(newFromData);
                             }
-                        } else if (isActionAbstract) { // --a--> ....  --1/tau-> X
+                        } else if (isActionAbstract) {
+                            // --a--> ....  --1/tau-> X
                             var nonAbstractAction = findNonAbstraction(prevFromData);
-                            this.fromTable.set(new AbstractTransition(sourceProcessId, nonAbstractAction, targetId), newFromData);
+                            this.fromTable.set(
+                                new AbstractTransition(sourceProcessId, nonAbstractAction, targetId),
+                                newFromData
+                            );
                             stage2Processes.push(newFromData);
                         }
                     }
@@ -233,7 +254,7 @@ module Traverse {
                 if (!result.contains(transition)) {
                     //Know only abstracts in this loop.
                     //If  --1--> X then also --tau--> X and reverse
-                    this.abstractions.forEach(abstraction => {
+                    this.abstractions.forEach((abstraction) => {
                         result.add(new CCS.Transition(abstraction, fromData.to));
                     });
                     addTransitions(fromData, fromData.to, false);
@@ -253,7 +274,7 @@ module Traverse {
             }
 
             //Add tau loop to from set:  P ==tau=> P, by P -- tau -> P
-            this.abstractions.forEach(abstraction => {
+            this.abstractions.forEach((abstraction) => {
                 var abstractTransition = new AbstractTransition(sourceProcessId, abstraction, sourceProcessId);
                 if (!this.fromTable.has(abstractTransition)) {
                     var fromData = new FromData(null, abstraction, sourceProcess);
@@ -267,11 +288,11 @@ module Traverse {
         }
 
         //Only call with arguments, for which getSuccessors(fromId) has yielded Transition(action, proces.toId)
-        getStrictPath(fromId : ccs.ProcessId, action : ccs.Action, toId : ccs.ProcessId) : ccs.Transition[] {
+        getStrictPath(fromId: ccs.ProcessId, action: ccs.Action, toId: ccs.ProcessId): ccs.Transition[] {
             var transitions = [],
                 succGen = this.strictSuccGenerator;
             var fromData = this.fromTable.get(new AbstractTransition(fromId, action, toId));
-            if (!fromData) throw "Do not call getStrictPath with unknown data.";
+            if (!fromData) throw 'Do not call getStrictPath with unknown data.';
             do {
                 transitions.push(new ccs.Transition(fromData.action, fromData.to));
                 fromData = fromData.prev;
@@ -280,45 +301,47 @@ module Traverse {
             return transitions;
         }
     }
-    
+
     export class WeakSuccessorGenerator extends AbstractingSuccessorGenerator {
-        constructor(strictSuccGenerator : ccs.SuccessorGenerator, cache?) {
-            super([new ccs.Action("tau", false)], strictSuccGenerator, cache);
+        constructor(strictSuccGenerator: ccs.SuccessorGenerator, cache?) {
+            super([new ccs.Action('tau', false)], strictSuccGenerator, cache);
         }
     }
 
     export class ReducingSuccessorGenerator implements ccs.SuccessorGenerator {
-
-        constructor(public succGenerator : ccs.SuccessorGenerator, public reducer : ProcessTreeReducer) { }
+        constructor(
+            public succGenerator: ccs.SuccessorGenerator,
+            public reducer: ProcessTreeReducer
+        ) {}
 
         getGraph() {
             return this.succGenerator.getGraph();
         }
 
-        getProcessByName(processName : string) : ccs.Process {
+        getProcessByName(processName: string): ccs.Process {
             var namedProcess = this.succGenerator.getProcessByName(processName);
             return this.reducer.visit(namedProcess);
         }
 
-        getProcessById(processId : ccs.ProcessId) : ccs.Process {
+        getProcessById(processId: ccs.ProcessId): ccs.Process {
             var proc = this.succGenerator.getProcessById(processId);
             return this.reducer.visit(proc);
         }
 
-        getSuccessors(processId : ccs.ProcessId) : ccs.TransitionSet {
+        getSuccessors(processId: ccs.ProcessId): ccs.TransitionSet {
             var transitionSet = this.succGenerator.getSuccessors(processId);
             return this.reduceSuccessors(transitionSet);
         }
-        
+
         // getProbabilityDistrubution(processId : ccs.ProcessId) : PCCS.ProbabilityDistribution {
         //     var distributions = this.succGenerator.getProbabilityDistrubution(processId);
         //     // TODO: Implement reducing probability distributions
         //     return distributions;
         // }
 
-        private reduceSuccessors(transitionSet : ccs.TransitionSet) {
+        private reduceSuccessors(transitionSet: ccs.TransitionSet) {
             var result = new ccs.TransitionSet();
-            transitionSet.forEach(transition => {
+            transitionSet.forEach((transition) => {
                 result.add(new ccs.Transition(transition.action, this.reducer.visit(transition.targetProcess)));
             });
             return result;

@@ -11,7 +11,6 @@
 /// <reference path="tooltip.ts" />
 
 module Activity {
-
     export class Explorer extends Activity {
         private graph: CCS.Graph;
         private succGenerator: CCS.SuccessorGenerator;
@@ -39,56 +38,58 @@ module Activity {
             super(container, button);
 
             this.project = Project.getInstance();
-            this.fullscreen = new Fullscreen($("#explorer-fullscreen-container")[0], $("#explorer-fullscreen"), () => this.resize(this.$zoom.val()));
-            this.$canvasContainer = $("#explorer-canvas");
-            this.$statusContainer = $("#explorer-transitions");
-            this.$statusTable = this.$statusContainer.find("tbody");
+            this.fullscreen = new Fullscreen($('#explorer-fullscreen-container')[0], $('#explorer-fullscreen'), () =>
+                this.resize(this.$zoom.val())
+            );
+            this.$canvasContainer = $('#explorer-canvas');
+            this.$statusContainer = $('#explorer-transitions');
+            this.$statusTable = this.$statusContainer.find('tbody');
             this.tooltip = new ProcessTooltip(this.$statusTable);
-            this.$ccsOptions = $("#ccs-options");
-            this.$pccsOptions = $("#pccs-options");
-            this.$tccsOptions = $("#tccs-options");
-            this.$zoom = $("#explorer-zoom");
-            this.$depth = $("#explorer-depth");
-            this.$freeze = $("#explorer-freeze");
-            this.$save = $("#explorer-save");
-            this.canvas = <HTMLCanvasElement>$("#explorer-canvas").find("canvas")[0];
+            this.$ccsOptions = $('#ccs-options');
+            this.$pccsOptions = $('#pccs-options');
+            this.$tccsOptions = $('#tccs-options');
+            this.$zoom = $('#explorer-zoom');
+            this.$depth = $('#explorer-depth');
+            this.$freeze = $('#explorer-freeze');
+            this.$save = $('#explorer-save');
+            this.canvas = <HTMLCanvasElement>$('#explorer-canvas').find('canvas')[0];
             this.renderer = new Renderer(this.canvas);
             this.uiGraph = new GUI.ArborGraph(this.renderer);
 
             this.$statusTable
-                .on("click", "tr", this.onTransitionTableRowClick.bind(this))
-                .on("mouseenter", "tr", this.onTransitionTableRowHover.bind(this, true))
-                .on("mouseleave", "tr", this.onTransitionTableRowHover.bind(this, false));
+                .on('click', 'tr', this.onTransitionTableRowClick.bind(this))
+                .on('mouseenter', 'tr', this.onTransitionTableRowHover.bind(this, true))
+                .on('mouseleave', 'tr', this.onTransitionTableRowHover.bind(this, false));
 
             // Use onchange instead of oninput for IE.
-            if (navigator.userAgent.indexOf("MSIE ") > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
-                this.$zoom.on("change", () => this.resize(this.$zoom.val()));
+            if (navigator.userAgent.indexOf('MSIE ') > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
+                this.$zoom.on('change', () => this.resize(this.$zoom.val()));
             } else {
-                this.$zoom.on("input", () => this.resize(this.$zoom.val()));
+                this.$zoom.on('input', () => this.resize(this.$zoom.val()));
             }
 
-            this.$depth.on("change", () => this.setDepth(this.$depth.val()));
-            this.$freeze.on("click", () => this.toggleFreeze(!this.$freeze.data("frozen")));
-            this.$save.on("click", () => this.save());
+            this.$depth.on('change', () => this.setDepth(this.$depth.val()));
+            this.$freeze.on('click', () => this.toggleFreeze(!this.$freeze.data('frozen')));
+            this.$save.on('click', () => this.save());
 
             // Prevent options menu from closing when pressing form elements.
-            $(document).on('click', '.yamm .dropdown-menu', e => e.stopPropagation());
+            $(document).on('click', '.yamm .dropdown-menu', (e) => e.stopPropagation());
 
             // Manually remove focus from zoom, depth and freeze when the canvas is clicked.
-            this.$canvasContainer.on("click", () => {
+            this.$canvasContainer.on('click', () => {
                 this.$zoom.blur();
                 this.$depth.blur();
                 this.$freeze.blur();
             });
 
-            $("#explorer-process-list, #option-simplify").on("change", () => this.draw());
-            this.$ccsOptions.find("input").on("change", () => this.draw());
-            this.$pccsOptions.find("input").on("change", () => this.draw());
-            this.$tccsOptions.find("input").on("change", () => this.draw());
+            $('#explorer-process-list, #option-simplify').on('change', () => this.draw());
+            this.$ccsOptions.find('input').on('change', () => this.draw());
+            this.$pccsOptions.find('input').on('change', () => this.draw());
+            this.$tccsOptions.find('input').on('change', () => this.draw());
         }
 
         public onShow(configuration?: any): void {
-            $(window).on("resize", () => this.resize(this.$zoom.val()));
+            $(window).on('resize', () => this.resize(this.$zoom.val()));
             this.resize(this.$zoom.val());
 
             this.fullscreen.onShow();
@@ -107,27 +108,27 @@ module Activity {
 
             this.uiGraph.setHoverOnListener((processId) => {
                 this.timeout = setTimeout(() => {
-                    var tooltipAnchor = $("#explorer-canvas-tooltip");
+                    var tooltipAnchor = $('#explorer-canvas-tooltip');
                     var position = this.uiGraph.getPosition(processId);
 
-                    tooltipAnchor.css("left", position.x - this.$canvasContainer.scrollLeft());
-                    tooltipAnchor.css("top", position.y - this.$canvasContainer.scrollTop() - 10);
+                    tooltipAnchor.css('left', position.x - this.$canvasContainer.scrollLeft());
+                    tooltipAnchor.css('top', position.y - this.$canvasContainer.scrollTop() - 10);
 
                     tooltipAnchor.tooltip({ title: this.tooltip.ccsNotationForProcessId(processId), html: true });
-                    tooltipAnchor.tooltip("show");
-                }, 1000)
+                    tooltipAnchor.tooltip('show');
+                }, 1000);
             });
 
             this.uiGraph.setHoverOutListener(() => {
                 clearTimeout(this.timeout);
-                $("#explorer-canvas-tooltip").tooltip("destroy");
+                $('#explorer-canvas-tooltip').tooltip('destroy');
             });
 
             this.toggleFreeze(this.isFreezeSet());
         }
 
         public onHide(): void {
-            $(window).off("resize");
+            $(window).off('resize');
 
             this.fullscreen.onHide();
 
@@ -140,14 +141,14 @@ module Activity {
 
         private displayOptions(): void {
             var processes = this.graph.getNamedProcesses().reverse();
-            var list = $("#explorer-process-list").empty();
+            var list = $('#explorer-process-list').empty();
 
             for (var i = 0; i < processes.length; i++) {
-                var $option = $("<option></option>").append(processes[i]);
+                var $option = $('<option></option>').append(processes[i]);
                 list.append($option);
 
                 if (this.lastSelectedProcess && this.lastSelectedProcess.toString() === processes[i]) {
-                    $option.prop("selected", true);
+                    $option.prop('selected', true);
                 }
             }
 
@@ -165,7 +166,7 @@ module Activity {
                 case InputMode.TCCS:
                 default: // Default to preserve previous "else" behaviour, which didn't check on TCCS
                     this.$ccsOptions.hide();
-                    this.$pccsOptions.hide()
+                    this.$pccsOptions.hide();
                     this.$tccsOptions.show();
                     break;
             }
@@ -173,25 +174,25 @@ module Activity {
 
         private getOptions(): any {
             var options = {
-                process: $("#explorer-process-list :selected").text(),
-                simplify: $("#option-simplify").prop("checked"),
+                process: $('#explorer-process-list :selected').text(),
+                simplify: $('#option-simplify').prop('checked'),
                 inputMode: InputMode[this.project.getInputMode()]
             };
 
             switch (this.project.getInputMode()) {
                 case InputMode.CCS:
-                    options["successor"] = $("input[name=option-ccs-successor]:checked").val();
-                    options["collapse"] = $("input[name=option-collapse]:checked").val();
+                    options['successor'] = $('input[name=option-ccs-successor]:checked').val();
+                    options['collapse'] = $('input[name=option-collapse]:checked').val();
                     break;
                 case InputMode.PCCS:
-                    options["successor"] = $("input[name=option-pccs-successor]:checked").val();
-                    options["collapse"] = $("input[name=option-pccs-collapse]:checked").val();
+                    options['successor'] = $('input[name=option-pccs-successor]:checked').val();
+                    options['collapse'] = $('input[name=option-pccs-collapse]:checked').val();
                     break;
                 case InputMode.TCCS:
                 default:
-                    options["collapse"] = $("input[name=option-tccs-collapse]:checked").val();
-                    options["successor"] = $("input[name=option-tccs-successor]:checked").val();
-                    options["time"] = $("input[name=option-tccs-successor]:checked").data("time");
+                    options['collapse'] = $('input[name=option-tccs-collapse]:checked').val();
+                    options['successor'] = $('input[name=option-tccs-successor]:checked').val();
+                    options['time'] = $('input[name=option-tccs-successor]:checked').data('time');
             }
 
             this.options = options;
@@ -201,20 +202,24 @@ module Activity {
         private draw(): void {
             this.uiGraph.clearAll();
             this.$statusTable.empty();
-            this.$zoom.val("1");
+            this.$zoom.val('1');
             this.resize(1);
 
             var options = this.getOptions();
-            this.succGenerator = CCS.getSuccGenerator(this.graph,
-                { inputMode: options.inputMode, succGen: options.successor, time: options.time, reduce: options.simplify });
+            this.succGenerator = CCS.getSuccGenerator(this.graph, {
+                inputMode: options.inputMode,
+                succGen: options.successor,
+                time: options.time,
+                reduce: options.simplify
+            });
             var process = this.succGenerator.getProcessByName(options.process);
 
             var mode = this.project.getInputMode();
 
             if (options.collapse !== 'none') {
                 var defendInfos = {
-                    'strong': { succGen: 'strong', time: undefined },
-                    'weak': { succGen: 'weak', time: undefined },
+                    strong: { succGen: 'strong', time: undefined },
+                    weak: { succGen: 'weak', time: undefined },
                     'strong-timed': { succGen: 'strong', time: 'timed' },
                     'strong-untimed': { succGen: 'strong', time: 'untimed' },
                     'weak-timed': { succGen: 'weak', time: 'timed' },
@@ -224,16 +229,31 @@ module Activity {
                 if (!defInfo) throw "Invalid collapse setting: '" + options.collapse + "'";
                 try {
                     //Always attack with strong succ generator (improves performance)
-                    var attackSuccGen = CCS.getSuccGenerator(this.graph, { inputMode: mode, succGen: "strong", time: "timed", reduce: options.simplify });
-                    var defendSuccGen = CCS.getSuccGenerator(this.graph, { inputMode: mode, succGen: defInfo.succGen, time: defInfo.time, reduce: options.simplify });
+                    var attackSuccGen = CCS.getSuccGenerator(this.graph, {
+                        inputMode: mode,
+                        succGen: 'strong',
+                        time: 'timed',
+                        reduce: options.simplify
+                    });
+                    var defendSuccGen = CCS.getSuccGenerator(this.graph, {
+                        inputMode: mode,
+                        succGen: defInfo.succGen,
+                        time: defInfo.time,
+                        reduce: options.simplify
+                    });
                     try {
-                        var collapse = Equivalence.getBisimulationCollapse(attackSuccGen, defendSuccGen, process.id, process.id);
+                        var collapse = Equivalence.getBisimulationCollapse(
+                            attackSuccGen,
+                            defendSuccGen,
+                            process.id,
+                            process.id
+                        );
                     } catch (err) {
                         if (err && err.name && err.name === 'CollapseTooLarge') {
-                            this.showMessageBox('System too large',
-                                'The bisimulation collapse is too large to compute in the browser.' + (
-                                    options.simplify ? '' : " Try enabling 'Structural Reduction'."
-                                )
+                            this.showMessageBox(
+                                'System too large',
+                                'The bisimulation collapse is too large to compute in the browser.' +
+                                    (options.simplify ? '' : " Try enabling 'Structural Reduction'.")
                             );
                             return;
                         } else {
@@ -246,12 +266,12 @@ module Activity {
                     //Process have been replaced by collapse.
                     process = collapseSuccGen.getCollapseForProcess(process.id);
                 } catch (err) {
-                    if (err.name === "CollapseTooLarge") {
+                    if (err.name === 'CollapseTooLarge') {
                         //Possible, this restriction should be removed eventually and the calculation run in a worker.
-                        this.showMessageBox("Unable to Collapse", "There are too many processes to collapse.");
+                        this.showMessageBox('Unable to Collapse', 'There are too many processes to collapse.');
                         //This is safe (no looping), because this code is not run when 'none' collapse is set.
-                        $("input[name=option-collapse][value='none']").prop("checked", true);
-                        $("input[name=option-tccs-collapse][value='none']").prop("checked", true);
+                        $("input[name=option-collapse][value='none']").prop('checked', true);
+                        $("input[name=option-tccs-collapse][value='none']").prop('checked', true);
                     } else {
                         throw err;
                     }
@@ -263,25 +283,25 @@ module Activity {
         }
 
         private save(): void {
-            this.$save.attr("href", this.canvas.toDataURL("image/png"));
-            this.$save.attr("download", this.getOptions().process + ".png");
+            this.$save.attr('href', this.canvas.toDataURL('image/png'));
+            this.$save.attr('download', this.getOptions().process + '.png');
         }
 
         private setDepth(depth: number): void {
             if (!/^[1-9][0-9]*$/.test(depth.toString())) {
-                this.$depth.val(this.$depth.data("previous-depth"));
+                this.$depth.val(this.$depth.data('previous-depth'));
             } else {
-                this.$depth.data("previous-depth", depth);
+                this.$depth.data('previous-depth', depth);
                 this.draw();
             }
         }
 
         private isFreezeSet(): boolean {
-            return !!(this.$freeze.data("frozen"));
+            return !!this.$freeze.data('frozen');
         }
 
         private toggleFreeze(freeze: boolean): void {
-            var icon = this.$freeze.find("i");
+            var icon = this.$freeze.find('i');
 
             if (freeze) {
                 this.uiGraph.freeze();
@@ -291,12 +311,16 @@ module Activity {
                 icon.replaceWith("<i class='fa fa-unlock-alt fa-lg'></i>");
             }
 
-            this.$freeze.data("frozen", freeze);
+            this.$freeze.data('frozen', freeze);
         }
 
         private showProcess(process: CCS.Process): void {
             if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            this.uiGraph.showProcess(process.id, { label: this.graph.getLabel(process), status: "unexpanded", probabilityDistrubution: false });
+            this.uiGraph.showProcess(process.id, {
+                label: this.graph.getLabel(process),
+                status: 'unexpanded',
+                probabilityDistrubution: false
+            });
         }
 
         private showProbabilityDistrubution(process: string): void {
@@ -310,30 +334,38 @@ module Activity {
             var allTransitions = CCS.getNSuccessors(this.succGenerator, process, this.$depth.val());
             var data = this.uiGraph.getProcessDataObject(process.id.toString());
 
-            if (!data || data.status === "unexpanded") {
+            if (!data || data.status === 'unexpanded') {
                 this.toggleFreeze(false);
 
                 for (var fromId in allTransitions) {
                     var fromProcess = this.graph.processById(fromId);
                     this.showProcess(fromProcess);
                     this.showProcessAsExplored(fromProcess);
-                    var groupedByTargetProcessId = ArrayUtil.groupBy(allTransitions[fromId].toArray(), t => t.targetProcess.id);
+                    var groupedByTargetProcessId = ArrayUtil.groupBy(
+                        allTransitions[fromId].toArray(),
+                        (t) => t.targetProcess.id
+                    );
 
-                    Object.keys(groupedByTargetProcessId).forEach(strProcId => {
+                    Object.keys(groupedByTargetProcessId).forEach((strProcId) => {
                         var group = groupedByTargetProcessId[strProcId];
-                        var data = group.map(t => { return { label: t.action.toString() } });
+                        var data = group.map((t) => {
+                            return { label: t.action.toString() };
+                        });
                         var targetProcess: PCCS.ProbabilisticProcess = group[0].targetProcess;
 
                         if (this.project.getInputMode() === InputMode.PCCS) {
                             this.showProbabilityDistrubution(strProcId); // Show dot
                             this.uiGraph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
-                            targetProcess.dist.getProbabilities().forEach(({ proc, probability }) => { // for each target process in the distrubution, create transition from dot to target
+                            targetProcess.dist.getProbabilities().forEach(({ proc, probability }) => {
+                                // for each target process in the distrubution, create transition from dot to target
                                 this.showProcess(proc);
 
                                 if (isNaN(probability)) {
-                                    console.error("NaN prop for", proc)
+                                    console.error('NaN prop for', proc);
                                 }
-                                this.uiGraph.showTransitions(strProcId, proc.id, [{ dashed: true, label: probability }]);
+                                this.uiGraph.showTransitions(strProcId, proc.id, [
+                                    { dashed: true, label: probability }
+                                ]);
                             });
                         } else {
                             this.showProcess(targetProcess);
@@ -351,26 +383,35 @@ module Activity {
         private updateStatusTable(transitions: CCS.Transition[]): void {
             this.$statusTable.empty();
 
-            transitions.forEach(t => {
-                var row = $("<tr>");
-                var $actionTd = $("<td>");
+            transitions.forEach((t) => {
+                var row = $('<tr>');
+                var $actionTd = $('<td>');
 
                 if (this.succGenerator instanceof Traverse.AbstractingSuccessorGenerator) {
                     var abstractingSuccGen = <Traverse.AbstractingSuccessorGenerator>this.succGenerator;
                     var $action = Tooltip.wrap(t.action.toString(true));
-                    Tooltip.setTooltip($action, Tooltip.strongSequence(abstractingSuccGen, this.selectedProcess, t.action, t.targetProcess, this.graph));
+                    Tooltip.setTooltip(
+                        $action,
+                        Tooltip.strongSequence(
+                            abstractingSuccGen,
+                            this.selectedProcess,
+                            t.action,
+                            t.targetProcess,
+                            this.graph
+                        )
+                    );
                     $actionTd.append($action);
                 } else {
                     $actionTd.append(t.action.toString(true));
                 }
 
-                row.append($("<td>").append(this.sourceText(this.selectedProcess)));
+                row.append($('<td>').append(this.sourceText(this.selectedProcess)));
                 row.append($actionTd);
-                row.append($("<td>").append(this.sourceText(t.targetProcess)));
+                row.append($('<td>').append(this.sourceText(t.targetProcess)));
                 // row.append($("<td>").append(Tooltip.wrapProcess(this.graph.getLabel(t.targetProcess))));
 
-                row.data("targetId", t.targetProcess.id);
-                row.data("action", t.action);
+                row.data('targetId', t.targetProcess.id);
+                row.data('action', t.action);
 
                 this.$statusTable.append(row);
             });
@@ -381,12 +422,12 @@ module Activity {
                that under normal cirsumstances it would not be possible to hover
                over the constituent processes and get their description. */
             if (process instanceof CCS.CollapsedProcess) {
-                var wrappedSubProcs = process.subProcesses.map(p => Tooltip.wrapProcess(this.graph.getLabel(p)));
+                var wrappedSubProcs = process.subProcesses.map((p) => Tooltip.wrapProcess(this.graph.getLabel(p)));
                 return [].concat(
                     [Tooltip.wrapProcess(this.graph.getLabel(process))],
-                    [" = {"],
-                    ArrayUtil.intersperse<any>(wrappedSubProcs, ", "),
-                    ["}"]
+                    [' = {'],
+                    ArrayUtil.intersperse<any>(wrappedSubProcs, ', '),
+                    ['}']
                 );
             } else {
                 return Tooltip.wrapProcess(this.graph.getLabel(process));
@@ -397,7 +438,7 @@ module Activity {
             this.uiGraph.clearHighlights();
 
             if (entering) {
-                var targetId = $(event.currentTarget).data("targetId");
+                var targetId = $(event.currentTarget).data('targetId');
                 // Disabled for now - Can cause confusion.
                 /*if (this.options.successor === "weak") {
                     var action = $(event.currentTarget).data("action");
@@ -409,31 +450,34 @@ module Activity {
         }
 
         private highlightStrictPath(action, toTargetId) {
-            var strictPath = (<Traverse.AbstractingSuccessorGenerator>this.succGenerator).
-                getStrictPath(this.selectedProcess.id, action, toTargetId);
+            var strictPath = (<Traverse.AbstractingSuccessorGenerator>this.succGenerator).getStrictPath(
+                this.selectedProcess.id,
+                action,
+                toTargetId
+            );
             var from = this.selectedProcess.id;
             GUI.highlightTransitions(this.uiGraph, this.selectedProcess.id, strictPath);
         }
 
         private onTransitionTableRowClick(e: Event): void {
-            var targetId = $(e.currentTarget).data("targetId");
+            var targetId = $(e.currentTarget).data('targetId');
 
-            if (targetId !== "undefined") {
+            if (targetId !== 'undefined') {
                 this.expand(this.graph.processById(targetId));
                 this.uiGraph.clearHighlights();
             }
         }
 
         private showProcessAsExplored(process: CCS.Process): void {
-            this.uiGraph.getProcessDataObject(process.id).status = "expanded";
+            this.uiGraph.getProcessDataObject(process.id).status = 'expanded';
         }
 
         private centerProcess(process: CCS.Process): void {
             var position = this.uiGraph.getPosition(process.id.toString());
 
             if (position && this.$zoom.val() > 1) {
-                this.$canvasContainer.scrollLeft(position.x - (this.$canvasContainer.width() / 2));
-                this.$canvasContainer.scrollTop(position.y - (this.$canvasContainer.height() / 2));
+                this.$canvasContainer.scrollLeft(position.x - this.$canvasContainer.width() / 2);
+                this.$canvasContainer.scrollTop(position.y - this.$canvasContainer.height() / 2);
             }
         }
 
@@ -454,12 +498,12 @@ module Activity {
             this.renderer.resize(this.canvas.width, this.canvas.height);
 
             if (zoom > 1) {
-                this.$canvasContainer.parent().find(".input-group").css("right", 30);
-                this.$canvasContainer.css("overflow", "auto");
+                this.$canvasContainer.parent().find('.input-group').css('right', 30);
+                this.$canvasContainer.css('overflow', 'auto');
                 this.centerProcess(this.selectedProcess);
             } else {
-                this.$canvasContainer.parent().find(".input-group").css("right", 10);
-                this.$canvasContainer.css("overflow", "hidden");
+                this.$canvasContainer.parent().find('.input-group').css('right', 10);
+                this.$canvasContainer.css('overflow', 'hidden');
             }
         }
     }
