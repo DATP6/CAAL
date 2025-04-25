@@ -310,7 +310,7 @@ module CCS {
             return (this.processes[result.id] = result);
         }
 
-        newRestrictedProcess(process, restrictedLabels: LabelSet) {
+        newRestrictedProcess(process: CCS.Process, restrictedLabels: LabelSet) {
             //For now return just new instead of structural sharing
             restrictedLabels = this.allRestrictedSets.getOrAdd(restrictedLabels);
             var result = new RestrictionProcess(process, restrictedLabels);
