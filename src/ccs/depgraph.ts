@@ -70,8 +70,19 @@ module DependencyGraph {
         }
 
         dispatchDiamondFormula(formula: hml.DiamondFormula) {
+            hyperEdges = [];
+            let operator, probability = formula.probabilityTerm();  
+            // Multiset implementation needed
+            // Get all successor states 
+            // Find successor states that fulfill prob criteria 
             console.log(`Dispatching: ${formula.toString()}`);
             throw new Error("Method not implemented.");
+        }
+
+        // TODO: Implement support 
+        getSupport(Multiset<T>, relop: RelationOp){
+            // Multiset.getEntires()
+            // Based on the relational op, include multiset elements. 
         }
 
         getHyperEdges(node : MuCalculusNode) : Hyperedge[] {

@@ -1,6 +1,8 @@
 /// <reference path="../../lib/util.d.ts" />
 /// <reference path="ccs.ts" />
 
+import { TupleType } from "typescript";
+
 module HML {
 
     import ccs = CCS;
@@ -236,6 +238,10 @@ module HML {
 
         get id(): string {
             return this.toString();
+        }
+
+        get probabilityTerm(): [string, string] {
+            return [this.probability.toString(), this.relational_operator.toString()];
         }
     }
 
