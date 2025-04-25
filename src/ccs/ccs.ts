@@ -254,12 +254,9 @@ module CCS {
         }
 
         addProcesses(processes: Process[]) {
-            console.log("added processes", processes);
             processes.forEach(process => {
-                console.log("added process", process);
                 this.processes[process.id] = process;
             });
-            console.log(this.processes)
         }
 
         newNamedProcess(processName: string, process: Process) {
@@ -813,7 +810,6 @@ module CCS {
         dispatchActionPrefixProcess(process: ActionPrefixProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
-                // TODO: Find distribution for nextProcess
                 transitionSet = this.cache[process.id] = new TransitionSet([new Transition(process.action, process.nextProcess)]);
             }
             return transitionSet;
@@ -941,20 +937,16 @@ module CCS {
             queue: [number, CCS.Process][] = [[1, process]],
             depth, fromProcess: CCS.Process, transitions: TransitionSet;
 
-
         for (var i = 0; i < queue.length; i++) {
             depth = queue[i][0];
             fromProcess = queue[i][1];
             if (succGen["succGenerator"] instanceof PCCS.StrictSuccessorGenerator) {
-                // result[fromProcess.id] = transitions = succGen["succGenerator"].getSuccessors(fromProcess.id);
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
-
                 transitions.forEach(t => {
                     if (!(t.targetProcess instanceof PCCS.ProbabilisticProcess)) {
                         console.log("Unknown target process in t:", t);
                         throw new Error("Probabilistic transition did not result in a distribution")
                     }
-
                     t.targetProcess.getTargetProcesses().forEach(p => {
                         if (!result[t.targetProcess.id] && depth < maxDepth) {
                             queue.push([depth + 1, p]);
@@ -963,7 +955,6 @@ module CCS {
                 })
             } else {
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
-
                 transitions.forEach(t => {
                     if (!result[t.targetProcess.id] && depth < maxDepth) {
                         queue.push([depth + 1, t.targetProcess]);
@@ -971,9 +962,6 @@ module CCS {
                 });
             }
         }
-
-        console.log("Generated processes to depth", depth)
-
         return result;
     }
 
