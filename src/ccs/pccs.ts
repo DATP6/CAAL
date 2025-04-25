@@ -20,7 +20,6 @@ module PCCS {
             let entry1 = { proc: subProcesses[0], weight: probability.num };
             let entry2 = { proc: subProcesses[1], weight: probability.den - probability.num };
             let dist = newDistribution([entry1, entry2]);
-            console.log('From', probability.num, probability.den, 'to Distribution for new process:', dist);
             let result = new ProbabilisticProcess(dist);
             return (this.processes[result.id] = result);
         }
@@ -319,7 +318,6 @@ module PCCS {
         }
 
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
-            console.log('[PDG Composition] In:', process);
             const dist: Distribution = process.subProcesses
                 .map((p) => p.dispatchOn(this))
                 .reduce(
@@ -331,27 +329,27 @@ module PCCS {
                         ),
                     newDistribution([])
                 );
-            console.log('[PDG Composition] Out', dist);
             return dist;
         }
 
         dispatchRestrictionProcess(process: CCS.RestrictionProcess) {
-            // TODO: Implement in accordance with semantics
-            console.log('[PDG Restriction] In:', process);
             const dist: Distribution = process.subProcess.dispatchOn(this);
-            console.log('[PDG Restriction] Via:', dist);
 
             const restrictedDist = dist.map((e) => ({
                 ...e,
-                proc: this.graph.newRestrictedProcess(e, process.restrictedLabels)
+                proc: this.graph.newRestrictedProcess(e.proc, process.restrictedLabels)
             }));
-            console.log('[PDG Restriction] To:', restrictedDist);
             return restrictedDist;
         }
 
         dispatchRelabellingProcess(process: CCS.RelabellingProcess) {
-            // TODO: Implement in accordance with semantics
-            return process.subProcess.dispatchOn(this);
+            const dist: Distribution = process.subProcess.dispatchOn(this);
+
+            const relabeledDist = dist.map((e) => ({
+                ...e,
+                proc: this.graph.newRelabelingProcess(e.proc, process.relabellings)
+            }));
+            return relabeledDist;
         }
     }
 }
