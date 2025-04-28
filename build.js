@@ -21,7 +21,7 @@ var pccsGrammar = _P('lib/pccs_grammar.js');
 pegjs(pccsGrammar, _P('src/ccs/pccs_grammar.pegjs'), 'PCCSParser');
 
 var phmlGrammar = _P('lib/phml_grammar.js');
-pegjs(phmlGrammar, _P('src/ccs/phml_grammar.pegjs'), 'PHMLParser', ["--allowed-start-rules", "start,TopFormula"]);
+pegjs(phmlGrammar, _P('src/ccs/phml_grammar.pegjs'), 'PHMLParser', ['--allowed-start-rules', 'start,TopFormula']);
 
 var hmlGrammar = _P('lib/hml_grammar.js');
 pegjs(hmlGrammar, _P('src/ccs/hml_grammar.pegjs'), 'HMLParser', ['--allowed-start-rules', 'start,TopFormula']);
@@ -51,65 +51,69 @@ var workerVerifier = _P('lib/workers/verifier.js');
 createTscFileTask(workerVerifier, [_P('src/workers/verifier.ts')]);
 
 // build ace
-task('ace-integration', [ccsTargetFile, ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar], function () {
-    jake.mkdirP('modules/ace/lib/ace/mode/ccs');
-    var moduleHeader = 'define(function(require, exports, module) {\n';
-    toWrap = [
-        {
-            source: dataTargetFile,
-            header: moduleHeader,
-            target: _P('modules/ace/lib/ace/mode/ccs/data.js'),
-            footer: '\nmodule.exports.MapUtil = MapUtil;\nmodule.exports.SetUtil = SetUtil; });'
-        },
-        {
-            source: utilTargetFile,
-            header: moduleHeader,
-            target: _P('modules/ace/lib/ace/mode/ccs/util.js'),
-            footer: '\nmodule.exports.ArrayUtil = ArrayUtil; });'
-        },
-        {
-            source: ccsTargetFile,
-            header: moduleHeader + 'var ArrayUtil = require("./util").ArrayUtil;\n',
-            target: _P('modules/ace/lib/ace/mode/ccs/ccs.js'),
-            footer: '\nmodule.exports.CCS = CCS; module.exports.HML = HML; module.exports.TCCS = TCCS; module.exports.PCCS = PCCS; });'
-        },
-        {
-            source: ccsGrammar,
-            header: moduleHeader,
-            target: _P('modules/ace/lib/ace/mode/ccs/ccs_grammar.js'),
-            footer: '\nmodule.exports.CCSParser = CCSParser; });'
-        },
-        {
-            source: pccsGrammar,
-            header: moduleHeader,
-            target: _P('modules/ace/lib/ace/mode/ccs/pccs_grammar.js'),
-            footer: '\nmodule.exports.PCCSParser = PCCSParser; });'
-        },
-        {
-            source: tccsGrammar,
-            header: moduleHeader,
-            target: _P('modules/ace/lib/ace/mode/ccs/tccs_grammar.js'),
-            footer: '\nmodule.exports.TCCSParser = TCCSParser; });'
-        },
-        {
-            source: hmlGrammar,
-            header: moduleHeader,
-            target: _P('modules/ace/lib/ace/mode/ccs/hml_grammar.js'),
-            footer: '\nmodule.exports.HMLParser = HMLParser; });'
-        },
-        {
-            source: thmlGrammar,
-            header: moduleHeader,
-            target: _P('modules/ace/lib/ace/mode/ccs/thml_grammar.js'),
-            footer: '\nmodule.exports.THMLParser = THMLParser; });'
-        }
-    ];
-    toWrap.forEach(function (data) {
-        fs.writeFileSync(data.target, data.header);
-        fs.appendFileSync(data.target, fs.readFileSync(data.source));
-        fs.appendFileSync(data.target, data.footer);
-    });
-});
+task(
+    'ace-integration',
+    [ccsTargetFile, ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar],
+    function () {
+        jake.mkdirP('modules/ace/lib/ace/mode/ccs');
+        var moduleHeader = 'define(function(require, exports, module) {\n';
+        toWrap = [
+            {
+                source: dataTargetFile,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/data.js'),
+                footer: '\nmodule.exports.MapUtil = MapUtil;\nmodule.exports.SetUtil = SetUtil; });'
+            },
+            {
+                source: utilTargetFile,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/util.js'),
+                footer: '\nmodule.exports.ArrayUtil = ArrayUtil; });'
+            },
+            {
+                source: ccsTargetFile,
+                header: moduleHeader + 'var ArrayUtil = require("./util").ArrayUtil;\n',
+                target: _P('modules/ace/lib/ace/mode/ccs/ccs.js'),
+                footer: '\nmodule.exports.CCS = CCS; module.exports.HML = HML; module.exports.TCCS = TCCS; module.exports.PCCS = PCCS; });'
+            },
+            {
+                source: ccsGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/ccs_grammar.js'),
+                footer: '\nmodule.exports.CCSParser = CCSParser; });'
+            },
+            {
+                source: pccsGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/pccs_grammar.js'),
+                footer: '\nmodule.exports.PCCSParser = PCCSParser; });'
+            },
+            {
+                source: tccsGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/tccs_grammar.js'),
+                footer: '\nmodule.exports.TCCSParser = TCCSParser; });'
+            },
+            {
+                source: hmlGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/hml_grammar.js'),
+                footer: '\nmodule.exports.HMLParser = HMLParser; });'
+            },
+            {
+                source: thmlGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/thml_grammar.js'),
+                footer: '\nmodule.exports.THMLParser = THMLParser; });'
+            }
+        ];
+        toWrap.forEach(function (data) {
+            fs.writeFileSync(data.target, data.header);
+            fs.appendFileSync(data.target, fs.readFileSync(data.source));
+            fs.appendFileSync(data.target, data.footer);
+        });
+    }
+);
 
 task('ace', ['ace-integration'], { async: true }, function () {
     jake.exec('node modules/ace/Makefile.ccs.js --target lib/ace', { printStderr: true }, function () {

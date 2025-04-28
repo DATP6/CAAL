@@ -208,22 +208,24 @@ module HML {
     }
 
     export class DiamondFormula implements Formula {
-        constructor(public relational_operator: string, public probability: string, public subformula: Formula){}
-        
+        constructor(
+            public relational_operator: string,
+            public probability: string,
+            public subformula: Formula
+        ) {}
+
         dispatchOn<T>(dispatcher: FormulaDispatchHandler<T>): T {
-            return dispatcher.dispatchDiamondFormula(this)
+            return dispatcher.dispatchDiamondFormula(this);
         }
 
-        toString(){
+        toString() {
             return this.relational_operator + this.probability + this.subformula.toString();
         }
 
-        get id() : string {
+        get id(): string {
             return this.toString();
         }
-
     }
-
 
     function compareStrings(strA, strB) {
         return strA.toString().localeCompare(strB.toString());
@@ -492,7 +494,7 @@ module HML {
             return this.formulaSet.formulaByName(formula.variable).dispatchOn(this);
         }
 
-        dispatchDiamondFormula(formula : DiamondFormula) : boolean {
+        dispatchDiamondFormula(formula: DiamondFormula): boolean {
             return formula.subformula.dispatchOn(this);
         }
     }
