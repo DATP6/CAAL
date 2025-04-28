@@ -258,8 +258,8 @@ module Property {
                         HMLParser.parse(data.formula, { startRule: "TopFormula", ccs: CCS, hml: hml, formulaSet: formulaSet });
                         break;
                     case InputMode.PCCS:
-                        HMLParser.parse(data.definitions, { ccs: CCS, pccs: PCCS, hml: hml, formulaSet: formulaSet });
-                        HMLParser.parse(data.formula, { startRule: "TopFormula", ccs: CCS, pccs: PCCS, hml: hml, formulaSet: formulaSet });
+                        PHMLParser.parse(data.definitions, { ccs: CCS, pccs: PCCS, hml: hml, formulaSet: formulaSet });
+                        PHMLParser.parse(data.formula, { startRule: "TopFormula", ccs: CCS, pccs: PCCS, hml: hml, formulaSet: formulaSet });
                         break;
                     case InputMode.TCCS:
                         THMLParser.parse(data.definitions, { ccs: CCS, tccs: TCCS, hml: hml, formulaSet: formulaSet });

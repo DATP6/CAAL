@@ -25,6 +25,7 @@ declare var PCCSParser;
 declare var TCCSParser;
 declare var HMLParser;
 declare var THMLParser;
+declare var PHMLParser;
 import ccs = CCS;
 import hml = HML;
 

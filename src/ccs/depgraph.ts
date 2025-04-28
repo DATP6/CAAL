@@ -69,6 +69,10 @@ module DependencyGraph {
                     private formulaSet : hml.FormulaSet) {
         }
 
+        dispatchDiamondFormula(formula: hml.DiamondFormula) {
+            throw new Error("Method not implemented.");
+        }
+
         getHyperEdges(node : MuCalculusNode) : Hyperedge[] {
             this.currentNode = node;
             return node.formula.dispatchOn(this);
