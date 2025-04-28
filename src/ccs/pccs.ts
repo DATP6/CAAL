@@ -129,10 +129,10 @@ module PCCS {
                                     leftTransition.action.getLabel() === rightTransition.action.getLabel() &&
                                     leftTransition.action.isComplement() !== rightTransition.action.isComplement()
                                 ) {
+                                    // TODO: Doing this map each iteration is really inefficient. Can easily be moved out and slices to copy.
                                     var targetDistributions: Distribution[] = process.subProcesses.map((p) =>
                                         this.ProbabilityDistributionGenerator.getProbabilityDistribution(p)
                                     );
-                                    // TODO: Doing this map each iteration is really inefficient. Can easily be moved out and slices to copy.
                                     // Transition the 2 synchonising processes, leave the rest be (by adding a tau action)
                                     targetDistributions[i] =
                                         this.ProbabilityDistributionGenerator.getProbabilityDistribution(
