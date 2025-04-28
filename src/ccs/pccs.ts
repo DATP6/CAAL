@@ -271,18 +271,9 @@ module PCCS {
                 .getEntries()
                 .map((e) => ({ dist: e.proc.dispatchOn(this), weight: e.weight }));
 
-            // Wheighted union is done step-wise by keeping track of a total weight, in the same way you compute step-wise averages
-            // Skip the first index when folding
-            let { accDist } = weightedDists.slice(1).reduce(
-                ({ accWeight, accDist }, { dist, weight }) => ({
-                    accWeight: accWeight + weight,
-                    accDist: MultiSetUtil.weightedUnion(accDist, accWeight, dist, weight)
-                }),
-                // Start with first index
-                { accDist: weightedDists[0].dist, accWeight: weightedDists[0].weight }
-            );
+            result = MultiSetUtil.weightedUnion(weightedDists);
 
-            return (this.cache[process.id] = accDist);
+            return (this.cache[process.id] = result);
         }
 
         public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess) {

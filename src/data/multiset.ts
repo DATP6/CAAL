@@ -42,7 +42,7 @@ module MultiSetUtil {
         }
     }
 
-    export const weightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
+    const singleWeightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
         if (weightA === 0) return setB.clone();
         if (weightB === 0) return setA.clone();
         const aSize = setA.size();
@@ -51,6 +51,25 @@ module MultiSetUtil {
         const bEntries = setB.getEntries().map((x) => ({ proc: x.proc, weight: x.weight * aSize * weightB }));
 
         return new MultiSet([...aEntries, ...bEntries]);
+    };
+
+    /**
+     * Performs a weighted union on multiple multisets
+     *
+     * Function signature is due to call site practicalities
+     * */
+    export const weightedUnion = <T>(dists: { dist: MultiSet<T>; weight: number }[]) => {
+        // Wheighted union is done step-wise by keeping track of a total weight, in the same way you compute step-wise averages
+        // Skip the first index when folding
+        let { accDist } = dists.slice(1).reduce(
+            ({ accWeight, accDist }, { dist, weight }) => ({
+                accWeight: accWeight + weight,
+                accDist: singleWeightedUnion(accDist, accWeight, dist, weight)
+            }),
+            // Start with first index
+            { accDist: dists[0].dist, accWeight: dists[0].weight }
+        );
+        return accDist;
     };
 
     export const crossCombination = <T>(op: (procs: T[]) => T, left: MultiSet<T>, right: MultiSet<T>): MultiSet<T> => {
