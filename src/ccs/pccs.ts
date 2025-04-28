@@ -251,7 +251,7 @@ module PCCS {
 
     // TODO: this class should use the cache to avoid recomputing the same process multiple times
     export class probabilityDistributionGenerator implements PCCS.ProcessDispatchHandler<Distribution> {
-        private cache: { [id: string]: CCS.Process } = {};
+        private cache: { [id: string]: Distribution } = {};
 
         constructor(
             public graph: Graph,

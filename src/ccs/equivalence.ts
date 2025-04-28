@@ -186,14 +186,35 @@ module Equivalence {
             var rightTransitions = this.defendSuccGen.getSuccessors(rightProcessId);
             console.log("shit2");
             leftTransitions.forEach(leftTransition => {
-                var newNodeIdx = this.nextIdx++;
-                this.constructData[newNodeIdx] = [1, leftTransition.action, leftTransition.targetProcess.id, rightProcessId];
-                hyperedges.push([newNodeIdx]);
+                console.log("left: ", leftTransition);
+                if (leftTransition.targetProcess instanceof pccs.ProbabilisticProcess) {
+                    console.log(leftTransition.targetProcess.dist.getEntries());
+                    leftTransition.targetProcess.dist.getEntries().forEach(entry => {
+                        var newNodeIdx = this.nextIdx++;
+                        this.constructData[newNodeIdx] = [1, leftTransition.action, entry.proc.id, rightProcessId];
+                        hyperedges.push([newNodeIdx]);
+                    });
+                    return;
+                } else {
+                    var newNodeIdx = this.nextIdx++;
+                    this.constructData[newNodeIdx] = [1, leftTransition.action, leftTransition.targetProcess.id, rightProcessId];
+                    hyperedges.push([newNodeIdx]);
+                }
             });
             rightTransitions.forEach(rightTransition => {
-                var newNodeIdx = this.nextIdx++;
-                this.constructData[newNodeIdx] = [2, rightTransition.action, rightTransition.targetProcess.id, leftProcessId];
-                hyperedges.push([newNodeIdx]);
+                console.log("right: ", rightTransition);
+                if (rightTransition.targetProcess instanceof pccs.ProbabilisticProcess) {
+                    rightTransition.targetProcess.dist.getEntries().forEach(entry => {
+                        var newNodeIdx = this.nextIdx++;
+                        this.constructData[newNodeIdx] = [2, rightTransition.action, entry.proc.id, leftProcessId];
+                        hyperedges.push([newNodeIdx]);
+                    });
+                    return;
+                } else {
+                    var newNodeIdx = this.nextIdx++;
+                    this.constructData[newNodeIdx] = [2, rightTransition.action, rightTransition.targetProcess.id, leftProcessId];
+                    hyperedges.push([newNodeIdx]);
+                }
             });
             console.log("Shit3");
             return hyperedges;

@@ -21,6 +21,7 @@ module Activity {
         private $rightProcessList: JQuery;
         private $ccsGameTypes: JQuery;
         private $tccsGameTypes: JQuery;
+        private $pccsGameTypes: JQuery;
         private $gameRelation: JQuery;
         private $playerType: JQuery;
         private $restart: JQuery;
@@ -53,6 +54,7 @@ module Activity {
             this.$rightProcessList = $('#game-right-process');
             this.$ccsGameTypes = $('#game-ccs-type');
             this.$tccsGameTypes = $('#game-tccs-type');
+            this.$pccsGameTypes = $('#game-pccs-type');
             this.$gameRelation = $('#game-relation');
             this.$playerType = $('input[name=player-type]');
             this.$restart = $('#game-restart');
@@ -76,6 +78,7 @@ module Activity {
             this.$rightProcessList.on('change', () => this.newGame(false, true));
             this.$ccsGameTypes.on('change', () => this.newGame(true, true));
             this.$tccsGameTypes.on('change', () => this.newGame(true, true));
+            this.$pccsGameTypes.on('change', () => this.newGame(true, true));
             this.$gameRelation.on('change', () => this.newGame(false, false));
             this.$playerType.on('change', () => this.newGame(false, false));
             this.$restart.on('click', () => this.newGame(false, false));
@@ -296,9 +299,11 @@ module Activity {
 
             if (this.project.getInputMode() === InputMode.CCS) {
                 options.type = this.$ccsGameTypes.val();
-            } else {
+            } else if (this.project.getInputMode() === InputMode.TCCS) {
                 options.type = this.$tccsGameTypes.find('option:selected').val();
                 options.time = this.$tccsGameTypes.find('option:selected').data('time');
+            } else {
+                options.type = this.$pccsGameTypes.val();
             }
 
             return options;
@@ -310,10 +315,12 @@ module Activity {
 
             if (this.project.getInputMode() === InputMode.CCS) {
                 this.$ccsGameTypes.val(options.type);
-            } else {
+            } else if (this.project.getInputMode() === InputMode.TCCS) {
                 this.$tccsGameTypes
                     .find('[value=' + options.type + '][data-time=' + options.time + ']')
                     .prop('selected', true);
+            } else {
+                this.$pccsGameTypes.val(options.type);
             }
 
             this.$gameRelation.val(options.relation);
@@ -420,8 +427,8 @@ module Activity {
             var allTransitions = CCS.getNSuccessors(
                 CCS.getSuccGenerator(this.graph, {
                     inputMode: InputMode[this.project.getInputMode()],
-                    time: 'timed',
-                    succGen: 'strong',
+                    time: "timed",
+                    succGen: "strong",
                     reduce: true
                 }),
                 process,
@@ -437,17 +444,43 @@ module Activity {
                     (t) => t.targetProcess.id
                 );
 
-                Object.keys(groupedByTargetProcessId).forEach((strProcId) => {
-                    var group = groupedByTargetProcessId[strProcId],
-                        data = group.map((t) => {
-                            return { label: t.action.toString(false) };
+                Object.keys(groupedByTargetProcessId).forEach(strProcId => {
+                    var group = groupedByTargetProcessId[strProcId];
+                    var data = group.map(t => { return { label: t.action.toString() } });
+                    var targetProcess: PCCS.ProbabilisticProcess = group[0].targetProcess;
+
+                    if (this.project.getInputMode() === InputMode.PCCS) {
+                        this.showProbabilityDistrubution(strProcId, graph); // Show dot
+                        graph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
+                        targetProcess.dist.getProbabilities().forEach((x) => { // for each target process in the distrubution, create transition from dot to target
+
+                            const { proc, probability } = x;
+                            this.showProcess(proc, graph);
+
+                            if (isNaN(probability)) {
+                                console.log("NaN prop for", proc)
+                            }
+                            graph.showTransitions(strProcId, proc.id, [{ dashed: true, label: probability }]);
+                            // this.showProcess(this.graph.processById(target.targetProcess.id));
+                            // this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
                         });
-                    this.showProcess(this.graph.processById(strProcId), graph);
-                    graph.showTransitions(fromProcess.id, strProcId, data);
+                        // targetProcess.dist.forEach(target => { // for each target process in the distrubution, create transition from dot to target
+                        //     this.showProcess(this.graph.processById(target.targetProcess.id));
+                        //     this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [{ dashed: true, label: target.probability }]);
+                        // });
+                    } else {
+                        this.showProcess(targetProcess, graph);
+                        graph.showTransitions(fromProcess.id, strProcId, data);
+                    }
                 });
             }
 
             this.highlightNodes();
+        }
+
+        private showProbabilityDistrubution(process: string, graph: GUI.ProcessGraphUI): void {
+            // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
+            graph.showProcess(process, { probabilityDistrubution: true });
         }
 
         private showProcess(process: CCS.Process, graph: GUI.ProcessGraphUI): void {
