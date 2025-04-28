@@ -1,9 +1,12 @@
 /// <reference path="../../lib/util.d.ts" />
 /// <reference path="../../lib/data.d.ts" />
 /// <reference path="ccs.ts" />
+/// <reference path="pccs.ts" />
 /// <reference path="hml.ts" />
 /// <reference path="util.ts" />
 /// <reference path="collapse.ts" />
+
+import { isPropertyAccessChain, isPropertyAccessOrQualifiedName } from "typescript";
 
 module DependencyGraph {
 
@@ -69,12 +72,23 @@ module DependencyGraph {
                     private formulaSet : hml.FormulaSet) {
         }
 
+        // TODO: OOP can be used to beautify switch case
         dispatchDiamondFormula(formula: hml.DiamondFormula) {
+            if(!(this.currentNode.process instanceof PCCS.ProbabilisticProcess)){
+                throw new Error("Diamond formula was not dispatched with a probabilistic process");
+            }
             hyperEdges = [];
-            let operator, probability = formula.probabilityTerm();  
-            // Multiset implementation needed
-            // Get all successor states 
+            const distribution = this.currentNode.process.dist; // Potential successor states 
+            const operator = formula.probabilisticOperator();
             // Find successor states that fulfill prob criteria 
+
+            // NOTE: Could make a class for each prob op and use OOP to determine behaviour of dispatch on runtime
+            switch(operator){
+                case "e":
+                default:
+                    throw new Error(`${operator} is not defined for `)
+            }
+            // Multiset implementation needed
             console.log(`Dispatching: ${formula.toString()}`);
             throw new Error("Method not implemented.");
         }

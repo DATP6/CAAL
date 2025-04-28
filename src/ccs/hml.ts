@@ -243,6 +243,10 @@ module HML {
         get probabilityTerm(): [string, string] {
             return [this.probability.toString(), this.relational_operator.toString()];
         }
+
+        get probabilisticOperator(): RelationOp {
+            return this.relational_operator
+        }
     }
 
 
