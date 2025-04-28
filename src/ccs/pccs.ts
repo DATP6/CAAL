@@ -173,9 +173,9 @@ module PCCS {
                 //COM1/2s
                 subTransitionSets.forEach((subTransitionSet, index) => {
                     subTransitionSet.forEach((subTransition) => {
-                        var targetDistributions: Distribution[] = process.subProcesses
-                            .slice(0)
-                            .map((p) => this.ProbabilityDistributionGenerator.getProbabilityDistribution(p));
+                        var targetDistributions: Distribution[] = process.subProcesses.map((p) =>
+                            this.ProbabilityDistributionGenerator.getProbabilityDistribution(p)
+                        );
                         //Only the index of the subprocess will have changed.
                         // Change targetProcess to distribution
                         targetDistributions[index] = this.ProbabilityDistributionGenerator.getProbabilityDistribution(
