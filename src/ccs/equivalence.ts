@@ -88,10 +88,34 @@ module Equivalence {
             var rightTransitions = this.defendSuccGen.getSuccessors(fromRightId);
             rightTransitions.forEach((rightTransition) => {
                 var existing, toRightId;
-                //Same action - possible candidate.
-                if (rightTransition.action.equals(action)) {
-                    toRightId = rightTransition.targetProcess.id;
-                    result.push(this.getOrCreatePairNode(toLeftId, toRightId));
+                if (rightTransition.targetProcess instanceof pccs.ProbabilisticProcess) {
+                    rightTransition.targetProcess.dist.getEntries().forEach(entry => {
+                        if (rightTransition.action.equals(action)) {
+                            toRightId = entry.proc.id;
+                            var rightIds = this.leftPairs[toLeftId];
+                            if (rightIds) {
+                                existing = rightIds[toRightId];
+                            }
+                            //Have we already solved the resulting (s1, t1) pair?
+                            if (existing) {
+                                result.push(existing);
+                            } else {
+                                //Build the node.
+                                var newIndex = this.nextIdx++;
+                                if (!rightIds) this.leftPairs[toLeftId] = rightIds = {};
+                                rightIds[toRightId] = newIndex
+                                this.constructData[newIndex] = [0, toLeftId, toRightId];
+                                result.push(newIndex);
+                            }
+                        }
+                    });
+                    return;
+                } else {
+                    //Same action - possible candidate.
+                    if (rightTransition.action.equals(action)) {
+                        toRightId = rightTransition.targetProcess.id;
+                        result.push(this.getOrCreatePairNode(toLeftId, toRightId));
+                    }
                 }
             });
             return [result];
@@ -105,9 +129,33 @@ module Equivalence {
             var leftTransitions = this.defendSuccGen.getSuccessors(fromLeftId);
             leftTransitions.forEach((leftTransition) => {
                 var existing, toLeftId;
-                if (leftTransition.action.equals(action)) {
-                    toLeftId = leftTransition.targetProcess.id;
-                    result.push(this.getOrCreatePairNode(toLeftId, toRightId));
+                if (leftTransition.targetProcess instanceof pccs.ProbabilisticProcess) {
+                    leftTransition.targetProcess.dist.getEntries().forEach(entry => {
+                        if (leftTransition.action.equals(action)) {
+                            toLeftId = entry.proc.id;
+                            var rightIds = this.leftPairs[toLeftId];
+                            if (rightIds) {
+                                existing = rightIds[toRightId];
+                            }
+                            //Have we already solved the resulting (s1, t1) pair?
+                            if (existing) {
+                                result.push(existing);
+                            } else {
+                                //Build the node.
+                                var newIndex = this.nextIdx++;
+                                if (!rightIds) this.leftPairs[toLeftId] = rightIds = {};
+                                rightIds[toRightId] = newIndex
+                                this.constructData[newIndex] = [0, toLeftId, toRightId];
+                                result.push(newIndex);
+                            }
+                        }
+                    });
+                    return;
+                } else {
+                    if (leftTransition.action.equals(action)) {
+                        toLeftId = leftTransition.targetProcess.id;
+                        result.push(this.getOrCreatePairNode(toLeftId, toRightId));
+                    }
                 }
             });
             return [result];
@@ -133,7 +181,10 @@ module Equivalence {
         private getProcessPairStates(leftProcessId: ccs.ProcessId, rightProcessId: ccs.ProcessId): dg.Hyperedge[] {
             var hyperedges: dg.Hyperedge[] = [];
             var leftTransitions = this.attackSuccGen.getSuccessors(leftProcessId);
-            var rightTransitions = this.attackSuccGen.getSuccessors(rightProcessId);
+            console.log("shit1");
+            console.log("right: ", rightProcessId);
+            var rightTransitions = this.defendSuccGen.getSuccessors(rightProcessId);
+            console.log("shit2");
             leftTransitions.forEach(leftTransition => {
                 var newNodeIdx = this.nextIdx++;
                 this.constructData[newNodeIdx] = [1, leftTransition.action, leftTransition.targetProcess.id, rightProcessId];
@@ -518,23 +569,47 @@ module Equivalence {
             var rightTransitions = this.defendSuccGen.getSuccessors(fromRightId);
             rightTransitions.forEach((rightTransition) => {
                 var existing, toRightId;
-                //Same action - possible candidate.
-                if (rightTransition.action.equals(action)) {
-                    toRightId = rightTransition.targetProcess.id;
-                    var rightIds = this.leftPairs[toLeftId];
-                    if (rightIds) {
-                        existing = rightIds[toRightId];
-                    }
-                    //Have we already solved the resulting (s1, t1) pair?
-                    if (existing) {
-                        result.push(existing);
-                    } else {
-                        //Build the node.
-                        var newIndex = this.nextIdx++;
-                        if (!rightIds) this.leftPairs[toLeftId] = rightIds = {};
-                        rightIds[toRightId] = newIndex;
-                        this.constructData[newIndex] = [0, toLeftId, toRightId];
-                        result.push(newIndex);
+                if (rightTransition.targetProcess instanceof pccs.ProbabilisticProcess) {
+                    rightTransition.targetProcess.dist.getEntries().forEach(entry => {
+                        if (rightTransition.action.equals(action)) {
+                            toRightId = entry.proc.id;
+                            var rightIds = this.leftPairs[toLeftId];
+                            if (rightIds) {
+                                existing = rightIds[toRightId];
+                            }
+                            //Have we already solved the resulting (s1, t1) pair?
+                            if (existing) {
+                                result.push(existing);
+                            } else {
+                                //Build the node.
+                                var newIndex = this.nextIdx++;
+                                if (!rightIds) this.leftPairs[toLeftId] = rightIds = {};
+                                rightIds[toRightId] = newIndex
+                                this.constructData[newIndex] = [0, toLeftId, toRightId];
+                                result.push(newIndex);
+                            }
+                        }
+                    });
+                    return;
+                } else {
+                    //Same action - possible candidate.
+                    if (rightTransition.action.equals(action)) {
+                        toRightId = rightTransition.targetProcess.id;
+                        var rightIds = this.leftPairs[toLeftId];
+                        if (rightIds) {
+                            existing = rightIds[toRightId];
+                        }
+                        //Have we already solved the resulting (s1, t1) pair?
+                        if (existing) {
+                            result.push(existing);
+                        } else {
+                            //Build the node.
+                            var newIndex = this.nextIdx++;
+                            if (!rightIds) this.leftPairs[toLeftId] = rightIds = {};
+                            rightIds[toRightId] = newIndex
+                            this.constructData[newIndex] = [0, toLeftId, toRightId];
+                            result.push(newIndex);
+                        }
                     }
                 }
             });
