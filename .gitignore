@@ -12,6 +12,7 @@ lib/pccs_grammar.js
 lib/tccs_grammar.js
 lib/hml_grammar.js
 lib/thml_grammar.js
+lib/phml_grammar.js
 lib/ace
 lib/main.js
 lib/main.d.ts
