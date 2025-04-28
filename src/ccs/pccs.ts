@@ -45,7 +45,6 @@ module PCCS {
         }
 
         toString() {
-            // TODO: This is just a placeholder, we need to implement a proper toString method
             if (this.ccs) return this.ccs;
             return (this.ccs = this.dist
                 .getEntries()
@@ -75,14 +74,14 @@ module PCCS {
         extends CCS.StrictSuccessorGenerator
         implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet>
     {
-        public probabilityDistributionGenerator: probabilityDistributionGenerator;
+        public ProbabilityDistributionGenerator: ProbabilityDistributionGenerator;
 
         constructor(
             public graph: Graph,
             cache?
         ) {
             super(graph, cache);
-            this.probabilityDistributionGenerator = new PCCS.probabilityDistributionGenerator(
+            this.ProbabilityDistributionGenerator = new PCCS.ProbabilityDistributionGenerator(
                 graph,
                 this.getProcessByName.bind(this),
                 cache
@@ -101,7 +100,7 @@ module PCCS {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
                 // generate the next process with probability distribution generator as the process could be probabilistic
-                const nextDistribution = this.probabilityDistributionGenerator.getProbabilityDistribution(
+                const nextDistribution = this.ProbabilityDistributionGenerator.getProbabilityDistribution(
                     process.nextProcess
                 );
                 const nextProcess = this.graph.newDistributionProcess(nextDistribution);
@@ -117,9 +116,6 @@ module PCCS {
             if (!transitionSet) {
                 transitionSet = this.cache[process.id] = new CCS.TransitionSet();
                 var subTransitionSets = process.subProcesses.map((subProc) => subProc.dispatchOn(this));
-                // var defaultDistributions: Distribution[] = process.subProcesses.map(
-                //     p => this.probabilityDistributionGenerator.getProbabilityDistribution(p)
-                // );
                 //COM3s
                 for (var i = 0; i < subTransitionSets.length - 1; i++) {
                     for (var j = i + 1; j < subTransitionSets.length; j++) {
@@ -134,16 +130,16 @@ module PCCS {
                                     leftTransition.action.isComplement() !== rightTransition.action.isComplement()
                                 ) {
                                     var targetDistributions: Distribution[] = process.subProcesses.map((p) =>
-                                        this.probabilityDistributionGenerator.getProbabilityDistribution(p)
+                                        this.ProbabilityDistributionGenerator.getProbabilityDistribution(p)
                                     );
                                     // TODO: Doing this map each iteration is really inefficient. Can easily be moved out and slices to copy.
                                     // Transition the 2 synchonising processes, leave the rest be (by adding a tau action)
                                     targetDistributions[i] =
-                                        this.probabilityDistributionGenerator.getProbabilityDistribution(
+                                        this.ProbabilityDistributionGenerator.getProbabilityDistribution(
                                             leftTransition.targetProcess
                                         );
                                     targetDistributions[j] =
-                                        this.probabilityDistributionGenerator.getProbabilityDistribution(
+                                        this.ProbabilityDistributionGenerator.getProbabilityDistribution(
                                             rightTransition.targetProcess
                                         );
                                     // Now we combine these to a single distribution instead of n different distributions
@@ -179,10 +175,10 @@ module PCCS {
                     subTransitionSet.forEach((subTransition) => {
                         var targetDistributions: Distribution[] = process.subProcesses
                             .slice(0)
-                            .map((p) => this.probabilityDistributionGenerator.getProbabilityDistribution(p));
+                            .map((p) => this.ProbabilityDistributionGenerator.getProbabilityDistribution(p));
                         //Only the index of the subprocess will have changed.
                         // Change targetProcess to distribution
-                        targetDistributions[index] = this.probabilityDistributionGenerator.getProbabilityDistribution(
+                        targetDistributions[index] = this.ProbabilityDistributionGenerator.getProbabilityDistribution(
                             subTransition.targetProcess
                         );
                         // Do fold as in sync
@@ -251,8 +247,8 @@ module PCCS {
     }
 
     // TODO: this class should use the cache to avoid recomputing the same process multiple times
-    export class probabilityDistributionGenerator implements PCCS.ProcessDispatchHandler<Distribution> {
-        private cache: { [id: string]: CCS.Process } = {};
+    export class ProbabilityDistributionGenerator implements PCCS.ProcessDispatchHandler<Distribution> {
+        private cache: { [id: string]: Distribution } = {};
 
         constructor(
             public graph: Graph,
@@ -263,11 +259,14 @@ module PCCS {
         }
 
         getProbabilityDistribution(process: CCS.Process): Distribution {
-            return (this.cache[process.id] = process.dispatchOn(this));
+            return (this.cache[process.id] ??= process.dispatchOn(this));
         }
 
         // TODO: Someone sanity check this
         dispatchProbabilisticProcess(process: ProbabilisticProcess) {
+            let result = this.cache[process.id];
+            if (result) return result;
+
             const weightedDists = process.dist
                 .getEntries()
                 .map((e) => ({ dist: e.proc.dispatchOn(this), weight: e.weight }));
@@ -283,26 +282,44 @@ module PCCS {
                 { accDist: weightedDists[0].dist, accWeight: weightedDists[0].weight }
             );
 
-            return accDist;
+            return (this.cache[process.id] = accDist);
         }
 
         public dispatchActionPrefixProcess(process: CCS.ActionPrefixProcess) {
-            return newDistribution([{ proc: process, weight: 1 }]);
+            let result = this.cache[process.id];
+            if (result) return result;
+
+            result = newDistribution([{ proc: process, weight: 1 }]);
+
+            return (this.cache[process.id] = result);
         }
 
         dispatchNullProcess(process: CCS.NullProcess) {
-            return newDistribution([{ proc: process, weight: 1 }]);
+            let result = this.cache[process.id];
+            if (result) return result;
+
+            result = newDistribution([{ proc: process, weight: 1 }]);
+
+            return (this.cache[process.id] = result);
         }
 
         dispatchNamedProcess(process: CCS.NamedProcess) {
+            let result = this.cache[process.id];
+            if (result) return result;
+
             // TODO: Ensure this works for `K=A 0.5 B`, which it does not at the moment
             // Simply expanding it leads to infinite recursion.
             // May be enough to only expand if it starts as a probability
-            return newDistribution([{ proc: process, weight: 1 }]);
+            result = newDistribution([{ proc: process, weight: 1 }]);
+
+            return (this.cache[process.id] = result);
         }
 
         dispatchSummationProcess(process: CCS.SummationProcess) {
-            const dist: Distribution = process.subProcesses
+            let result = this.cache[process.id];
+            if (result) return result;
+
+            result = process.subProcesses
                 .map((p) => p.dispatchOn(this))
                 .reduce(
                     (curr, acc) =>
@@ -314,11 +331,14 @@ module PCCS {
                     newDistribution([])
                 );
 
-            return dist;
+            return (this.cache[process.id] = result);
         }
 
         dispatchCompositionProcess(process: CCS.CompositionProcess) {
-            const dist: Distribution = process.subProcesses
+            let result = this.cache[process.id];
+            if (result) return result;
+
+            result = process.subProcesses
                 .map((p) => p.dispatchOn(this))
                 .reduce(
                     (curr, acc) =>
@@ -329,27 +349,36 @@ module PCCS {
                         ),
                     newDistribution([])
                 );
-            return dist;
+
+            return (this.cache[process.id] = result);
         }
 
         dispatchRestrictionProcess(process: CCS.RestrictionProcess) {
+            let result = this.cache[process.id];
+            if (result) return result;
+
             const dist: Distribution = process.subProcess.dispatchOn(this);
 
-            const restrictedDist = dist.map((e) => ({
+            result = dist.map((e) => ({
                 ...e,
                 proc: this.graph.newRestrictedProcess(e.proc, process.restrictedLabels)
             }));
-            return restrictedDist;
+
+            return (this.cache[process.id] = result);
         }
 
         dispatchRelabellingProcess(process: CCS.RelabellingProcess) {
+            let result = this.cache[process.id];
+            if (result) return result;
+
             const dist: Distribution = process.subProcess.dispatchOn(this);
 
-            const relabeledDist = dist.map((e) => ({
+            result = dist.map((e) => ({
                 ...e,
                 proc: this.graph.newRelabelingProcess(e.proc, process.relabellings)
             }));
-            return relabeledDist;
+
+            return (this.cache[process.id] = result);
         }
     }
 }
