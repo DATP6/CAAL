@@ -57,7 +57,7 @@ module PCCS {
         }
 
         getTargetById(targetId: string): { targetProcess: CCS.Process; probability: string } | null {
-            this.dist.getEntries().forEach(({ proc: target, ..._ }) => {
+            this.dist.getEntries().forEach(({ proc: target }) => {
                 if (target.id == targetId) {
                     return target;
                 }
@@ -391,7 +391,7 @@ module Traverse {
     {
         dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
             var isUnguarded = false;
-            process.dist.getEntries().forEach(({ proc: target, ..._ }) => {
+            process.dist.getEntries().forEach(({ proc: target }) => {
                 if (target.dispatchOn(this)) {
                     isUnguarded = true;
                 }
