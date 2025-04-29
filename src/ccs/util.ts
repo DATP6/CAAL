@@ -268,10 +268,13 @@ module Traverse {
             this.clearCache();
         }
 
+<<<<<<< HEAD
         dispatchDiamondFormula(formula: hml.DiamondFormula): string {
             throw new Error('Method not implemented.');
         }
 
+=======
+>>>>>>> next-hml
         clearCache() {
             this.cache = Object.create(null);
         }
@@ -439,10 +442,13 @@ module Traverse {
 
         constructor(private hmlFormulaSet: HML.FormulaSet) {}
 
+<<<<<<< HEAD
         dispatchDiamondFormula(formula: hml.DiamondFormula): hml.Formula[] {
             throw new Error('Method not implemented.');
         }
 
+=======
+>>>>>>> next-hml
         visit(formula: HML.Formula) {
             return formula.dispatchOn(this);
         }
@@ -577,10 +583,13 @@ module Traverse {
             return subFormulas.length > 1 ? this.prevSet.newConj(subFormulas) : subFormulas[0];
         }
 
+<<<<<<< HEAD
         dispatchDiamondFormula(formula: hml.DiamondFormula) {
             return formula;
         }
 
+=======
+>>>>>>> next-hml
         dispatchTrueFormula(formula: hml.TrueFormula) {
             return this.prevSet.newTrue();
         }
@@ -682,10 +691,13 @@ module Traverse {
             formulaSet.getTopLevelFormulas().forEach((formula) => formula.dispatchOn(this));
         }
 
+<<<<<<< HEAD
         dispatchDiamondFormula(formula: hml.DiamondFormula) {
             return formula;
         }
 
+=======
+>>>>>>> next-hml
         dispatchDisjFormula(formula: hml.DisjFormula) {
             this.doCallback('enterDisjunction', formula);
             formula.subFormulas.map((subF) => subF.dispatchOn(this));

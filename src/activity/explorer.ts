@@ -351,16 +351,32 @@ module Activity {
                         var data = group.map((t) => {
                             return { label: t.action.toString() };
                         });
+<<<<<<< HEAD
                         var targetProcess = group[0].targetProcess;
+=======
+                        var targetProcess: PCCS.ProbabilisticProcess = group[0].targetProcess;
+>>>>>>> next-hml
 
                         if (this.project.getInputMode() === InputMode.PCCS) {
                             this.showProbabilityDistrubution(strProcId); // Show dot
                             this.uiGraph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
+<<<<<<< HEAD
                             targetProcess.dist.forEach((target) => {
                                 // for each target process in the distrubution, create transition from dot to target
                                 this.showProcess(this.graph.processById(target.targetProcess.id));
                                 this.uiGraph.showTransitions(strProcId, target.targetProcess.id, [
                                     { dashed: true, label: target.probability }
+=======
+                            targetProcess.dist.getProbabilities().forEach(({ proc, probability }) => {
+                                // for each target process in the distrubution, create transition from dot to target
+                                this.showProcess(proc);
+
+                                if (isNaN(probability)) {
+                                    console.error('NaN prop for', proc);
+                                }
+                                this.uiGraph.showTransitions(strProcId, proc.id, [
+                                    { dashed: true, label: probability }
+>>>>>>> next-hml
                                 ]);
                             });
                         } else {

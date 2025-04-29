@@ -43,18 +43,8 @@ Assignment
 Process = Summation
 
 Summation
-	= P:Probabilistic _ "+" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
-	// = P:Probabilistic _ "?" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
-	/ P:Probabilistic { return P; }
-	// = P:Composition _ "+" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
-	// / P:Composition { return P; }
-
-Probabilistic
-	= P:Composition _ Prob:Probability _ Q:Probabilistic { return g.newProbabilisticProcess(Prob, [P, Q]); }
-	// = P:Composition _ "?" _ Q:Probabilistic { return Q instanceof pccs.ProbabilisticProcess ? g.newProbabilisticProcess(1, [P].concat(Q.subProcesses)) : g.newProbabilisticProcess(1, [P, Q]); }
-	// = P:Composition _ Prob:Probability _ Q:Probabilistic { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
+	= P:Composition _ "+" _ Q:Summation { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
 	/ P:Composition { return P; }
-	// = P:Composition { return P; }
 
 Composition
 	= P:ActionPrefix _ "|" _ Q:Composition { return Q instanceof ccs.CompositionProcess ? g.newCompositionProcess([P].concat(Q.subProcesses)) : g.newCompositionProcess([P, Q]); }
@@ -80,7 +70,11 @@ Relabel
 
 ParenProcess
 	= "(" _ P:Process _ ")" { return P; }
+	/ "(" _ P:Probabilistic _ ")" { return P; } // Require a parentheses around probabilistic processes
 	/ P:ConstantProcess { return P; }
+
+Probabilistic
+	= P:Process _ Prob:Probability _ Q:Process{ return g.newProbabilisticProcess(Prob, [P, Q]); }
 
 ConstantProcess
 	= "0" { return g.getNullProcess(); }
@@ -92,7 +86,10 @@ Identifier "identifier"
 IdentifierRest
 	= rest:[A-Za-z0-9?!_'\-#^]*  { return rest; }
 
-Probability = "0"? "." N:("0"*[1-9][0-9]*)  { return N; } 
+Integer = [1-9][0-9]*
+
+Probability = num:Integer "/" den:Integer { return {num , den }; }
+            / "0"? "." N:[0-9] { const digits = String(N).length; return { num: parseInt(N), den: Math.pow(10, digits) } } 
 
 Action "action"
 	= ['] label:Label { return new ccs.Action(label, true); }

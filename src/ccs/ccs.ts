@@ -255,12 +255,9 @@ module CCS {
         constructor() {}
 
         addProcesses(processes: Process[]) {
-            console.log('added processes', processes);
             processes.forEach((process) => {
-                console.log('added process', process);
                 this.processes[process.id] = process;
             });
-            console.log(this.processes);
         }
 
         newNamedProcess(processName: string, process: Process) {
@@ -313,7 +310,7 @@ module CCS {
             return (this.processes[result.id] = result);
         }
 
-        newRestrictedProcess(process, restrictedLabels: LabelSet) {
+        newRestrictedProcess(process: CCS.Process, restrictedLabels: LabelSet) {
             //For now return just new instead of structural sharing
             restrictedLabels = this.allRestrictedSets.getOrAdd(restrictedLabels);
             var result = new RestrictionProcess(process, restrictedLabels);
@@ -846,7 +843,6 @@ module CCS {
         dispatchActionPrefixProcess(process: ActionPrefixProcess) {
             var transitionSet = this.cache[process.id];
             if (!transitionSet) {
-                //process.nextProcess.dispatchOn(this).clone();
                 transitionSet = this.cache[process.id] = new TransitionSet([
                     new Transition(process.action, process.nextProcess)
                 ]);
@@ -976,19 +972,29 @@ module CCS {
 
     export function getNSuccessors(succGen: CCS.SuccessorGenerator, process: CCS.Process, maxDepth: number): any {
         var result = {},
-            queue = [[1, process]],
+            queue: [number, CCS.Process][] = [[1, process]],
             depth,
-            fromProcess,
-            transitions;
+            fromProcess: CCS.Process,
+            transitions: TransitionSet;
 
         for (var i = 0; i < queue.length; i++) {
             depth = queue[i][0];
             fromProcess = queue[i][1];
             if (succGen['succGenerator'] instanceof PCCS.StrictSuccessorGenerator) {
+<<<<<<< HEAD
                 result[fromProcess.id] = transitions = succGen['succGenerator'].getSuccessors(fromProcess.id);
 
                 transitions.forEach((t) => {
                     t.getTargetProcesses().forEach((p) => {
+=======
+                result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
+                transitions.forEach((t) => {
+                    if (!(t.targetProcess instanceof PCCS.ProbabilisticProcess)) {
+                        console.log('Unknown target process in t:', t);
+                        throw new Error('Probabilistic transition did not result in a distribution');
+                    }
+                    t.targetProcess.getTargetProcesses().forEach((p) => {
+>>>>>>> next-hml
                         if (!result[t.targetProcess.id] && depth < maxDepth) {
                             queue.push([depth + 1, p]);
                         }
@@ -996,7 +1002,10 @@ module CCS {
                 });
             } else {
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
+<<<<<<< HEAD
 
+=======
+>>>>>>> next-hml
                 transitions.forEach((t) => {
                     if (!result[t.targetProcess.id] && depth < maxDepth) {
                         queue.push([depth + 1, t.targetProcess]);
@@ -1004,7 +1013,6 @@ module CCS {
                 });
             }
         }
-
         return result;
     }
 
