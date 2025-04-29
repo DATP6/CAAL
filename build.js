@@ -21,13 +21,13 @@ var pccsGrammar = _P('lib/pccs_grammar.js');
 pegjs(pccsGrammar, _P('src/ccs/pccs_grammar.pegjs'), 'PCCSParser');
 
 var phmlGrammar = _P('lib/phml_grammar.js');
-pegjs(phmlGrammar, _P('src/ccs/phml_grammar.pegjs'), 'PHMLParser', ["--allowed-start-rules", "start,TopFormula"]);
+pegjs(phmlGrammar, _P('src/ccs/phml_grammar.pegjs'), 'PHMLParser', ['--allowed-start-rules', 'start,TopFormula']);
 
 var hmlGrammar = _P('lib/hml_grammar.js');
-pegjs(hmlGrammar, _P('src/ccs/hml_grammar.pegjs'), 'HMLParser', ["--allowed-start-rules", "start,TopFormula"]);
+pegjs(hmlGrammar, _P('src/ccs/hml_grammar.pegjs'), 'HMLParser', ['--allowed-start-rules', 'start,TopFormula']);
 
 var thmlGrammar = _P('lib/thml_grammar.js');
-pegjs(thmlGrammar, _P('src/ccs/thml_grammar.pegjs'), 'THMLParser', ["--allowed-start-rules", "start,TopFormula"]);
+pegjs(thmlGrammar, _P('src/ccs/thml_grammar.pegjs'), 'THMLParser', ['--allowed-start-rules', 'start,TopFormula']);
 
 // util.js
 var utilTargetFile = _P('lib/util.js');
@@ -51,41 +51,102 @@ var workerVerifier = _P('lib/workers/verifier.js');
 createTscFileTask(workerVerifier, [_P('src/workers/verifier.ts')]);
 
 // build ace
-task('ace-integration', [ccsTargetFile, ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar], function () {
-    jake.mkdirP('modules/ace/lib/ace/mode/ccs');
-    var moduleHeader = 'define(function(require, exports, module) {\n';
-    toWrap = [
-        { source: dataTargetFile, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/data.js'), footer: '\nmodule.exports.MapUtil = MapUtil;\nmodule.exports.SetUtil = SetUtil; });' },
-        { source: utilTargetFile, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/util.js'), footer: '\nmodule.exports.ArrayUtil = ArrayUtil; });' },
-        { source: ccsTargetFile, header: moduleHeader + 'var ArrayUtil = require("./util").ArrayUtil;\n', target: _P('modules/ace/lib/ace/mode/ccs/ccs.js'), footer: '\nmodule.exports.CCS = CCS; module.exports.HML = HML; module.exports.TCCS = TCCS; module.exports.PCCS = PCCS; });' },
-        { source: ccsGrammar, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/ccs_grammar.js'), footer: '\nmodule.exports.CCSParser = CCSParser; });' },
-        { source: pccsGrammar, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/pccs_grammar.js'), footer: '\nmodule.exports.PCCSParser = PCCSParser; });' },
-        { source: tccsGrammar, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/tccs_grammar.js'), footer: '\nmodule.exports.TCCSParser = TCCSParser; });' },
-        { source: hmlGrammar, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/hml_grammar.js'), footer: '\nmodule.exports.HMLParser = HMLParser; });' },
-        { source: thmlGrammar, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/thml_grammar.js'), footer: '\nmodule.exports.THMLParser = THMLParser; });' },
-        { source: phmlGrammar, header: moduleHeader, target: _P('modules/ace/lib/ace/mode/ccs/phml_grammar.js'), footer: '\nmodule.exports.PHMLParser = PHMLParser; });' }
-    ];
-    toWrap.forEach(function (data) {
-        fs.writeFileSync(data.target, data.header);
-        fs.appendFileSync(data.target, fs.readFileSync(data.source));
-        fs.appendFileSync(data.target, data.footer);
-    });
-});
+task(
+    'ace-integration',
+    [ccsTargetFile, ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar],
+    function () {
+        jake.mkdirP('modules/ace/lib/ace/mode/ccs');
+        var moduleHeader = 'define(function(require, exports, module) {\n';
+        toWrap = [
+            {
+                source: dataTargetFile,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/data.js'),
+                footer: '\nmodule.exports.MapUtil = MapUtil;\nmodule.exports.SetUtil = SetUtil; });'
+            },
+            {
+                source: utilTargetFile,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/util.js'),
+                footer: '\nmodule.exports.ArrayUtil = ArrayUtil; });'
+            },
+            {
+                source: ccsTargetFile,
+                header: moduleHeader + 'var ArrayUtil = require("./util").ArrayUtil;\n',
+                target: _P('modules/ace/lib/ace/mode/ccs/ccs.js'),
+                footer: '\nmodule.exports.CCS = CCS; module.exports.HML = HML; module.exports.TCCS = TCCS; module.exports.PCCS = PCCS; });'
+            },
+            {
+                source: ccsGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/ccs_grammar.js'),
+                footer: '\nmodule.exports.CCSParser = CCSParser; });'
+            },
+            {
+                source: pccsGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/pccs_grammar.js'),
+                footer: '\nmodule.exports.PCCSParser = PCCSParser; });'
+            },
+            {
+                source: tccsGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/tccs_grammar.js'),
+                footer: '\nmodule.exports.TCCSParser = TCCSParser; });'
+            },
+            {
+                source: hmlGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/hml_grammar.js'),
+                footer: '\nmodule.exports.HMLParser = HMLParser; });'
+            },
+            {
+                source: thmlGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/thml_grammar.js'),
+                footer: '\nmodule.exports.THMLParser = THMLParser; });'
+            },
+            {
+                source: phmlGrammar,
+                header: moduleHeader,
+                target: _P('modules/ace/lib/ace/mode/ccs/phml_grammar.js'),
+                footer: '\nmodule.exports.PHMLParser = PHMLParser; });'
+            }
+        ];
+        toWrap.forEach(function (data) {
+            fs.writeFileSync(data.target, data.header);
+            fs.appendFileSync(data.target, fs.readFileSync(data.source));
+            fs.appendFileSync(data.target, data.footer);
+        });
+    }
+);
 
 task('ace', ['ace-integration'], { async: true }, function () {
-    jake.exec('node modules/ace/Makefile.ccs.js --target lib/ace', { printStderr: true }, function () { complete(); });
+    jake.exec('node modules/ace/Makefile.ccs.js --target lib/ace', { printStderr: true }, function () {
+        complete();
+    });
 });
 
 // main.js
 var mainTargetFile = _P('lib/main.js');
 var mainSourceFiles = ['src/main.ts'].map(_P);
-createTscFileTask(mainTargetFile, mainSourceFiles, { definitionFile: true, sourceMap: true }, 'Compile Main', addVersion);
+createTscFileTask(
+    mainTargetFile,
+    mainSourceFiles,
+    { definitionFile: true, sourceMap: true },
+    'Compile Main',
+    addVersion
+);
 
 task('grammars', [ccsGrammar, pccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar, phmlGrammar]);
 
-task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', workerVerifier, mainTargetFile], function () {
-    console.log('Done Building');
-});
+task(
+    'all',
+    [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', workerVerifier, mainTargetFile],
+    function () {
+        console.log('Done Building');
+    }
+);
 
 task('default', ['all']);
 
@@ -93,7 +154,11 @@ task('default', ['all']);
 
 function createTscFileTask(targetFile, sourceFiles, options, comment, onFinish) {
     options = options || {};
-    onFinish = onFinish || function (callback) { callback(); };
+    onFinish =
+        onFinish ||
+        function (callback) {
+            callback();
+        };
     if (comment) {
         desc(comment);
     }
@@ -106,15 +171,22 @@ function createTscFileTask(targetFile, sourceFiles, options, comment, onFinish) 
         if (options.sourceMap) command += ' --sourcemap';
         command += ' --target ES5';
         command += ' --out ' + targetFile + ' ' + sourceFiles.join(' ');
-        jake.exec(command, { printStdout: true }, function () { onFinish(complete); });
+        jake.exec(command, { printStdout: true }, function () {
+            onFinish(complete);
+        });
     });
 }
 
 function pegjs(targetFile, sourceFile, variable, extraOptions) {
     extraOptions = extraOptions || [];
     file(targetFile, [sourceFile], { async: true }, function () {
-        var command = [PEGJS, '--cache', '-e', variable].concat(extraOptions).concat([sourceFile, targetFile]).join(' ');
-        jake.exec(command, { printStdout: true }, function () { complete(); });
+        var command = [PEGJS, '--cache', '-e', variable]
+            .concat(extraOptions)
+            .concat([sourceFile, targetFile])
+            .join(' ');
+        jake.exec(command, { printStdout: true }, function () {
+            complete();
+        });
     });
 }
 
@@ -122,8 +194,8 @@ function addVersion(callback) {
     child_process.execFile('git', ['describe', '--tags', '--long'], function (error, stdout, stderr) {
         if (error) throw error;
         //remove newlines
-        var tag = stdout.replace(/(\r\n|\n|\r)/gm, "");
-        if (tag.length < 3) throw "Bad tag: " + tag;
+        var tag = stdout.replace(/(\r\n|\n|\r)/gm, '');
+        if (tag.length < 3) throw 'Bad tag: ' + tag;
         fs.appendFileSync(mainTargetFile, '\nvar Version = "' + tag + '";');
         callback();
     });

@@ -20,27 +20,27 @@ and limitations under the License.
 /////////////////////////////
 
 /**
-  * Represents a raw buffer of binary data, which is used to store data for the 
-  * different typed arrays. ArrayBuffers cannot be read from or written to directly, 
-  * but can be passed to a typed array or DataView Object to interpret the raw 
-  * buffer as needed. 
-  */
+ * Represents a raw buffer of binary data, which is used to store data for the
+ * different typed arrays. ArrayBuffers cannot be read from or written to directly,
+ * but can be passed to a typed array or DataView Object to interpret the raw
+ * buffer as needed.
+ */
 interface ArrayBuffer {
     /**
-      * Read-only. The length of the ArrayBuffer (in bytes).
-      */
+     * Read-only. The length of the ArrayBuffer (in bytes).
+     */
     byteLength: number;
 
     /**
-      * Returns a section of an ArrayBuffer.
-      */
-    slice(begin:number, end?:number): ArrayBuffer;
+     * Returns a section of an ArrayBuffer.
+     */
+    slice(begin: number, end?: number): ArrayBuffer;
 }
 
 declare var ArrayBuffer: {
     prototype: ArrayBuffer;
     new (byteLength: number): ArrayBuffer;
-}
+};
 
 interface ArrayBufferView {
     buffer: ArrayBuffer;
@@ -49,53 +49,53 @@ interface ArrayBufferView {
 }
 
 /**
-  * A typed array of 8-bit integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 8-bit integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Int8Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
 
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Int8Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Int8Array view of the ArrayBuffer store for this array, referencing the elements at begin, inclusive, up to end, exclusive. 
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Int8Array view of the ArrayBuffer store for this array, referencing the elements at begin, inclusive, up to end, exclusive.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Int8Array;
 }
 declare var Int8Array: {
@@ -105,55 +105,55 @@ declare var Int8Array: {
     new (array: number[]): Int8Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Int8Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * A typed array of 8-bit unsigned integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 8-bit unsigned integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Uint8Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Uint8Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Uint8Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray. 
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Uint8Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Uint8Array;
 }
 declare var Uint8Array: {
@@ -163,55 +163,55 @@ declare var Uint8Array: {
     new (array: number[]): Uint8Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Uint8Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * A typed array of 16-bit integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 16-bit integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Int16Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Int16Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Int16Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray. 
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Int16Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Int16Array;
 }
 declare var Int16Array: {
@@ -221,55 +221,55 @@ declare var Int16Array: {
     new (array: number[]): Int16Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Int16Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * A typed array of 16-bit unsigned integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 16-bit unsigned integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Uint16Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Uint16Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Uint16Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Uint16Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Uint16Array;
 }
 declare var Uint16Array: {
@@ -279,55 +279,55 @@ declare var Uint16Array: {
     new (array: number[]): Uint16Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Uint16Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * A typed array of 32-bit integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 32-bit integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Int32Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Int32Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Int32Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray. 
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Int32Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Int32Array;
 }
 declare var Int32Array: {
@@ -337,55 +337,55 @@ declare var Int32Array: {
     new (array: number[]): Int32Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Int32Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * A typed array of 32-bit unsigned integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 32-bit unsigned integer values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Uint32Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Uint32Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Int8Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray. 
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Int8Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Uint32Array;
 }
 declare var Uint32Array: {
@@ -395,55 +395,55 @@ declare var Uint32Array: {
     new (array: number[]): Uint32Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Uint32Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * A typed array of 32-bit float values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 32-bit float values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Float32Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Float32Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Float32Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray. 
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Float32Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Float32Array;
 }
 declare var Float32Array: {
@@ -453,55 +453,55 @@ declare var Float32Array: {
     new (array: number[]): Float32Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Float32Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * A typed array of 64-bit float values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
-  */
+ * A typed array of 64-bit float values. The contents are initialized to 0. If the requested number of bytes could not be allocated an exception is raised.
+ */
 interface Float64Array extends ArrayBufferView {
     /**
-      * The size in bytes of each element in the array. 
-      */
+     * The size in bytes of each element in the array.
+     */
     BYTES_PER_ELEMENT: number;
 
     /**
-      * The length of the array.
-      */
+     * The length of the array.
+     */
     length: number;
     [index: number]: number;
 
     /**
-      * Gets the element at the specified index.
-      * @param index The index at which to get the element of the array.
-      */
+     * Gets the element at the specified index.
+     * @param index The index at which to get the element of the array.
+     */
     get(index: number): number;
 
     /**
-      * Sets a value or an array of values.
-      * @param index The index of the location to set.
-      * @param value The value to set.
-      */
+     * Sets a value or an array of values.
+     * @param index The index of the location to set.
+     * @param value The value to set.
+     */
     set(index: number, value: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: Float64Array, offset?: number): void;
 
     /**
-      * Sets a value or an array of values.
-      * @param array A typed or untyped array of values to set.
-      * @param offset The index in the current array at which the values are to be written.
-      */
+     * Sets a value or an array of values.
+     * @param array A typed or untyped array of values to set.
+     * @param offset The index in the current array at which the values are to be written.
+     */
     set(array: number[], offset?: number): void;
 
     /**
-      * Gets a new Float64Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray. 
-      * @param begin The index of the beginning of the array.
-      * @param end The index of the end of the array.
-      */
+     * Gets a new Float64Array view of the ArrayBuffer Object store for this array, specifying the first and last members of the subarray.
+     * @param begin The index of the beginning of the array.
+     * @param end The index of the end of the array.
+     */
     subarray(begin: number, end?: number): Float64Array;
 }
 declare var Float64Array: {
@@ -511,126 +511,126 @@ declare var Float64Array: {
     new (array: number[]): Float64Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Float64Array;
     BYTES_PER_ELEMENT: number;
-}
+};
 
 /**
-  * You can use a DataView object to read and write the different kinds of binary data to any location in the ArrayBuffer. 
-  */
+ * You can use a DataView object to read and write the different kinds of binary data to any location in the ArrayBuffer.
+ */
 interface DataView extends ArrayBufferView {
     /**
-      * Gets the Int8 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Int8 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getInt8(byteOffset: number): number;
 
     /**
-      * Gets the Uint8 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Uint8 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getUint8(byteOffset: number): number;
 
     /**
-      * Gets the Int16 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Int16 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getInt16(byteOffset: number, littleEndian?: boolean): number;
 
     /**
-      * Gets the Uint16 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Uint16 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getUint16(byteOffset: number, littleEndian?: boolean): number;
 
     /**
-      * Gets the Int32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Int32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getInt32(byteOffset: number, littleEndian?: boolean): number;
 
     /**
-      * Gets the Uint32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Uint32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getUint32(byteOffset: number, littleEndian?: boolean): number;
 
     /**
-      * Gets the Float32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Float32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getFloat32(byteOffset: number, littleEndian?: boolean): number;
 
     /**
-      * Gets the Float64 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. 
-      * @param byteOffset The place in the buffer at which the value should be retrieved.
-      */
+     * Gets the Float64 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.
+     * @param byteOffset The place in the buffer at which the value should be retrieved.
+     */
     getFloat64(byteOffset: number, littleEndian?: boolean): number;
 
     /**
-      * Stores an Int8 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      */
+     * Stores an Int8 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     */
     setInt8(byteOffset: number, value: number): void;
 
     /**
-      * Stores an Uint8 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      */
+     * Stores an Uint8 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     */
     setUint8(byteOffset: number, value: number): void;
 
     /**
-      * Stores an Int16 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
-      */
+     * Stores an Int16 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
+     */
     setInt16(byteOffset: number, value: number, littleEndian?: boolean): void;
 
     /**
-      * Stores an Uint16 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
-      */
+     * Stores an Uint16 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
+     */
     setUint16(byteOffset: number, value: number, littleEndian?: boolean): void;
 
     /**
-      * Stores an Int32 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
-      */
+     * Stores an Int32 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
+     */
     setInt32(byteOffset: number, value: number, littleEndian?: boolean): void;
 
     /**
-      * Stores an Uint32 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
-      */
+     * Stores an Uint32 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
+     */
     setUint32(byteOffset: number, value: number, littleEndian?: boolean): void;
 
     /**
-      * Stores an Float32 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
-      */
+     * Stores an Float32 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
+     */
     setFloat32(byteOffset: number, value: number, littleEndian?: boolean): void;
 
     /**
-      * Stores an Float64 value at the specified byte offset from the start of the view. 
-      * @param byteOffset The place in the buffer at which the value should be set.
-      * @param value The value to set.
-      * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
-      */
+     * Stores an Float64 value at the specified byte offset from the start of the view.
+     * @param byteOffset The place in the buffer at which the value should be set.
+     * @param value The value to set.
+     * @param littleEndian If false or undefined, a big-endian value should be written, otherwise a little-endian value should be written.
+     */
     setFloat64(byteOffset: number, value: number, littleEndian?: boolean): void;
 }
 declare var DataView: {
     prototype: DataView;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): DataView;
-}
+};
 
 /////////////////////////////
 /// IE11 ECMAScript Extensions
@@ -647,7 +647,7 @@ interface Map<K, V> {
 }
 declare var Map: {
     new <K, V>(): Map<K, V>;
-}
+};
 
 interface WeakMap<K, V> {
     clear(): void;
@@ -658,7 +658,7 @@ interface WeakMap<K, V> {
 }
 declare var WeakMap: {
     new <K, V>(): WeakMap<K, V>;
-}
+};
 
 interface Set<T> {
     add(value: T): Set<T>;
@@ -670,10 +670,9 @@ interface Set<T> {
 }
 declare var Set: {
     new <T>(): Set<T>;
-}
+};
 
 declare module Intl {
-
     interface CollatorOptions {
         usage?: string;
         localeMatcher?: string;
@@ -704,7 +703,7 @@ declare module Intl {
         (locale?: string, options?: CollatorOptions): Collator;
         supportedLocalesOf(locales: string[], options?: CollatorOptions): string[];
         supportedLocalesOf(locale: string, options?: CollatorOptions): string[];
-    }
+    };
 
     interface NumberFormatOptions {
         localeMatcher?: string;
@@ -739,7 +738,7 @@ declare module Intl {
         (locale?: string, options?: NumberFormatOptions): Collator;
         supportedLocalesOf(locales: string[], options?: NumberFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: NumberFormatOptions): string[];
-    }
+    };
 
     interface DateTimeFormatOptions {
         localeMatcher?: string;
@@ -784,63 +783,62 @@ declare module Intl {
         (locale?: string, options?: DateTimeFormatOptions): Collator;
         supportedLocalesOf(locales: string[], options?: DateTimeFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: DateTimeFormatOptions): string[];
-    }
+    };
 }
 
 interface String {
     /**
-      * Determines whether two strings are equivalent in the current locale.
-      * @param that String to compare to target string
-      * @param locales An array of locale strings that contain one or more language or locale tags. If you include more than one locale string, list them in descending order of priority so that the first entry is the preferred locale. If you omit this parameter, the default locale of the JavaScript runtime is used. This parameter must conform to BCP 47 standards; see the Intl.Collator object for details.
-      * @param options An object that contains one or more properties that specify comparison options. see the Intl.Collator object for details.
-      */
+     * Determines whether two strings are equivalent in the current locale.
+     * @param that String to compare to target string
+     * @param locales An array of locale strings that contain one or more language or locale tags. If you include more than one locale string, list them in descending order of priority so that the first entry is the preferred locale. If you omit this parameter, the default locale of the JavaScript runtime is used. This parameter must conform to BCP 47 standards; see the Intl.Collator object for details.
+     * @param options An object that contains one or more properties that specify comparison options. see the Intl.Collator object for details.
+     */
     localeCompare(that: string, locales: string[], options?: Intl.CollatorOptions): number;
 
     /**
-      * Determines whether two strings are equivalent in the current locale.
-      * @param that String to compare to target string
-      * @param locale Locale tag. If you omit this parameter, the default locale of the JavaScript runtime is used. This parameter must conform to BCP 47 standards; see the Intl.Collator object for details.
-      * @param options An object that contains one or more properties that specify comparison options. see the Intl.Collator object for details.
-      */
+     * Determines whether two strings are equivalent in the current locale.
+     * @param that String to compare to target string
+     * @param locale Locale tag. If you omit this parameter, the default locale of the JavaScript runtime is used. This parameter must conform to BCP 47 standards; see the Intl.Collator object for details.
+     * @param options An object that contains one or more properties that specify comparison options. see the Intl.Collator object for details.
+     */
     localeCompare(that: string, locale: string, options?: Intl.CollatorOptions): number;
 }
 
 interface Number {
     /**
-      * Converts a number to a string by using the current or specified locale. 
-      * @param locales An array of locale strings that contain one or more language or locale tags. If you include more than one locale string, list them in descending order of priority so that the first entry is the preferred locale. If you omit this parameter, the default locale of the JavaScript runtime is used.
-      * @param options An object that contains one or more properties that specify comparison options.
-      */
+     * Converts a number to a string by using the current or specified locale.
+     * @param locales An array of locale strings that contain one or more language or locale tags. If you include more than one locale string, list them in descending order of priority so that the first entry is the preferred locale. If you omit this parameter, the default locale of the JavaScript runtime is used.
+     * @param options An object that contains one or more properties that specify comparison options.
+     */
     toLocaleString(locales?: string[], options?: Intl.NumberFormatOptions): string;
 
     /**
-      * Converts a number to a string by using the current or specified locale. 
-      * @param locale Locale tag. If you omit this parameter, the default locale of the JavaScript runtime is used.
-      * @param options An object that contains one or more properties that specify comparison options.
-      */
+     * Converts a number to a string by using the current or specified locale.
+     * @param locale Locale tag. If you omit this parameter, the default locale of the JavaScript runtime is used.
+     * @param options An object that contains one or more properties that specify comparison options.
+     */
     toLocaleString(locale?: string, options?: Intl.NumberFormatOptions): string;
 }
 
 interface Date {
     /**
-      * Converts a date to a string by using the current or specified locale.  
-      * @param locales An array of locale strings that contain one or more language or locale tags. If you include more than one locale string, list them in descending order of priority so that the first entry is the preferred locale. If you omit this parameter, the default locale of the JavaScript runtime is used.
-      * @param options An object that contains one or more properties that specify comparison options.
-      */
+     * Converts a date to a string by using the current or specified locale.
+     * @param locales An array of locale strings that contain one or more language or locale tags. If you include more than one locale string, list them in descending order of priority so that the first entry is the preferred locale. If you omit this parameter, the default locale of the JavaScript runtime is used.
+     * @param options An object that contains one or more properties that specify comparison options.
+     */
     toLocaleString(locales?: string[], options?: Intl.DateTimeFormatOptions): string;
 
     /**
-      * Converts a date to a string by using the current or specified locale.  
-      * @param locale Locale tag. If you omit this parameter, the default locale of the JavaScript runtime is used.
-      * @param options An object that contains one or more properties that specify comparison options.
-      */
+     * Converts a date to a string by using the current or specified locale.
+     * @param locale Locale tag. If you omit this parameter, the default locale of the JavaScript runtime is used.
+     * @param options An object that contains one or more properties that specify comparison options.
+     */
     toLocaleString(locale?: string, options?: Intl.DateTimeFormatOptions): string;
 }
 
 /////////////////////////////
 /// IE Worker APIs
 /////////////////////////////
-
 
 interface Console {
     info(message?: any, ...optionalParams: any[]): void;
@@ -866,8 +864,8 @@ interface Console {
 }
 declare var Console: {
     prototype: Console;
-    new(): Console;
-}
+    new (): Console;
+};
 
 interface NavigatorID {
     appVersion: string;
@@ -889,12 +887,20 @@ interface MessageEvent extends Event {
     origin: string;
     data: any;
     ports: any;
-    initMessageEvent(typeArg: string, canBubbleArg: boolean, cancelableArg: boolean, dataArg: any, originArg: string, lastEventIdArg: string, sourceArg: any): void;
+    initMessageEvent(
+        typeArg: string,
+        canBubbleArg: boolean,
+        cancelableArg: boolean,
+        dataArg: any,
+        originArg: string,
+        lastEventIdArg: string,
+        sourceArg: any
+    ): void;
 }
 declare var MessageEvent: {
     prototype: MessageEvent;
-    new(): MessageEvent;
-}
+    new (): MessageEvent;
+};
 
 interface XMLHttpRequest extends EventTarget {
     responseBody: any;
@@ -930,26 +936,26 @@ interface XMLHttpRequest extends EventTarget {
     UNSENT: number;
     OPENED: number;
     HEADERS_RECEIVED: number;
-    addEventListener(type: "timeout", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "readystatechange", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "load", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "progress", listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "abort", listener: (ev: any) => any, useCapture?: boolean): void;
-    addEventListener(type: "loadend", listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "loadstart", listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'timeout', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'readystatechange', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'load', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'progress', listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'abort', listener: (ev: any) => any, useCapture?: boolean): void;
+    addEventListener(type: 'loadend', listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'loadstart', listener: (ev: Event) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var XMLHttpRequest: {
     prototype: XMLHttpRequest;
-    new(): XMLHttpRequest;
+    new (): XMLHttpRequest;
     LOADING: number;
     DONE: number;
     UNSENT: number;
     OPENED: number;
     HEADERS_RECEIVED: number;
     create(): XMLHttpRequest;
-}
+};
 
 interface EventListener {
     (evt: Event): void;
@@ -965,10 +971,10 @@ interface EventException {
 }
 declare var EventException: {
     prototype: EventException;
-    new(): EventException;
+    new (): EventException;
     DISPATCH_REQUEST_ERR: number;
     UNSPECIFIED_EVENT_TYPE_ERR: number;
-}
+};
 
 interface NavigatorOnLine {
     onLine: boolean;
@@ -996,11 +1002,11 @@ interface Event {
 }
 declare var Event: {
     prototype: Event;
-    new(): Event;
+    new (): Event;
     CAPTURING_PHASE: number;
     AT_TARGET: number;
     BUBBLING_PHASE: number;
-}
+};
 
 interface ImageData {
     width: number;
@@ -1009,8 +1015,8 @@ interface ImageData {
 }
 declare var ImageData: {
     prototype: ImageData;
-    new(): ImageData;
-}
+    new (): ImageData;
+};
 
 interface DOMException {
     code: number;
@@ -1047,7 +1053,7 @@ interface DOMException {
 }
 declare var DOMException: {
     prototype: DOMException;
-    new(): DOMException;
+    new (): DOMException;
     HIERARCHY_REQUEST_ERR: number;
     NO_MODIFICATION_ALLOWED_ERR: number;
     INVALID_MODIFICATION_ERR: number;
@@ -1075,7 +1081,7 @@ declare var DOMException: {
     INVALID_NODE_TYPE_ERR: number;
     DATA_CLONE_ERR: number;
     TIMEOUT_ERR: number;
-}
+};
 
 interface ErrorEvent extends Event {
     colno: number;
@@ -1083,12 +1089,19 @@ interface ErrorEvent extends Event {
     error: any;
     lineno: number;
     message: string;
-    initErrorEvent(typeArg: string, canBubbleArg: boolean, cancelableArg: boolean, messageArg: string, filenameArg: string, linenoArg: number): void;
+    initErrorEvent(
+        typeArg: string,
+        canBubbleArg: boolean,
+        cancelableArg: boolean,
+        messageArg: string,
+        filenameArg: string,
+        linenoArg: number
+    ): void;
 }
 declare var ErrorEvent: {
     prototype: ErrorEvent;
-    new(): ErrorEvent;
-}
+    new (): ErrorEvent;
+};
 
 interface MSStreamReader extends MSBaseReader {
     error: DOMError;
@@ -1099,8 +1112,8 @@ interface MSStreamReader extends MSBaseReader {
 }
 declare var MSStreamReader: {
     prototype: MSStreamReader;
-    new(): MSStreamReader;
-}
+    new (): MSStreamReader;
+};
 
 interface MessageChannel {
     port2: MessagePort;
@@ -1108,8 +1121,8 @@ interface MessageChannel {
 }
 declare var MessageChannel: {
     prototype: MessageChannel;
-    new(): MessageChannel;
-}
+    new (): MessageChannel;
+};
 
 interface DOMError {
     name: string;
@@ -1117,19 +1130,26 @@ interface DOMError {
 }
 declare var DOMError: {
     prototype: DOMError;
-    new(): DOMError;
-}
+    new (): DOMError;
+};
 
 interface CloseEvent extends Event {
     wasClean: boolean;
     reason: string;
     code: number;
-    initCloseEvent(typeArg: string, canBubbleArg: boolean, cancelableArg: boolean, wasCleanArg: boolean, codeArg: number, reasonArg: string): void;
+    initCloseEvent(
+        typeArg: string,
+        canBubbleArg: boolean,
+        cancelableArg: boolean,
+        wasCleanArg: boolean,
+        codeArg: number,
+        reasonArg: string
+    ): void;
 }
 declare var CloseEvent: {
     prototype: CloseEvent;
-    new(): CloseEvent;
-}
+    new (): CloseEvent;
+};
 
 interface WebSocket extends EventTarget {
     protocol: string;
@@ -1148,32 +1168,39 @@ interface WebSocket extends EventTarget {
     CLOSING: number;
     CONNECTING: number;
     CLOSED: number;
-    addEventListener(type: "open", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "message", listener: (ev: MessageEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "close", listener: (ev: CloseEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'open', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'message', listener: (ev: MessageEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'close', listener: (ev: CloseEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var WebSocket: {
     prototype: WebSocket;
-    new(url: string, protocols?: string): WebSocket;
-    new(url: string, protocols?: string[]): WebSocket;
+    new (url: string, protocols?: string): WebSocket;
+    new (url: string, protocols?: string[]): WebSocket;
     OPEN: number;
     CLOSING: number;
     CONNECTING: number;
     CLOSED: number;
-}
+};
 
 interface ProgressEvent extends Event {
     loaded: number;
     lengthComputable: boolean;
     total: number;
-    initProgressEvent(typeArg: string, canBubbleArg: boolean, cancelableArg: boolean, lengthComputableArg: boolean, loadedArg: number, totalArg: number): void;
+    initProgressEvent(
+        typeArg: string,
+        canBubbleArg: boolean,
+        cancelableArg: boolean,
+        lengthComputableArg: boolean,
+        loadedArg: number,
+        totalArg: number
+    ): void;
 }
 declare var ProgressEvent: {
     prototype: ProgressEvent;
-    new(): ProgressEvent;
-}
+    new (): ProgressEvent;
+};
 
 interface IDBObjectStore {
     indexNames: DOMStringList;
@@ -1193,8 +1220,8 @@ interface IDBObjectStore {
 }
 declare var IDBObjectStore: {
     prototype: IDBObjectStore;
-    new(): IDBObjectStore;
-}
+    new (): IDBObjectStore;
+};
 
 interface IDBVersionChangeEvent extends Event {
     newVersion: number;
@@ -1202,8 +1229,8 @@ interface IDBVersionChangeEvent extends Event {
 }
 declare var IDBVersionChangeEvent: {
     prototype: IDBVersionChangeEvent;
-    new(): IDBVersionChangeEvent;
-}
+    new (): IDBVersionChangeEvent;
+};
 
 interface IDBIndex {
     unique: boolean;
@@ -1218,8 +1245,8 @@ interface IDBIndex {
 }
 declare var IDBIndex: {
     prototype: IDBIndex;
-    new(): IDBIndex;
-}
+    new (): IDBIndex;
+};
 
 interface FileList {
     length: number;
@@ -1228,8 +1255,8 @@ interface FileList {
 }
 declare var FileList: {
     prototype: FileList;
-    new(): FileList;
-}
+    new (): FileList;
+};
 
 interface IDBCursor {
     source: any;
@@ -1247,12 +1274,12 @@ interface IDBCursor {
 }
 declare var IDBCursor: {
     prototype: IDBCursor;
-    new(): IDBCursor;
+    new (): IDBCursor;
     PREV: string;
     PREV_NO_DUPLICATE: string;
     NEXT: string;
     NEXT_NO_DUPLICATE: string;
-}
+};
 
 interface File extends Blob {
     lastModifiedDate: any;
@@ -1260,16 +1287,16 @@ interface File extends Blob {
 }
 declare var File: {
     prototype: File;
-    new(): File;
-}
+    new (): File;
+};
 
 interface IDBCursorWithValue extends IDBCursor {
     value: any;
 }
 declare var IDBCursorWithValue: {
     prototype: IDBCursorWithValue;
-    new(): IDBCursorWithValue;
-}
+    new (): IDBCursorWithValue;
+};
 
 interface XMLHttpRequestEventTarget extends EventTarget {
     onprogress: (ev: ProgressEvent) => any;
@@ -1279,19 +1306,19 @@ interface XMLHttpRequestEventTarget extends EventTarget {
     onabort: (ev: any) => any;
     onloadstart: (ev: Event) => any;
     onloadend: (ev: ProgressEvent) => any;
-    addEventListener(type: "progress", listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "load", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "timeout", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "abort", listener: (ev: any) => any, useCapture?: boolean): void;
-    addEventListener(type: "loadstart", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "loadend", listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'progress', listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'load', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'timeout', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'abort', listener: (ev: any) => any, useCapture?: boolean): void;
+    addEventListener(type: 'loadstart', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'loadend', listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var XMLHttpRequestEventTarget: {
     prototype: XMLHttpRequestEventTarget;
-    new(): XMLHttpRequestEventTarget;
-}
+    new (): XMLHttpRequestEventTarget;
+};
 
 interface MSBaseReader extends EventTarget {
     onprogress: (ev: ProgressEvent) => any;
@@ -1306,12 +1333,12 @@ interface MSBaseReader extends EventTarget {
     LOADING: number;
     EMPTY: number;
     DONE: number;
-    addEventListener(type: "progress", listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "abort", listener: (ev: any) => any, useCapture?: boolean): void;
-    addEventListener(type: "loadend", listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "load", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "loadstart", listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'progress', listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'abort', listener: (ev: any) => any, useCapture?: boolean): void;
+    addEventListener(type: 'loadend', listener: (ev: ProgressEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'load', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'loadstart', listener: (ev: Event) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 
@@ -1323,12 +1350,12 @@ interface IDBKeyRange {
 }
 declare var IDBKeyRange: {
     prototype: IDBKeyRange;
-    new(): IDBKeyRange;
+    new (): IDBKeyRange;
     bound(lower: any, upper: any, lowerOpen?: boolean, upperOpen?: boolean): IDBKeyRange;
     only(value: any): IDBKeyRange;
     lowerBound(bound: any, open?: boolean): IDBKeyRange;
     upperBound(bound: any, open?: boolean): IDBKeyRange;
-}
+};
 
 interface WindowConsole {
     console: Console;
@@ -1346,18 +1373,18 @@ interface IDBTransaction extends EventTarget {
     READ_ONLY: string;
     VERSION_CHANGE: string;
     READ_WRITE: string;
-    addEventListener(type: "complete", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "abort", listener: (ev: any) => any, useCapture?: boolean): void;
+    addEventListener(type: 'complete', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'abort', listener: (ev: any) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var IDBTransaction: {
     prototype: IDBTransaction;
-    new(): IDBTransaction;
+    new (): IDBTransaction;
     READ_ONLY: string;
     VERSION_CHANGE: string;
     READ_WRITE: string;
-}
+};
 
 interface WindowBase64 {
     btoa(rawString: string): string;
@@ -1374,14 +1401,14 @@ interface IDBDatabase extends EventTarget {
     close(): void;
     transaction(storeNames: any, mode?: string): IDBTransaction;
     deleteObjectStore(name: string): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "abort", listener: (ev: any) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'abort', listener: (ev: any) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var IDBDatabase: {
     prototype: IDBDatabase;
-    new(): IDBDatabase;
-}
+    new (): IDBDatabase;
+};
 
 interface DOMStringList {
     length: number;
@@ -1391,22 +1418,22 @@ interface DOMStringList {
 }
 declare var DOMStringList: {
     prototype: DOMStringList;
-    new(): DOMStringList;
-}
+    new (): DOMStringList;
+};
 
 interface IDBOpenDBRequest extends IDBRequest {
     onupgradeneeded: (ev: IDBVersionChangeEvent) => any;
     onblocked: (ev: Event) => any;
-    addEventListener(type: "success", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "upgradeneeded", listener: (ev: IDBVersionChangeEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "blocked", listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'success', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'upgradeneeded', listener: (ev: IDBVersionChangeEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'blocked', listener: (ev: Event) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var IDBOpenDBRequest: {
     prototype: IDBOpenDBRequest;
-    new(): IDBOpenDBRequest;
-}
+    new (): IDBOpenDBRequest;
+};
 
 interface MSUnsafeFunctionCallback {
     (): any;
@@ -1420,27 +1447,27 @@ interface IDBRequest extends EventTarget {
     onerror: (ev: ErrorEvent) => any;
     readyState: string;
     result: any;
-    addEventListener(type: "success", listener: (ev: Event) => any, useCapture?: boolean): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'success', listener: (ev: Event) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var IDBRequest: {
     prototype: IDBRequest;
-    new(): IDBRequest;
-}
+    new (): IDBRequest;
+};
 
 interface MessagePort extends EventTarget {
     onmessage: (ev: MessageEvent) => any;
     close(): void;
     postMessage(message?: any, ports?: any): void;
     start(): void;
-    addEventListener(type: "message", listener: (ev: MessageEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'message', listener: (ev: MessageEvent) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var MessagePort: {
     prototype: MessagePort;
-    new(): MessagePort;
-}
+    new (): MessagePort;
+};
 
 interface FileReader extends MSBaseReader {
     error: DOMError;
@@ -1450,8 +1477,8 @@ interface FileReader extends MSBaseReader {
 }
 declare var FileReader: {
     prototype: FileReader;
-    new(): FileReader;
-}
+    new (): FileReader;
+};
 
 interface BlobPropertyBag {
     type?: string;
@@ -1468,7 +1495,7 @@ interface Blob {
 declare var Blob: {
     prototype: Blob;
     new (blobParts?: any[], options?: BlobPropertyBag): Blob;
-}
+};
 
 interface MSStream {
     type: string;
@@ -1477,8 +1504,8 @@ interface MSStream {
 }
 declare var MSStream: {
     prototype: MSStream;
-    new(): MSStream;
-}
+    new (): MSStream;
+};
 
 interface MSBlobBuilder {
     append(data: any, endings?: string): void;
@@ -1486,8 +1513,8 @@ interface MSBlobBuilder {
 }
 declare var MSBlobBuilder: {
     prototype: MSBlobBuilder;
-    new(): MSBlobBuilder;
-}
+    new (): MSBlobBuilder;
+};
 
 interface IDBFactory {
     open(name: string, version?: number): IDBOpenDBRequest;
@@ -1496,12 +1523,12 @@ interface IDBFactory {
 }
 declare var IDBFactory: {
     prototype: IDBFactory;
-    new(): IDBFactory;
-}
+    new (): IDBFactory;
+};
 
 interface AbstractWorker extends EventTarget {
     onerror: (ev: ErrorEvent) => any;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 
@@ -1533,14 +1560,14 @@ interface Worker extends AbstractWorker {
     onmessage: (ev: MessageEvent) => any;
     postMessage(message: any, ports?: any): void;
     terminate(): void;
-    addEventListener(type: "error", listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
-    addEventListener(type: "message", listener: (ev: MessageEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'error', listener: (ev: ErrorEvent) => any, useCapture?: boolean): void;
+    addEventListener(type: 'message', listener: (ev: MessageEvent) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListener, useCapture?: boolean): void;
 }
 declare var Worker: {
     prototype: Worker;
-    new(stringUrl: string): Worker;
-}
+    new (stringUrl: string): Worker;
+};
 
 interface MSExecAtPriorityFunctionCallback {
     (...args: any[]): any;
@@ -1553,8 +1580,8 @@ interface MSAppView {
 }
 declare var MSAppView: {
     prototype: MSAppView;
-    new(): MSAppView;
-}
+    new (): MSAppView;
+};
 
 interface WorkerLocation {
     hash: string;
@@ -1569,8 +1596,8 @@ interface WorkerLocation {
 }
 declare var WorkerLocation: {
     prototype: WorkerLocation;
-    new(): WorkerLocation;
-}
+    new (): WorkerLocation;
+};
 
 interface FileReaderSync {
     readAsArrayBuffer(blob: Blob): any;
@@ -1579,8 +1606,8 @@ interface FileReaderSync {
 }
 declare var FileReaderSync: {
     prototype: FileReaderSync;
-    new(): FileReaderSync;
-}
+    new (): FileReaderSync;
+};
 
 interface WorkerGlobalScope extends EventTarget, DedicatedWorkerGlobalScope, WindowConsole, WorkerUtils {
     location: WorkerLocation;
@@ -1592,20 +1619,19 @@ interface WorkerGlobalScope extends EventTarget, DedicatedWorkerGlobalScope, Win
 }
 declare var WorkerGlobalScope: {
     prototype: WorkerGlobalScope;
-    new(): WorkerGlobalScope;
-}
+    new (): WorkerGlobalScope;
+};
 
 interface DedicatedWorkerGlobalScope {
     onmessage: (ev: MessageEvent) => any;
     postMessage(data: any): void;
 }
 
-interface WorkerNavigator extends NavigatorID, NavigatorOnLine {
-}
+interface WorkerNavigator extends NavigatorID, NavigatorOnLine {}
 declare var WorkerNavigator: {
     prototype: WorkerNavigator;
-    new(): WorkerNavigator;
-}
+    new (): WorkerNavigator;
+};
 
 interface WorkerUtils extends WindowBase64 {
     navigator: WorkerNavigator;
@@ -1619,7 +1645,6 @@ interface WorkerUtils extends WindowBase64 {
     clearInterval(handle: number): void;
     setInterval(handler: any, timeout?: any, ...args: any[]): number;
 }
-
 
 declare var location: WorkerLocation;
 declare var self: WorkerGlobalScope;

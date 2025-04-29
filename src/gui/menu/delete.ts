@@ -2,89 +2,98 @@
 /// <reference path="../../activity/activityhandler.ts" />
 
 class Delete extends MenuItem {
-    public constructor(button : string, activityHandler : Activity.ActivityHandler) {
+    public constructor(button: string, activityHandler: Activity.ActivityHandler) {
         super(button, activityHandler);
 
         this.showProjects();
 
-        $(document).on("save", () => this.showProjects());
-        $(document).on("delete", () => this.showProjects());
+        $(document).on('save', () => this.showProjects());
+        $(document).on('delete', () => this.showProjects());
     }
 
-    private deleteFromStorage(e) : void {
+    private deleteFromStorage(e): void {
         var id = e.data.id;
 
         var callback = () => {
-            var projects = this.storage.getObj("projects");
+            var projects = this.storage.getObj('projects');
 
             for (var i = 0; i < projects.length; i++) {
                 if (projects[i].id === id) {
                     if (projects.length === 1) {
-                        this.storage.delete("projects");
+                        this.storage.delete('projects');
                     } else {
                         projects.splice(i, 1);
-                        this.storage.setObj("projects", projects);
+                        this.storage.setObj('projects', projects);
                     }
                     this.project.setId(null);
-                    $(document).trigger("delete");
-                    Main.showNotification("Project deleted!", 2000);
+                    $(document).trigger('delete');
+                    Main.showNotification('Project deleted!', 2000);
                     break;
                 }
             }
-        }
+        };
 
-        this.showConfirmModal("Confirm Delete",
-                              "Are you sure you want to delete this project?",
-                              "Cancel",
-                              "Delete",
-                              null,
-                              callback);
+        this.showConfirmModal(
+            'Confirm Delete',
+            'Are you sure you want to delete this project?',
+            'Cancel',
+            'Delete',
+            null,
+            callback
+        );
     }
 
-    private showProjects() : void {
-        var projects = this.storage.getObj("projects");
-        var $ccsProjects = $("#ccs-delete-list");
-        var $pccsProjects = $("#pccs-delete-list");
-        var $tccsProjects = $("#tccs-delete-list");
+    private showProjects(): void {
+        var projects = this.storage.getObj('projects');
+        var $ccsProjects = $('#ccs-delete-list');
+        var $pccsProjects = $('#pccs-delete-list');
+        var $tccsProjects = $('#tccs-delete-list');
         var ccsFound = false;
         var pccsFound = false;
         var tccsFound = false;
 
-        $("li.delete").remove();
+        $('li.delete').remove();
 
         if (projects) {
             this.$button.show();
 
-            projects.sort(function(a, b) {return b.title.localeCompare(a.title)});
-
+            projects.sort(function (a, b) {
+                return b.title.localeCompare(a.title);
+            });
 
             for (var i = 0; i < projects.length; i++) {
-                var html = $("<li class=\"delete\"><a>" + projects[i].title + "</a></li>");
+                var html = $('<li class="delete"><a>' + projects[i].title + '</a></li>');
 
                 if (!projects[i].inputMode) {
                     // for backwards compatibility, if input is not defined, then default to CCS.
-                    projects[i].inputMode = "CCS";
+                    projects[i].inputMode = 'CCS';
                 }
 
-                if (projects[i].inputMode.toLowerCase() === "ccs") {
+                if (projects[i].inputMode.toLowerCase() === 'ccs') {
                     ccsFound = true;
                     $ccsProjects.after(html);
-                } else if (projects[i].inputMode.toLowerCase() === "pccs") {
+                } else if (projects[i].inputMode.toLowerCase() === 'pccs') {
                     pccsFound = true;
                     $pccsProjects.after(html);
-                } else if (projects[i].inputMode.toLowerCase() === "tccs") {
+                } else if (projects[i].inputMode.toLowerCase() === 'tccs') {
                     tccsFound = true;
                     $tccsProjects.after(html);
                 }
 
-                html.on("click", {id: projects[i].id}, e => this.deleteFromStorage(e));
+                html.on('click', { id: projects[i].id }, (e) => this.deleteFromStorage(e));
             }
         } else {
             this.$button.hide();
         }
 
         $ccsProjects.toggle(ccsFound);
-        $pccsProjects.toggle(pccsFound).prev().toggle(ccsFound && pccsFound);
-        $tccsProjects.toggle(tccsFound).prev().toggle(ccsFound && tccsFound && pccsFound);
+        $pccsProjects
+            .toggle(pccsFound)
+            .prev()
+            .toggle(ccsFound && pccsFound);
+        $tccsProjects
+            .toggle(tccsFound)
+            .prev()
+            .toggle(ccsFound && tccsFound && pccsFound);
     }
 }
