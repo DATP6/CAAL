@@ -7,7 +7,6 @@
 /// <reference path="collapse.ts" />
 
 module DependencyGraph {
-
     import ccs = CCS;
     import hml = HML;
 
@@ -66,54 +65,55 @@ module DependencyGraph {
     export class MuCalculusDG implements PartialDependencyGraph, hml.FormulaDispatchHandler<any> {
         private variableEdges = {};
         private maxFixPoints = {};
-        private currentNode : MuCalculusNode;
-        public calculator : any = null;
+        private currentNode: MuCalculusNode;
+        public calculator: any = null;
 
-        constructor(private strongSuccGen : ccs.SuccessorGenerator,
-                    private weakSuccGen : ccs.SuccessorGenerator,
-                    private formulaSet : hml.FormulaSet) {
-        }
+        constructor(
+            private strongSuccGen: ccs.SuccessorGenerator,
+            private weakSuccGen: ccs.SuccessorGenerator,
+            private formulaSet: hml.FormulaSet
+        ) {}
 
         // TODO: OOP can be used to beautify switch case
         dispatchDiamondFormula(formula: hml.DiamondFormula) {
-            if(!(this.currentNode.process instanceof PCCS.ProbabilisticProcess)){
-                throw new Error("Diamond formula was not dispatched with a probabilistic process");
+            if (!(this.currentNode.process instanceof PCCS.ProbabilisticProcess)) {
+                throw new Error('Diamond formula was not dispatched with a probabilistic process');
             }
-            // hyperEdges = [];
-            const distribution = this.currentNode.process.dist; // Potential successor states 
-            const operator = formula.probabilisticOperator;
-            // Find successor states that fulfill prob criteria 
 
-            // NOTE: Could make a class for each prob op and use OOP to determine behaviour of dispatch on runtime
-            switch(operator){
-                default:
-                    throw new Error(`${operator} is not defined for `)
-            }
-            // Multiset implementation needed
-            console.log(`Dispatching: ${formula.toString()}`);
-            throw new Error("Method not implemented.");
+            const distribution = this.currentNode.process.dist; // Potential successor states
+            const processes = distribution.getEntries().map((e) => e.proc);
+            const powerset = processes.reduce<CCS.Process[][]>(
+                (acc, curr) => acc.concat(acc.map((s) => [curr].concat(s))),
+                [[]]
+            );
+
+            const setsRespectingOp = powerset.filter((s) => {
+                const { den, num } = distribution.probabilityOf(s);
+                const fraction = new HML.Fraction(num, den);
+                return formula.probability.compare(formula.relational_operator, fraction);
+            });
+
+            const hyperedges = setsRespectingOp.map((s) =>
+                s.map((process) => new MuCalculusNode(process, formula.subformula, this.currentNode.isMin))
+            );
+
+            return hyperedges;
         }
 
-        // TODO: Implement support 
-        getSupport(something: any, relop: any){
-            // Multiset.getEntires()
-            // Based on the relational op, include multiset elements. 
-        }
-
-        getHyperEdges(node : MuCalculusNode) : Hyperedge[] {
+        getHyperEdges(node: MuCalculusNode): Hyperedge[] {
             this.currentNode = node;
             return node.formula.dispatchOn(this);
         }
-        
-        dispatchDisjFormula(formula : hml.DisjFormula) {
+
+        dispatchDisjFormula(formula: hml.DisjFormula) {
             var hyperEdges = [];
             if (this.currentNode.isMin) {
-                formula.subFormulas.forEach(subFormula => {
+                formula.subFormulas.forEach((subFormula) => {
                     hyperEdges.push([this.currentNode.newWithFormula(subFormula)]);
                 });
             } else {
                 var targetNodes = [];
-                formula.subFormulas.forEach(subFormula => {
+                formula.subFormulas.forEach((subFormula) => {
                     targetNodes.push(this.currentNode.newWithFormula(subFormula));
                 });
                 hyperEdges.push(targetNodes);
@@ -121,16 +121,16 @@ module DependencyGraph {
             return hyperEdges;
         }
 
-        dispatchConjFormula(formula : hml.ConjFormula) {
+        dispatchConjFormula(formula: hml.ConjFormula) {
             var hyperEdges = [];
             if (this.currentNode.isMin) {
                 var targetNodes = [];
-                formula.subFormulas.forEach(subFormula => {
+                formula.subFormulas.forEach((subFormula) => {
                     targetNodes.push(this.currentNode.newWithFormula(subFormula));
                 });
                 hyperEdges.push(targetNodes);
             } else {
-                formula.subFormulas.forEach(subFormula => {
+                formula.subFormulas.forEach((subFormula) => {
                     hyperEdges.push([this.currentNode.newWithFormula(subFormula)]);
                 });
             }
@@ -156,23 +156,27 @@ module DependencyGraph {
             }
         }
 
-        private existsFormula(formula, succGen : ccs.SuccessorGenerator) {
+        private existsFormula(formula, succGen: ccs.SuccessorGenerator) {
             var hyperEdges = [],
                 transitionSet = succGen.getSuccessors(this.currentNode.process.id);
-            transitionSet.forEach(transition => {
+            transitionSet.forEach((transition) => {
                 if (formula.actionMatcher.matches(transition.action)) {
-                    hyperEdges.push([new MuCalculusNode(transition.targetProcess, formula.subFormula, this.currentNode.isMin)]);
+                    hyperEdges.push([
+                        new MuCalculusNode(transition.targetProcess, formula.subFormula, this.currentNode.isMin)
+                    ]);
                 }
             });
-            return hyperEdges;            
+            return hyperEdges;
         }
 
-        private forallFormula(formula, succGen : ccs.SuccessorGenerator) {
+        private forallFormula(formula, succGen: ccs.SuccessorGenerator) {
             var targetNodes = [],
                 transitionSet = succGen.getSuccessors(this.currentNode.process.id);
-            transitionSet.forEach(transition => {
+            transitionSet.forEach((transition) => {
                 if (formula.actionMatcher.matches(transition.action)) {
-                    targetNodes.push(new MuCalculusNode(transition.targetProcess, formula.subFormula, this.currentNode.isMin));
+                    targetNodes.push(
+                        new MuCalculusNode(transition.targetProcess, formula.subFormula, this.currentNode.isMin)
+                    );
                 }
             });
             return [targetNodes];

@@ -33,6 +33,14 @@ module HML {
         dispatchDiamondFormula(formula: DiamondFormula): T;
     }
 
+    export enum RelationOp {
+        Less = '<',
+        LessEqual = '<=',
+        Greater = '>',
+        GreaterEqual = '>=',
+        Equal = '=='
+    }
+
     export class Fraction {
         public numerator: number;
         public denominator: number;
@@ -45,14 +53,26 @@ module HML {
         toString(): string {
             return `${this.numerator}/${this.denominator}`;
         }
-    }
 
-    export enum RelationOp {
-        Less = '<',
-        LessEqual = '<=',
-        Greater = '>',
-        GreaterEqual = '>=',
-        Equal = '=='
+        compare(op: RelationOp, other: Fraction): boolean {
+            const numThis = this.numerator * other.denominator;
+            const numOther = other.numerator * this.denominator;
+
+            switch (op) {
+                case RelationOp.Less:
+                    return numThis < numOther;
+                case RelationOp.LessEqual:
+                    return numThis <= numOther;
+                case RelationOp.Equal:
+                    return numThis === numOther;
+                case RelationOp.Greater:
+                    return numThis > numOther;
+                case RelationOp.GreaterEqual:
+                    return numThis >= numOther;
+            }
+
+            throw new Error('Unknown relational operator');
+        }
     }
 
     export class DisjFormula implements Formula {
