@@ -87,10 +87,9 @@ module DependencyGraph {
             console.log('[MDG Diamond] Dist:', distribution);
 
             const processes = distribution.getEntries().map((e) => e.proc);
-            const powerset = processes.reduce<CCS.Process[][]>(
-                (acc, curr) => acc.concat(acc.map((s) => [curr].concat(s))),
-                [[]]
-            );
+            const powerset = processes
+                .reduce<CCS.Process[][]>((acc, curr) => acc.concat(acc.map((s) => [curr].concat(s))), [[]])
+                .filter((a) => a.length > 0); // Remove the empty set
 
             console.log('[MDG Diamond] Power:', powerset);
 

@@ -52,7 +52,7 @@ Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return fo
 // Additions
 PhiProbTerm
     = Diamond _ R:Relational_op P:Probability _ S:SimpleFormula {return formulas.newDiamondFormula(R,P,S);}
-	/ PhiParenFormula 
+	/ PhiUnary 
 
 PhiUnary 
 	= PhiParenFormula
