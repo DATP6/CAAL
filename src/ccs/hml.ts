@@ -1,7 +1,7 @@
 /// <reference path="../../lib/util.d.ts" />
 /// <reference path="ccs.ts" />
 
-import { TupleType } from 'typescript';
+// import { TupleType } from 'typescript';
 
 module HML {
     import ccs = CCS;

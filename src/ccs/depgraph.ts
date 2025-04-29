@@ -6,8 +6,6 @@
 /// <reference path="util.ts" />
 /// <reference path="collapse.ts" />
 
-import { isPropertyAccessChain, isPropertyAccessOrQualifiedName } from "typescript";
-
 module DependencyGraph {
 
     import ccs = CCS;
@@ -68,7 +66,6 @@ module DependencyGraph {
     export class MuCalculusDG implements PartialDependencyGraph, hml.FormulaDispatchHandler<any> {
         private variableEdges = {};
         private maxFixPoints = {};
-<<<<<<< HEAD
         private currentNode : MuCalculusNode;
         public calculator : any = null;
 
@@ -82,14 +79,13 @@ module DependencyGraph {
             if(!(this.currentNode.process instanceof PCCS.ProbabilisticProcess)){
                 throw new Error("Diamond formula was not dispatched with a probabilistic process");
             }
-            hyperEdges = [];
+            // hyperEdges = [];
             const distribution = this.currentNode.process.dist; // Potential successor states 
-            const operator = formula.probabilisticOperator();
+            const operator = formula.probabilisticOperator;
             // Find successor states that fulfill prob criteria 
 
             // NOTE: Could make a class for each prob op and use OOP to determine behaviour of dispatch on runtime
             switch(operator){
-                case "e":
                 default:
                     throw new Error(`${operator} is not defined for `)
             }
@@ -99,7 +95,7 @@ module DependencyGraph {
         }
 
         // TODO: Implement support 
-        getSupport(Multiset<T>, relop: RelationOp){
+        getSupport(something: any, relop: any){
             // Multiset.getEntires()
             // Based on the relational op, include multiset elements. 
         }

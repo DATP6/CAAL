@@ -981,12 +981,6 @@ module CCS {
             depth = queue[i][0];
             fromProcess = queue[i][1];
             if (succGen['succGenerator'] instanceof PCCS.StrictSuccessorGenerator) {
-<<<<<<< HEAD
-                result[fromProcess.id] = transitions = succGen['succGenerator'].getSuccessors(fromProcess.id);
-
-                transitions.forEach((t) => {
-                    t.getTargetProcesses().forEach((p) => {
-=======
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
                 transitions.forEach((t) => {
                     if (!(t.targetProcess instanceof PCCS.ProbabilisticProcess)) {
@@ -994,7 +988,6 @@ module CCS {
                         throw new Error('Probabilistic transition did not result in a distribution');
                     }
                     t.targetProcess.getTargetProcesses().forEach((p) => {
->>>>>>> next-hml
                         if (!result[t.targetProcess.id] && depth < maxDepth) {
                             queue.push([depth + 1, p]);
                         }
@@ -1002,10 +995,6 @@ module CCS {
                 });
             } else {
                 result[fromProcess.id] = transitions = succGen.getSuccessors(fromProcess.id);
-<<<<<<< HEAD
-
-=======
->>>>>>> next-hml
                 transitions.forEach((t) => {
                     if (!result[t.targetProcess.id] && depth < maxDepth) {
                         queue.push([depth + 1, t.targetProcess]);
