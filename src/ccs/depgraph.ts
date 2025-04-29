@@ -80,22 +80,31 @@ module DependencyGraph {
                 throw new Error('Diamond formula was not dispatched with a probabilistic process');
             }
 
+            console.log('[MDG Diamond] In:', formula);
+
             const distribution = this.currentNode.process.dist; // Potential successor states
+
+            console.log('[MDG Diamond] Dist:', distribution);
+
             const processes = distribution.getEntries().map((e) => e.proc);
             const powerset = processes.reduce<CCS.Process[][]>(
                 (acc, curr) => acc.concat(acc.map((s) => [curr].concat(s))),
                 [[]]
             );
 
+            console.log('[MDG Diamond] Power:', powerset);
+
             const setsRespectingOp = powerset.filter((s) => {
                 const { den, num } = distribution.probabilityOf(s);
                 const fraction = new HML.Fraction(num, den);
-                return formula.probability.compare(formula.relational_operator, fraction);
+                return fraction.compare(formula.relational_operator, formula.probability);
             });
 
             const hyperedges = setsRespectingOp.map((s) =>
                 s.map((process) => new MuCalculusNode(process, formula.subformula, this.currentNode.isMin))
             );
+
+            console.log('[MDG Diamond] Out:', hyperedges);
 
             return hyperedges;
         }

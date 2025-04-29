@@ -117,8 +117,10 @@ Probability
     = N:Integer"/"D:Integer { return formulas.newProbability(N, D) }
 
 Relational_op 
-    = S:"<" { return formulas.newRelationalOp(S); }
-    / S:"<=" { return formulas.newRelationalOp(S); }
+    = S:"<=" { return formulas.newRelationalOp(S); }
+    / S:"<" { return formulas.newRelationalOp(S); }
+    // = S:"<" { return formulas.newRelationalOp(S); }
+    // / S:"<=" { return formulas.newRelationalOp(S); }
     / S:"==" { return formulas.newRelationalOp(S); }
     / S:">=" { return formulas.newRelationalOp(S); }
     / S:">" { return formulas.newRelationalOp(S); }
