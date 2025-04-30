@@ -153,6 +153,21 @@ var examples: any[] = [
         inputMode: 'PCCS'
     },
     {
+        title: 'Small Prop Book Example',
+        ccs: [
+            "One = 'in.(A 0.8 B);",
+            "A = out.One;",
+            "B = err.One;",
+            '',
+            "Two = 'in.(C 0.8 (D 0.1 E));",
+            "C = out.Two;",
+            "D = err.Two;",
+            "E = err.Two;",
+        ].join('\n'),
+        properties: [],
+        inputMode: 'PCCS'
+    },
+    {
         title: 'Lightswitch',
         ccs: [
             'Off = press.Light;',

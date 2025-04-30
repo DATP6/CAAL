@@ -427,7 +427,7 @@ module Activity {
             var allTransitions = CCS.getNSuccessors(
                 CCS.getSuccGenerator(this.graph, {
                     inputMode: InputMode[this.project.getInputMode()],
-                    time: "timed",
+                    time: "untimed",
                     succGen: "strong",
                     reduce: true
                 }),

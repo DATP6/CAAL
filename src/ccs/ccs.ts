@@ -52,7 +52,7 @@ module CCS {
 
     export class NullProcess implements Process {
         private ccs: string;
-        constructor() {}
+        constructor() { }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchNullProcess(this);
         }
@@ -69,7 +69,7 @@ module CCS {
         constructor(
             public name: string,
             public subProcess: Process
-        ) {}
+        ) { }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchNamedProcess(this);
         }
@@ -83,7 +83,7 @@ module CCS {
 
     export class SummationProcess implements Process {
         private ccs: string;
-        constructor(public subProcesses: Process[]) {}
+        constructor(public subProcesses: Process[]) { }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchSummationProcess(this);
         }
@@ -98,7 +98,7 @@ module CCS {
 
     export class CompositionProcess implements Process {
         private ccs: string;
-        constructor(public subProcesses: Process[]) {}
+        constructor(public subProcesses: Process[]) { }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchCompositionProcess(this);
         }
@@ -116,7 +116,7 @@ module CCS {
         constructor(
             public action: Action,
             public nextProcess: Process
-        ) {}
+        ) { }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchActionPrefixProcess(this);
         }
@@ -134,7 +134,7 @@ module CCS {
         constructor(
             public subProcess: Process,
             public restrictedLabels: LabelSet
-        ) {}
+        ) { }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchRestrictionProcess(this);
         }
@@ -154,7 +154,7 @@ module CCS {
         constructor(
             public subProcess: Process,
             public relabellings: RelabellingSet
-        ) {}
+        ) { }
         dispatchOn<T>(dispatcher: ProcessDispatchHandler<T>): T {
             return dispatcher.dispatchRelabellingProcess(this);
         }
@@ -171,7 +171,7 @@ module CCS {
 
     export class CollapsedProcess implements Process {
         private ccs: string;
-        constructor(public subProcesses: Process[]) {}
+        constructor(public subProcesses: Process[]) { }
         dispatchOn<T>(dispatcher: CollapsedDispatchHandler<T>): T {
             return dispatcher.dispatchCollapsedProcess(this);
         }
@@ -252,7 +252,7 @@ module CCS {
         protected allRelabellings = new GrowingIndexedArraySet<RelabellingSet>();
         protected unguardedRecursionChecker = new Traverse.UnguardedRecursionChecker();
 
-        constructor() {}
+        constructor() { }
 
         addProcesses(processes: Process[]) {
             processes.forEach((process) => {
@@ -592,7 +592,7 @@ module CCS {
         constructor(
             public action: Action,
             public targetProcess: Process
-        ) {}
+        ) { }
 
         equals(other: Transition) {
             if (!(other instanceof Transition)) {
@@ -883,7 +883,7 @@ module CCS {
     export class GrowingIndexedArraySet<T> {
         private elements = [];
 
-        constructor() {}
+        constructor() { }
 
         getOrAdd(element: T): T {
             var result = element,
