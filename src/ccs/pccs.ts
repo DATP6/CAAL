@@ -445,7 +445,7 @@ module Traverse {
                     isUnguarded = true;
                 }
             });
-            return true;
+            return isUnguarded;
         }
     }
 
