@@ -1,9 +1,9 @@
 module MultiSetUtil {
     // INFO: This is mostly generic simply to avoid cyclical references. This way we do not have to know about the CCS module
-    export type Entry<T> = { proc: T; weight: number };
+    export type Entry<T> = { proc: T; weight: bigint };
 
     export class MultiSet<T> {
-        private _map: Map<T, number>;
+        private _map: Map<T, bigint>;
 
         constructor(entries: Entry<T>[]) {
             this._map = new Map();
@@ -14,7 +14,7 @@ module MultiSetUtil {
             return Array.from(this._map.entries()).map(([key, val]) => ({ proc: key, weight: val }));
         }
 
-        public getProbabilities(): (Entry<T> & { probability: number })[] {
+        public getProbabilities(): (Entry<T> & { probability: bigint })[] {
             const size = this.size();
             return this.getEntries().map((e) => ({ ...e, probability: e.weight / size }));
         }
@@ -22,11 +22,11 @@ module MultiSetUtil {
         public size() {
             return this.getEntries()
                 .map((x) => x.weight)
-                .reduce((acc, curr) => acc + curr, 0);
+                .reduce((acc, curr) => acc + curr, 0n);
         }
 
         public add(entry: Entry<T>) {
-            let weight = this._map.get(entry.proc) ?? 0;
+            let weight = this._map.get(entry.proc) ?? 0n;
             weight += entry.weight;
             this._map.set(entry.proc, weight);
         }
@@ -37,14 +37,27 @@ module MultiSetUtil {
             return new MultiSet(entries.map(mapper));
         }
 
+        public get(key: T): bigint | undefined {
+            return this._map.get(key);
+        }
+
+        public support(): T[] {
+            return Array.from(this._map.keys());
+        }
+
         public clone() {
             return new MultiSet(this.getEntries());
         }
+
+        public toString(): string {
+            const es = this.getEntries().map(({ proc, weight }) => `(${proc}, ${weight})`);
+            return `{${es.join(',')}}`;
+        }
     }
 
-    const singleWeightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
-        if (weightA === 0) return setB.clone();
-        if (weightB === 0) return setA.clone();
+    export const singleWeightedUnion = <T>(setA: MultiSet<T>, weightA: bigint, setB: MultiSet<T>, weightB: bigint) => {
+        if (weightA === 0n) return setB.clone();
+        if (weightB === 0n) return setA.clone();
         const aSize = setA.size();
         const bSize = setB.size();
         const aEntries = setA.getEntries().map((x) => ({ proc: x.proc, weight: x.weight * bSize * weightA }));
@@ -58,7 +71,7 @@ module MultiSetUtil {
      *
      * Function signature is due to call site practicalities
      * */
-    export const weightedUnion = <T>(dists: { dist: MultiSet<T>; weight: number }[]) => {
+    export const weightedUnion = <T>(dists: { dist: MultiSet<T>; weight: bigint }[]) => {
         // Wheighted union is done step-wise by keeping track of a total weight, in the same way you compute step-wise averages
         // Skip the first index when folding
         let { accDist } = dists.slice(1).reduce(
@@ -73,8 +86,8 @@ module MultiSetUtil {
     };
 
     export const crossCombination = <T>(op: (procs: T[]) => T, left: MultiSet<T>, right: MultiSet<T>): MultiSet<T> => {
-        if (left.size() === 0) return right;
-        if (right.size() === 0) return left;
+        if (left.size() === 0n) return right;
+        if (right.size() === 0n) return left;
 
         const crossCombinedMS = new MultiSet<T>([]);
         for (const leftEntry of left.getEntries()) {
