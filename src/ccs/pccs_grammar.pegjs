@@ -40,6 +40,7 @@ Assignment
 //The rules here are defined in the reverse order of their precedence.
 //Either a given rule applies, eg. +, and everything to the left must have higher precedence,
 // or there is no plus, in which cases it must still have higher predence.
+
 Process = Summation
 
 Summation
@@ -51,7 +52,7 @@ Composition
 	/ P:ActionPrefix { return P; }
 
 ActionPrefix
-	= action:Action _ "." _ P:ActionPrefix { return g.newActionPrefixProcess(action, P); }
+	= action:Action _ "." _ P:ActionPrefixP { return g.newActionPrefixProcess(action, P); } // ActionPrefixP to allow for probabilistic processes
 	/ P:ReProcess { return P; }
 
 ReProcess
@@ -59,6 +60,33 @@ ReProcess
 	/ P:ParenProcess _ "\\" _ setName:Identifier { return g.newRestrictedProcessOnSetName(P, setName); }
 	/ P:ParenProcess _ "[" _ relabels:RelabellingList _ "]" { return g.newRelabelingProcess(P, new ccs.RelabellingSet(relabels || [])); }
 	/ P:ParenProcess { return P; }
+
+ParenProcess
+	= "(" _ P:Process _ ")" { return P; }
+	/ P:ConstantProcess { return P; }
+
+// "ProcessP" includes probabilistic processes while "Process" does not. 
+// This ensures that assignments can only start with a dirac distribution.
+
+ProcessP = SummationP
+
+SummationP
+	= P:CompositionP _ "+" _ Q:SummationP { return Q instanceof ccs.SummationProcess ? g.newSummationProcess([P].concat(Q.subProcesses)) : g.newSummationProcess([P, Q]); }
+	/ P:CompositionP { return P; }
+
+CompositionP
+	= P:ActionPrefixP _ "|" _ Q:CompositionP { return Q instanceof ccs.CompositionProcess ? g.newCompositionProcess([P].concat(Q.subProcesses)) : g.newCompositionProcess([P, Q]); }
+	/ P:ActionPrefixP { return P; }
+
+ActionPrefixP
+	= action:Action _ "." _ P:ActionPrefixP { return g.newActionPrefixProcess(action, P); }
+	/ P:ReProcessP { return P; }
+
+ReProcessP
+	= P:ParenProcessP _ "\\" _ "{" _ labels:LabelList? _ "}" { return g.newRestrictedProcess(P, new ccs.LabelSet(labels || [])); }
+	/ P:ParenProcessP _ "\\" _ setName:Identifier { return g.newRestrictedProcessOnSetName(P, setName); }
+	/ P:ParenProcessP _ "[" _ relabels:RelabellingList _ "]" { return g.newRelabelingProcess(P, new ccs.RelabellingSet(relabels || [])); }
+	/ P:ParenProcessP { return P; }
 
 // Relabellings  [a/b, c/d]
 RelabellingList
@@ -68,13 +96,13 @@ RelabellingList
 Relabel
 	= to:Label _ "/" _ from:Label { return {to: to, from: from}; }
 
-ParenProcess
-	= "(" _ P:Process _ ")" { return P; }
+ParenProcessP
+	= "(" _ P:ProcessP _ ")" { return P; }
 	/ "(" _ P:Probabilistic _ ")" { return P; } // Require a parentheses around probabilistic processes
 	/ P:ConstantProcess { return P; }
 
 Probabilistic
-	= P:Process _ Prob:Probability _ Q:Process{ return g.newProbabilisticProcess(Prob, [P, Q]); }
+	= P:ProcessP _ Prob:Probability _ Q:ProcessP{ return g.newProbabilisticProcess(Prob, [P, Q]); }
 
 ConstantProcess
 	= "0" { return g.getNullProcess(); }
