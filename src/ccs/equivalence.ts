@@ -27,6 +27,7 @@ module Equivalence {
         private constructData = []; //Data necessary to construct nodes.
         private leftPairs = {}; // leftPairs[P.id][Q.id] is a cache for solved process pairs.
         private isFullyConstructed = false;
+        private counter = 0;
 
         constructor(private attackSuccGen: ccs.SuccessorGenerator,
             private defendSuccGen: ccs.SuccessorGenerator,
@@ -59,9 +60,26 @@ module Equivalence {
                 // The right action and destination is fixed?
                 result = this.nodes[identifier] = this.getNodeForRightTransition(data);
             } else if (type === 3) {
-                result = this.nodes[identifier] = this.getDistNodeForLeftTransition(data);
+                result = this.nodes[identifier] = this.getDistPairStates(data[1], data[2]);
             }
+
+            //else if (type === 3) {
+            //    result = this.nodes[identifier] = this.getDistNodeForLeftTransition(data);
+            //} else if (type === 4) {
+            //    result = this.nodes[identifier] = this.getDistNodeForRightTransition(data);
+            //}
             return result;
+        }
+
+        getDistPairStates(leftProcessId: ccs.Process, rightProcessId: ccs.Process) {
+            console.log("Leftprocessid: ", leftProcessId, "type of: ", typeof leftProcessId);
+            console.log("RightProcessId", rightProcessId, "type of: ", typeof rightProcessId);
+            var rightmaps = this.attackSuccGen.getProcessById(rightProcessId);
+            console.log("Right Comeplete.");
+            var leftmaps = this.attackSuccGen.getProcessById(Object.keys(leftProcessId)[0]);
+            console.log("LEft complete.")
+            console.log("Maps left: ", leftmaps);
+            console.log("Maps right ", rightmaps);
         }
 
         getAllHyperEdges(): [dg.DgNodeId, dg.Hyperedge][] {
@@ -98,32 +116,13 @@ module Equivalence {
             return [result];
         }
 
-        private getDistNodeForLeftTransition(data) {
-            var action = data[1],
-                leftDist = data[2],
-                rightDistId = data[3],
-                result = [];
-
-
-
-            var rightTransitions = this.defendSuccGen.getProcessById(rightDistId);
-            console.log(rightTransitions);
-            var stuff = this.constructData[rightTransitions.id];
-            stuff.forEach((rightTransition) => {
-                var existing, toRightId;
-                if (rightTransition.action.equals(action)) {
-                    toRightId = rightTransition.targetProcess.id;
-                    result.push(this.getOrCreatePairNode(leftDist, toRightId));
-                }
-            });
-            return [result];
-        }
 
         private getNodeForRightTransition(data) {
             var action = data[1],
                 toRightId = data[2],
                 fromLeftId = data[3],
                 result = [];
+
             var leftTransitions = this.defendSuccGen.getSuccessors(fromLeftId);
             leftTransitions.forEach((leftTransition) => {
                 var existing, toLeftId;
@@ -148,26 +147,37 @@ module Equivalence {
             result = this.nextIdx++;
             if (!rightIds) this.leftPairs[leftId] = rightIds = {};
             rightIds[rightId] = result;
-            this.constructData[result] = [3, leftId, rightId];
+            this.constructData[result] = [0, leftId, rightId];
             return result;
         }
 
         private getProcessPairStates(leftProcessId: ccs.ProcessId, rightProcessId: ccs.ProcessId): dg.Hyperedge[] {
             var hyperedges: dg.Hyperedge[] = [];
             var leftTransitions = this.attackSuccGen.getSuccessors(leftProcessId);
+
             var rightTransitions = this.defendSuccGen.getSuccessors(rightProcessId);
 
             leftTransitions.forEach(leftTransition => {
-                console.log("left: ", leftTransition);
-                var newNodeIdx = this.nextIdx++;
-                this.constructData[newNodeIdx] = [1, leftTransition.action, leftTransition.targetProcess.id, rightProcessId];
-                hyperedges.push([newNodeIdx]);
+                if (leftTransition.targetProcess instanceof pccs.ProbabilisticProcess) {
+                    var newNodeIdx = this.nextIdx++;
+                    this.constructData[newNodeIdx] = [3, leftTransition.action, leftTransition.targetProcess, rightProcessId];
+                    hyperedges.push([newNodeIdx]);
+                } else {
+                    var newNodeIdx = this.nextIdx++;
+                    this.constructData[newNodeIdx] = [1, leftTransition.action, leftTransition.targetProcess.id, rightProcessId];
+                    hyperedges.push([newNodeIdx]);
+                }
             });
             rightTransitions.forEach(rightTransition => {
-                console.log("right: ", rightTransition);
-                var newNodeIdx = this.nextIdx++;
-                this.constructData[newNodeIdx] = [2, rightTransition.action, rightTransition.targetProcess.id, leftProcessId];
-                hyperedges.push([newNodeIdx]);
+                if (rightTransition.targetProcess instanceof pccs.ProbabilisticProcess) {
+                    var newNodeIdx = this.nextIdx++;
+                    this.constructData[newNodeIdx] = [3, rightTransition.action, rightTransition.targetProcess, leftProcessId];
+                    hyperedges.push([newNodeIdx]);
+                } else {
+                    var newNodeIdx = this.nextIdx++;
+                    this.constructData[newNodeIdx] = [2, rightTransition.action, rightTransition.targetProcess.id, leftProcessId];
+                    hyperedges.push([newNodeIdx]);
+                }
             });
             return hyperedges;
         }
