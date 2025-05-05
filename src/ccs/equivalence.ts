@@ -44,6 +44,7 @@ module Equivalence {
             } else {
                 result = this.constructNode(identifier);
             }
+            console.log("getHyperEdges node: ", result)
             return dg.copyHyperEdges(result);
         }
 
@@ -51,15 +52,21 @@ module Equivalence {
             var result,
                 data = this.constructData[identifier],
                 type = data[0];
-            if (type === 0) {
-                //Is it a pair?
+            console.log('Constructing node', identifier, data);
+            if (type === 0) { // attacker pick L or R and picks transition
+                // Is it a pair?
                 result = this.nodes[identifier] = this.getProcessPairStates(data[1], data[2]);
-            } else if (type === 1) {
+            } else if (type === 1) { // Defender picks transition with matching action
                 // The left action and destination is fixed?
                 result = this.nodes[identifier] = this.getNodeForLeftTransition(data);
-            } else if (type === 2) {
+            } else if (type === 2) { // Defender picks transition with matching action
                 // The right action and destination is fixed?
                 result = this.nodes[identifier] = this.getNodeForRightTransition(data);
+            } else if (type == 3) { // Defender chooses coupling, only when using PCCS
+                // result = this.nodes[identifier] = this.createCoupling(data);
+            } else if (type == 4) { // atacker picks new configuration in supp(coupling)
+                console.log('Attacker picks new configuration');
+                // result = this.nodes[identifier] = this.
             }
             return result;
         }
@@ -76,6 +83,7 @@ module Equivalence {
             result.length = this.nextIdx;
             for (var i = 0; i < this.nextIdx; i++) {
                 result[i] = [i, dg.copyHyperEdges(this.nodes[i])];
+                console.log("HE", i, result[i])
             }
             return result;
         }
@@ -94,6 +102,7 @@ module Equivalence {
                 if (rightTransition.action.equals(action)) {
                     toRightId = rightTransition.targetProcess.id;
                     result.push(this.getOrCreatePairNode(toLeftId, toRightId));
+                    console.log('getNodeForLeftTransition', toLeftId, toRightId);
                 }
             });
             return [result];
@@ -128,7 +137,9 @@ module Equivalence {
             result = this.nextIdx++;
             if (!rightIds) this.leftPairs[leftId] = rightIds = {};
             rightIds[rightId] = result;
-            this.constructData[result] = [0, leftId, rightId];
+            // 0 = atacker chooses L or R and transition. 3 = choose coupling (only for PCCS).
+            let nextType = this.attackSuccGen instanceof PCCS.StrictSuccessorGenerator ? 3 : 0;
+            this.constructData[result] = [nextType, leftId, rightId];
             return result;
         }
 
