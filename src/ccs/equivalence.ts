@@ -1,6 +1,7 @@
 /// <reference path="ccs.ts" />
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
+/// <reference path="../../lib/util.d.ts" />
 
 module Equivalence {
     import ccs = CCS;
