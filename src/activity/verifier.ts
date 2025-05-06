@@ -3,7 +3,7 @@ module Activity {
         private graph: CCS.Graph;
         private timer: number;
         private queue: Property.Property[];
-        private verifyingProperty = null;
+        private verifyingProperty: Property.Property | null = null;
         private formulaEditor: any;
         private definitionsEditor: any;
 
@@ -227,8 +227,14 @@ module Activity {
 
             $('#secondProcess').find('option:nth-child(2)').prop('selected', true);
 
+            const isPCCS = this.project.getInputMode() === InputMode.PCCS;
+
             $('#ccsTransition').toggle(this.project.getInputMode() === InputMode.CCS);
             $('#tccsTransition').toggle(this.project.getInputMode() === InputMode.TCCS);
+            $('#pccsTransition').toggle(isPCCS);
+
+            $('#pccsRelationType').toggle(isPCCS).toggleClass('relation-active', isPCCS);
+            $('#relationType').toggle(!isPCCS).toggleClass('relation-active', !isPCCS);
         }
 
         private showPropertyModal(e?: any): void {
@@ -257,7 +263,11 @@ module Activity {
                         ).prop('selected', true);
                     }
 
-                    $('#relationType').val(property.getClassName());
+                    const isPCCS = this.project.getInputMode() === InputMode.PCCS;
+                    $('#pccsRelationType').toggle(isPCCS).toggleClass('relation-active', isPCCS);
+                    $('#relationType').toggle(!isPCCS).toggleClass('relation-active', !isPCCS);
+
+                    $('.relation-active').val(property.getClassName());
                     $('#firstProcess').val(property.getFirstProcess());
                     $('#secondProcess').val(property.getSecondProcess());
                     this.setSelectedPropertyType('relation');
@@ -296,7 +306,7 @@ module Activity {
             var propertyName, options;
 
             if (this.getSelectedPropertyType() === 'relation') {
-                propertyName = $('#relationType option:selected').val();
+                propertyName = $('.relation-active option:selected').val();
                 options = {
                     firstProcess: $('#firstProcess option:selected').val(),
                     secondProcess: $('#secondProcess option:selected').val(),
@@ -339,7 +349,7 @@ module Activity {
             });
         }
 
-        private verify(e): void {
+        private verify(e: { data: { property: Property.Property } }): void {
             if (this.verifyingProperty == null) {
                 this.verifyingProperty = e.data.property;
                 this.disableVerification();

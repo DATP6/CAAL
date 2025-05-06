@@ -10,6 +10,7 @@
         "typescript": "4.9.4"
     },
     "devDependencies": {
+        "mathjs": "^14.4.0",
         "node-qunit-phantomjs": "~2.1.1",
         "qunitjs": "~2.4.1"
     },
