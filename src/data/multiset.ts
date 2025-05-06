@@ -40,7 +40,35 @@ module MultiSetUtil {
         public clone() {
             return new MultiSet(this.getEntries());
         }
+
+        // Use GCD to reduce the size of the multiset
+        public reduceSize() {
+            const entries = this.getEntries();
+            const weights = entries.map((e) => e.weight);
+            const commonDivisor = weights.reduce((acc, curr) => gcd(acc, curr), weights[0]);
+
+            entries.map((e) => (this._map.set(e.proc, e.weight / commonDivisor)));
+        }
+        
+        // Find the common size of two multisets
+        public commonSize(other: MultiSet<T>) {
+            this.reduceSize();
+            other.reduceSize();
+            let commonMuiltple = lcm(this.size(), other.size());
+            this.getEntries().forEach((e) => {
+                this._map.set(e.proc, e.weight * commonMuiltple);
+            });
+        }
     }
+
+    const gcd = (a: number, b: number): number => {
+        if (b === 0) return a;
+        return gcd(b, a % b);
+    };
+
+    const lcm = (a, b) => {
+        return Math.abs(a * b) / gcd(a, b);
+    };
 
     const singleWeightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
         if (weightA === 0) return setB.clone();

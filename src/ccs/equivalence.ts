@@ -1,6 +1,8 @@
 /// <reference path="ccs.ts" />
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
+/// <reference path="PCCS.ts" />
+/// <reference path="flowGraph.ts" />
 
 module Equivalence {
     import ccs = CCS;
@@ -37,14 +39,13 @@ module Equivalence {
         }
 
         getHyperEdges(identifier: dg.DgNodeId): dg.Hyperedge[] {
-            var type, result;
+            var type, result: dg.DgNodeId[];
             //Have we already built this? Then return copy of the edges.
             if (this.nodes[identifier]) {
                 result = this.nodes[identifier];
             } else {
                 result = this.constructNode(identifier);
             }
-            console.log("getHyperEdges node: ", result)
             return dg.copyHyperEdges(result);
         }
 
@@ -52,7 +53,6 @@ module Equivalence {
             var result,
                 data = this.constructData[identifier],
                 type = data[0];
-            console.log('Constructing node', identifier, data);
             if (type === 0) { // attacker pick L or R and picks transition
                 // Is it a pair?
                 result = this.nodes[identifier] = this.getProcessPairStates(data[1], data[2]);
@@ -63,10 +63,10 @@ module Equivalence {
                 // The right action and destination is fixed?
                 result = this.nodes[identifier] = this.getNodeForRightTransition(data);
             } else if (type == 3) { // Defender chooses coupling, only when using PCCS
-                // result = this.nodes[identifier] = this.createCoupling(data);
+                result = this.nodes[identifier] = this.createCouplingNodes(data);
             } else if (type == 4) { // atacker picks new configuration in supp(coupling)
-                console.log('Attacker picks new configuration');
-                // result = this.nodes[identifier] = this.
+                console.log('PICKING NEW CONFIG : ', data);
+                result = this.nodes[identifier] = this.getNextConfigurations(data);
             }
             return result;
         }
@@ -83,10 +83,96 @@ module Equivalence {
             result.length = this.nextIdx;
             for (var i = 0; i < this.nextIdx; i++) {
                 result[i] = [i, dg.copyHyperEdges(this.nodes[i])];
-                console.log("HE", i, result[i])
             }
             return result;
         }
+
+        getCombinations(arr) {
+            const result = [];
+            function combine(current, index) {
+                if (current.length > 0) {
+                    result.push(current);
+                }
+        
+                for (let i = index; i < arr.length; i++) {
+                    // Include arr[i] in the combination
+                    combine(current.concat(arr[i]), i + 1);
+                }
+            }
+        
+            combine([], 0);
+            return result;
+        }
+
+        cartesianProduct(arr1: string[], arr2: string[]): [any, any][] {
+            const result: [string, string][] = [];
+            arr1.forEach(a => {
+                arr2.forEach(b => {
+                    result.push([a, b]);
+                });
+            });
+            return result;
+        }
+        
+        getSubsets(leftDist, rightDist) {
+            const leftEntries = leftDist.getTargetProcesses().map((p) => p.id);
+            const rightEntries = rightDist.getTargetProcesses().map((p) => p.id);
+            const cartesianProduct = this.cartesianProduct(leftEntries, rightEntries);
+            const subsets: [string, string][][] = [];
+            const totalSubsets = Math.pow(2, cartesianProduct.length);
+            
+            for (let i = 0; i < totalSubsets; i++) {
+                const subset: [string, string][] = [];
+                for (let j = 0; j < cartesianProduct.length; j++) {
+                    if ((i & (1 << j)) !== 0) {
+                        subset.push(cartesianProduct[j]);
+                    }
+                }
+                subsets.push(subset);
+            }
+        
+            return subsets;
+        }
+
+        // Create a coupling for every combination of target processes in each dist
+        createCouplingNodes(data) {
+            let result = [];
+            // Copy the probabilistic processes before finding common multiset size
+            let leftDist = this.defendSuccGen.getProcessById(data[1]) as PCCS.ProbabilisticProcess;
+            let rightDist = this.defendSuccGen.getProcessById(data[1]) as PCCS.ProbabilisticProcess;
+            leftDist.dist.commonSize(rightDist.dist); // Ensure the multisets are the same size
+            rightDist.dist.commonSize(leftDist.dist); // Ensure the multisets are the same size
+            let supportQueue: [string, string][][] = this.getSubsets(leftDist, rightDist);
+            data[3] = supportQueue;
+
+            // Use fulkerson algorithm to find a coupling
+            let currentSupport;
+            while (supportQueue.length > 0) { // this is a queue so that we dont need to find all couplings though not fully implemented yet
+                currentSupport = supportQueue.pop();
+                let graph = new flowGraph(leftDist.dist, rightDist.dist);
+                if (graph.couplingExists(currentSupport)){
+                    // Create a new node for the coupling
+                    let newNodeIdx = this.nextIdx++;
+                    this.constructData[newNodeIdx] = [4, currentSupport];
+                    result.push(newNodeIdx);
+                }
+            }
+            return [result];
+        }
+
+        getNextConfigurations(data) {
+            let result = [];
+            const support = data[1];
+            
+            support.forEach((pair) => {
+                const leftId = pair[0];
+                const rightId = pair[1];
+                const newNodeIdx = this.nextIdx++;
+                this.constructData[newNodeIdx] = [0, leftId, rightId];
+                result.push(newNodeIdx);
+            });
+            return [result];
+        } 
 
         private getNodeForLeftTransition(data) {
             var action = data[1],
@@ -102,7 +188,6 @@ module Equivalence {
                 if (rightTransition.action.equals(action)) {
                     toRightId = rightTransition.targetProcess.id;
                     result.push(this.getOrCreatePairNode(toLeftId, toRightId));
-                    console.log('getNodeForLeftTransition', toLeftId, toRightId);
                 }
             });
             return [result];
@@ -138,7 +223,7 @@ module Equivalence {
             if (!rightIds) this.leftPairs[leftId] = rightIds = {};
             rightIds[rightId] = result;
             // 0 = atacker chooses L or R and transition. 3 = choose coupling (only for PCCS).
-            let nextType = this.attackSuccGen instanceof PCCS.StrictSuccessorGenerator ? 3 : 0;
+            let nextType = this.attackSuccGen.getProcessById(leftId) instanceof PCCS.ProbabilisticProcess ? 3 : 0;
             this.constructData[result] = [nextType, leftId, rightId];
             return result;
         }
@@ -220,6 +305,7 @@ module Equivalence {
                     nextNode: targetNode
                 });
             });
+
 
             return result;
         }
