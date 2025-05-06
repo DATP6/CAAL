@@ -9,6 +9,8 @@ declare var THMLParser;
 declare var PHMLParser;
 
 importScripts(
+    // TODO: Check that this import is correct. We actually need to run the code to do this
+    '../math-14.4.0.js',
     '../ccs_grammar.js',
     '../tccs_grammar.js',
     '../phml_grammar.js',
@@ -277,6 +279,21 @@ messageHandlers.isWeaklyTraceEq = (data) => {
         isSatisfied: leftToRightTraceInclusion.isSatisfied && rightToLeftTraceInclusion.isSatisfied,
         formula: formula
     };
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyProbBisimilar = (data) => {
+    var succGen = CCS.getSuccGenerator(graph, {
+            inputMode: inputMode,
+            time: data.time,
+            succGen: 'strong',
+            reduce: true
+        }),
+        leftProcess = succGen.getProcessByName(data.leftProcess),
+        rightProcess = succGen.getProcessByName(data.rightProcess),
+        isBisimilar = Equivalence.isProbabilisticBisimilar(succGen, leftProcess.id, rightProcess.id);
+    //Add some kind of request id to determine for which problem have result? It is necessary? Right now just add the new data to the result.
+    data.result = isBisimilar;
     self.postMessage(data);
 };
 

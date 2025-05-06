@@ -1,3 +1,6 @@
+// HACK: We include the math.js library from index.html and the main webworker file
+declare const math: any;
+
 module MultiSetUtil {
     // INFO: This is mostly generic simply to avoid cyclical references. This way we do not have to know about the CCS module
     export type Entry<T> = { proc: T; weight: number };
@@ -36,14 +39,40 @@ module MultiSetUtil {
             this._map.set(entry.proc, weight);
         }
 
-        public map(mapper: (entry: Entry<T>, index: number, entries: Entry<T>[]) => Entry<T>) {
+        public map<U>(mapper: (entry: Entry<T>, index: number, entries: Entry<T>[]) => Entry<U>): MultiSet<U> {
             // Quick and dirty implementation. Can definitly be optimised
             const entries = this.getEntries();
             return new MultiSet(entries.map(mapper));
         }
 
+        public support(): T[] {
+            return Array.from(this._map.keys());
+        }
+
         public clone() {
             return new MultiSet(this.getEntries());
+        }
+
+        /**
+         * Return a copy of the multiset where all the weights are in their simplest form.
+         * This means that `a.normalized()[x] = a[x]/gcd(a.weights)`.
+         */
+        public normalized(): MultiSet<T> {
+            const d = math.gcd(...this.getEntries().map((e) => e.weight));
+            return this.map((e) => ({ ...e, weight: e.weight / d }));
+        }
+
+        /**
+         * Return a string representation of the multiset.
+         * The cache key of two multisets (under a total ordering) should be equal iff a.normalized()[x] == b.normalized()[y] for all x and y
+         *
+         * @param keyConversion Function to get a cache key from elements in the multiset. Like this function, keyConversion(x) == keyConversion(y) iff x and y are equivalent
+         */
+        public cacheKey(keyConversion: (a: T) => string, separator: string = '::'): string {
+            return this.getEntries()
+                .sort((a, b) => keyConversion(a.proc).localeCompare(keyConversion(b.proc)))
+                .map(({ proc }) => keyConversion(proc))
+                .join(separator);
         }
     }
 
