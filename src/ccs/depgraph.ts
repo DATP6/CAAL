@@ -312,7 +312,10 @@ module DependencyGraph {
         ZERO = 2;
         ONE = 3;
 
-        constructor(private nodeSuccGen) {}
+        constructor(
+            private nodeSuccGen,
+            private dg?: PartialDependencyGraph & { markNode?: (id: DgNodeId, marking: boolean) => void }
+        ) {}
 
         solve(solveNode?): void {
             if (solveNode != undefined) {
@@ -331,6 +334,11 @@ module DependencyGraph {
             var succGen = this.nodeSuccGen;
             var W = [];
             var edgeComparer = compareHyperedgesMFPCalculator;
+            const markingCallback = (id: DgNodeId, marking: boolean) => {
+                if (this.dg?.markNode) {
+                    this.dg.markNode(id, marking);
+                }
+            };
 
             function load(node) {
                 var hyperedges = succGen(node);
@@ -383,6 +391,7 @@ module DependencyGraph {
                 //Check if improved levels. Also prevents cycle-induced infinity looping.
                 var sourceLevel = Level[source] || Infinity;
                 if (numOnes === tNodes.length && sourceLevel > maxTargetLevel + 1) {
+                    markingCallback(source, true);
                     Level[source] = maxTargetLevel + 1;
                     Deps[source].forEach((edge) => W.push(edge));
                     if ('' + source === solveNodeStr) {
@@ -411,7 +420,7 @@ module DependencyGraph {
         Backwards compatible
     */
     export function liuSmolkaLocal2(m: DgNodeId, graph: PartialDependencyGraph): LevelMarking {
-        var calculator = new MinFixedPointCalculator((k) => graph.getHyperEdges(k));
+        var calculator = new MinFixedPointCalculator((k) => graph.getHyperEdges(k), graph);
         calculator.solve(m);
 
         return {
