@@ -34,7 +34,12 @@ module Equivalence {
             leftNode: ccs.ProcessId,
             rightNode: ccs.ProcessId
         ) {
-            this.constructData[0] = [0, leftNode, rightNode];
+            if (attackSuccGen['succGenerator'] instanceof PCCS.StrictSuccessorGenerator) {
+                this.constructData[0] = [4, [[leftNode, rightNode]]];
+            }
+            else {
+                this.constructData[0] = [0, leftNode, rightNode];
+            }
             this.nextIdx = 1;
         }
 
