@@ -5,78 +5,74 @@ class flowGraph {
     private graph: number[][];
     private leftEntries: { proc: CCS.Process; weight: number; }[];
     private rightEntries: { proc: CCS.Process; weight: number; }[];
-    
+
     constructor(distLeft: PCCS.Distribution, distRight: PCCS.Distribution) {
         this.leftEntries = distLeft.getEntries();
         this.rightEntries = distRight.getEntries();
         this.size = this.leftEntries.length + this.rightEntries.length + 2; // +2 for source and sink
         this.graph = Array.from({ length: this.size }, () => Array(this.size).fill(0));
-        
+
         distLeft.getEntries().forEach((entry, index) => {
             this.graph[0][index + 1] = entry.weight; // Source to left distribution
         });
         distRight.getEntries().forEach((entry, index) => {
             this.graph[index + this.leftEntries.length + 1][this.size - 1] = entry.weight; // Right distribution to sink
         });
-
-        console.log("Graph: ", this.graph);
     }
-  
+
     couplingExists(support: [string, string][]): boolean {
         for (let i = 0; i < support.length; i++) {
             let leftIndex = this.leftEntries.findIndex(entry => entry.proc.id === support[i][0]);
             let rightIndex = this.rightEntries.findIndex(entry => entry.proc.id === support[i][1]);
-            this.graph [leftIndex + 1][rightIndex + this.leftEntries.length + 1] = Infinity;
+            this.graph[leftIndex + 1][rightIndex + this.leftEntries.length + 1] = Infinity;
         }
 
-        console.log('Graph Before fulkerson', JSON.parse(JSON.stringify(this.graph)));
         this.fordFulkerson(0, this.size - 1);
-        console.log("Graph: ", this.graph);
         // coupling exists if all residual capacities from source to sink are 0
         return this.graph[0].every((capacity) => capacity === 0)
     }
-  
+
     // DFS to find an augmenting path
     private dfs(current: number, sink: number, visited: boolean[], parent: number[]): boolean {
         visited[current] = true;
-  
+
         if (current === sink) return true;
-  
+
         for (let next = 0; next < this.size; next++) {
             if (!visited[next] && this.graph[current][next] > 0) {
                 parent[next] = current;
                 if (this.dfs(next, sink, visited, parent)) return true;
             }
         }
-  
+
         return false;
     }
-  
+
     fordFulkerson(source: number, sink: number): number {
         let maxFlow = 0;
         const parent: number[] = Array(this.size).fill(-1);
-    
+
         while (true) {
             const visited: boolean[] = Array(this.size).fill(false);
             if (!this.dfs(source, sink, visited, parent)) break;
-    
+
             // Find minimum capacity in the path
             let pathFlow = Infinity;
             for (let v = sink; v !== source; v = parent[v]) {
                 const u = parent[v];
                 pathFlow = Math.min(pathFlow, this.graph[u][v]);
             }
-    
+
             // Update residual capacities
             for (let v = sink; v !== source; v = parent[v]) {
                 const u = parent[v];
                 this.graph[u][v] -= pathFlow;
                 this.graph[v][u] += pathFlow;
             }
-    
+
             maxFlow += pathFlow;
         }
-    
+
         return maxFlow;
     }
-  }
+}

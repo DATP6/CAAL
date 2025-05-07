@@ -92,13 +92,13 @@ module Equivalence {
                 if (current.length > 0) {
                     result.push(current);
                 }
-        
+
                 for (let i = index; i < arr.length; i++) {
                     // Include arr[i] in the combination
                     combine(current.concat(arr[i]), i + 1);
                 }
             }
-        
+
             combine([], 0);
             return result;
         }
@@ -112,14 +112,14 @@ module Equivalence {
             });
             return result;
         }
-        
+
         getSubsets(leftDist, rightDist) {
             const leftEntries = leftDist.getTargetProcesses().map((p) => p.id);
             const rightEntries = rightDist.getTargetProcesses().map((p) => p.id);
             const cartesianProduct = this.cartesianProduct(leftEntries, rightEntries);
             const subsets: [string, string][][] = [];
             const totalSubsets = Math.pow(2, cartesianProduct.length);
-            
+
             for (let i = 0; i < totalSubsets; i++) {
                 const subset: [string, string][] = [];
                 for (let j = 0; j < cartesianProduct.length; j++) {
@@ -129,7 +129,7 @@ module Equivalence {
                 }
                 subsets.push(subset);
             }
-        
+
             return subsets;
         }
 
@@ -143,8 +143,7 @@ module Equivalence {
             let lcm = leftDist.dist.leastCommonMultiple(rightDist.dist);
             leftDist.dist.scale(lcm / leftDist.dist.size());
             rightDist.dist.scale(lcm / rightDist.dist.size());
-            
-            console.log("SIZES: ", leftDist.dist.size(), rightDist.dist.size());
+
             let supportQueue: [string, string][][] = this.getSubsets(leftDist, rightDist);
             data[3] = supportQueue;
 
@@ -153,8 +152,7 @@ module Equivalence {
             while (supportQueue.length > 0) { // this is a queue so that we dont need to find all couplings though not fully implemented yet
                 currentSupport = supportQueue.pop();
                 let graph = new flowGraph(leftDist.dist, rightDist.dist);
-                if (graph.couplingExists(currentSupport)){
-                    console.log('Coupling exists', currentSupport);
+                if (graph.couplingExists(currentSupport)) {
                     // Create a new node for the coupling
                     let newNodeIdx = this.nextIdx++;
                     this.constructData[newNodeIdx] = [4, currentSupport];
@@ -167,7 +165,7 @@ module Equivalence {
         getNextConfigurations(data) {
             var hyperedges: dg.Hyperedge[] = [];
             const support = data[1];
-            
+
             support.forEach((pair) => {
                 const leftId = pair[0];
                 const rightId = pair[1];
@@ -176,7 +174,7 @@ module Equivalence {
                 hyperedges.push([newNodeIdx]);
             });
             return hyperedges;
-        } 
+        }
 
         private getNodeForLeftTransition(data) {
             var action = data[1],
@@ -725,7 +723,6 @@ module Equivalence {
     ) {
         var bisimDG = new Equivalence.BisimulationDG(attackSuccGen, defendSuccGen, leftProcessId, rightProcessId),
             marking = dg.liuSmolkaLocal2(0, bisimDG);
-            console.log("marking", marking, bisimDG);
         return marking.getMarking(0) === marking.ZERO;
     }
 

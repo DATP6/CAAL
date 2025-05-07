@@ -21,6 +21,7 @@ module Activity {
         private $rightProcessList: JQuery;
         private $ccsGameTypes: JQuery;
         private $tccsGameTypes: JQuery;
+        private $pccsGameTypes: JQuery;
         private $gameRelation: JQuery;
         private $playerType: JQuery;
         private $restart: JQuery;
@@ -53,6 +54,7 @@ module Activity {
             this.$rightProcessList = $('#game-right-process');
             this.$ccsGameTypes = $('#game-ccs-type');
             this.$tccsGameTypes = $('#game-tccs-type');
+            this.$pccsGameTypes = $('#game-pccs-type');
             this.$gameRelation = $('#game-relation');
             this.$playerType = $('input[name=player-type]');
             this.$restart = $('#game-restart');
@@ -76,6 +78,7 @@ module Activity {
             this.$rightProcessList.on('change', () => this.newGame(false, true));
             this.$ccsGameTypes.on('change', () => this.newGame(true, true));
             this.$tccsGameTypes.on('change', () => this.newGame(true, true));
+            this.$pccsGameTypes.on('change', () => this.newGame(true, true));
             this.$gameRelation.on('change', () => this.newGame(false, false));
             this.$playerType.on('change', () => this.newGame(false, false));
             this.$restart.on('click', () => this.newGame(false, false));
@@ -178,9 +181,15 @@ module Activity {
                 if (this.project.getInputMode() === InputMode.CCS) {
                     this.$ccsGameTypes.show();
                     this.$tccsGameTypes.hide();
-                } else {
+                    this.$pccsGameTypes.hide();
+                } else if (this.project.getInputMode() === InputMode.TCCS) {
                     this.$ccsGameTypes.hide();
                     this.$tccsGameTypes.show();
+                    this.$pccsGameTypes.hide();
+                } else {
+                    this.$ccsGameTypes.hide();
+                    this.$tccsGameTypes.hide();
+                    this.$pccsGameTypes.show();
                 }
 
                 this.changed = false;
@@ -290,9 +299,11 @@ module Activity {
 
             if (this.project.getInputMode() === InputMode.CCS) {
                 options.type = this.$ccsGameTypes.val();
-            } else {
+            } else if (this.project.getInputMode() === InputMode.TCCS) {
                 options.type = this.$tccsGameTypes.find('option:selected').val();
                 options.time = this.$tccsGameTypes.find('option:selected').data('time');
+            } else {
+                options.type = this.$pccsGameTypes.val();
             }
 
             return options;
@@ -304,10 +315,12 @@ module Activity {
 
             if (this.project.getInputMode() === InputMode.CCS) {
                 this.$ccsGameTypes.val(options.type);
-            } else {
+            } else if (this.project.getInputMode() === InputMode.TCCS) {
                 this.$tccsGameTypes
                     .find('[value=' + options.type + '][data-time=' + options.time + ']')
                     .prop('selected', true);
+            } else {
+                this.$pccsGameTypes.val(options.type);
             }
 
             this.$gameRelation.val(options.relation);
@@ -1585,8 +1598,8 @@ module Activity {
                         winner instanceof Computer
                             ? 'You ({3}) have'
                             : winner.getPlayType() === PlayType.Attacker
-                              ? 'Defender has'
-                              : 'Attacker has'
+                                ? 'Defender has'
+                                : 'Attacker has'
                 },
                 2: { text: winner instanceof Computer ? 'lose' : 'win' },
                 3: { text: winner.getPlayType() === PlayType.Attacker ? 'defender' : 'attacker' }
