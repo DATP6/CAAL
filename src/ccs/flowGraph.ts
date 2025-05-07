@@ -23,7 +23,6 @@ class flowGraph {
     }
   
     couplingExists(support: [string, string][]): boolean {
-
         for (let i = 0; i < support.length; i++) {
             let leftIndex = this.leftEntries.findIndex(entry => entry.proc.id === support[i][0]);
             let rightIndex = this.rightEntries.findIndex(entry => entry.proc.id === support[i][1]);

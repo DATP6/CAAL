@@ -1,7 +1,7 @@
 /// <reference path="ccs.ts" />
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
-/// <reference path="PCCS.ts" />
+/// <reference path="pccs.ts" />
 /// <reference path="flowGraph.ts" />
 
 module Equivalence {
@@ -65,7 +65,6 @@ module Equivalence {
             } else if (type == 3) { // Defender chooses coupling, only when using PCCS
                 result = this.nodes[identifier] = this.createCouplingNodes(data);
             } else if (type == 4) { // atacker picks new configuration in supp(coupling)
-                console.log('PICKING NEW CONFIG : ', data);
                 result = this.nodes[identifier] = this.getNextConfigurations(data);
             }
             return result;
@@ -139,9 +138,13 @@ module Equivalence {
             let result = [];
             // Copy the probabilistic processes before finding common multiset size
             let leftDist = this.defendSuccGen.getProcessById(data[1]) as PCCS.ProbabilisticProcess;
-            let rightDist = this.defendSuccGen.getProcessById(data[1]) as PCCS.ProbabilisticProcess;
-            leftDist.dist.commonSize(rightDist.dist); // Ensure the multisets are the same size
-            rightDist.dist.commonSize(leftDist.dist); // Ensure the multisets are the same size
+            let rightDist = this.defendSuccGen.getProcessById(data[2]) as PCCS.ProbabilisticProcess;
+            // Ensure that the sizes of the multisets are the same
+            let lcm = leftDist.dist.leastCommonMultiple(rightDist.dist);
+            leftDist.dist.scale(lcm / leftDist.dist.size());
+            rightDist.dist.scale(lcm / rightDist.dist.size());
+            
+            console.log("SIZES: ", leftDist.dist.size(), rightDist.dist.size());
             let supportQueue: [string, string][][] = this.getSubsets(leftDist, rightDist);
             data[3] = supportQueue;
 
@@ -151,6 +154,7 @@ module Equivalence {
                 currentSupport = supportQueue.pop();
                 let graph = new flowGraph(leftDist.dist, rightDist.dist);
                 if (graph.couplingExists(currentSupport)){
+                    console.log('Coupling exists', currentSupport);
                     // Create a new node for the coupling
                     let newNodeIdx = this.nextIdx++;
                     this.constructData[newNodeIdx] = [4, currentSupport];
@@ -161,17 +165,17 @@ module Equivalence {
         }
 
         getNextConfigurations(data) {
-            let result = [];
+            var hyperedges: dg.Hyperedge[] = [];
             const support = data[1];
             
             support.forEach((pair) => {
                 const leftId = pair[0];
                 const rightId = pair[1];
-                const newNodeIdx = this.nextIdx++;
+                var newNodeIdx = this.nextIdx++;
                 this.constructData[newNodeIdx] = [0, leftId, rightId];
-                result.push(newNodeIdx);
+                hyperedges.push([newNodeIdx]);
             });
-            return [result];
+            return hyperedges;
         } 
 
         private getNodeForLeftTransition(data) {
@@ -183,7 +187,7 @@ module Equivalence {
             // fromRightId must be able to match.
             var rightTransitions = this.defendSuccGen.getSuccessors(fromRightId);
             rightTransitions.forEach((rightTransition) => {
-                var existing, toRightId;
+                var toRightId;
                 //Same action - possible candidate.
                 if (rightTransition.action.equals(action)) {
                     toRightId = rightTransition.targetProcess.id;
@@ -200,7 +204,7 @@ module Equivalence {
                 result = [];
             var leftTransitions = this.defendSuccGen.getSuccessors(fromLeftId);
             leftTransitions.forEach((leftTransition) => {
-                var existing, toLeftId;
+                var toLeftId;
                 if (leftTransition.action.equals(action)) {
                     toLeftId = leftTransition.targetProcess.id;
                     result.push(this.getOrCreatePairNode(toLeftId, toRightId));
@@ -721,6 +725,7 @@ module Equivalence {
     ) {
         var bisimDG = new Equivalence.BisimulationDG(attackSuccGen, defendSuccGen, leftProcessId, rightProcessId),
             marking = dg.liuSmolkaLocal2(0, bisimDG);
+            console.log("marking", marking, bisimDG);
         return marking.getMarking(0) === marking.ZERO;
     }
 

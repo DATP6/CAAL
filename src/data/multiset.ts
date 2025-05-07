@@ -45,19 +45,18 @@ module MultiSetUtil {
         public reduceSize() {
             const entries = this.getEntries();
             const weights = entries.map((e) => e.weight);
-            const commonDivisor = weights.reduce((acc, curr) => gcd(acc, curr), weights[0]);
-
+            const commonDivisor = weights.reduce((acc, curr) => gcd(acc, curr)); 
             entries.map((e) => (this._map.set(e.proc, e.weight / commonDivisor)));
         }
         
         // Find the common size of two multisets
-        public commonSize(other: MultiSet<T>) {
-            this.reduceSize();
-            other.reduceSize();
-            let commonMuiltple = lcm(this.size(), other.size());
-            this.getEntries().forEach((e) => {
-                this._map.set(e.proc, e.weight * commonMuiltple);
-            });
+        public leastCommonMultiple(other: MultiSet<T>) {
+            return lcm(this.size(), other.size());
+        }
+
+        public scale(scale: number) {
+            const entries = this.getEntries();
+            entries.map((e) => (this._map.set(e.proc, e.weight * scale)));
         }
     }
 
