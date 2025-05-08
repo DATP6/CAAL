@@ -132,17 +132,13 @@ module Equivalence {
                         subset.push(cartesianProduct[j]);
                     }
                 }
-                subsets.push(subset);
+                // any subsets that has processes that dont have matching actions are not added
+                if (this.hasOnlyMatchingActions(subset)) subsets.push(subset);
             }
-            
-            // any subsets that has processes that dont have matching actions are removed
-            subsets = subsets.filter(set => this.hasOnlyMatchingActions(set));
-
             return subsets;
         }
 
         hasOnlyMatchingActions(subset: [string, string][]) {
-            console.log("subset", subset)
             return subset.every(pair => {
                 const aActions = this.attackSuccGen.getSuccessors(pair[0]).possibleActions().sort();
                 const bActions = this.attackSuccGen.getSuccessors(pair[1]).possibleActions().sort();
