@@ -122,9 +122,9 @@ module Equivalence {
             const leftEntries = leftDist.getTargetProcesses().map((p) => p.id);
             const rightEntries = rightDist.getTargetProcesses().map((p) => p.id);
             const cartesianProduct = this.cartesianProduct(leftEntries, rightEntries);
-            const subsets: [string, string][][] = [];
+            let subsets: [string, string][][] = [];
             const totalSubsets = Math.pow(2, cartesianProduct.length);
-
+            
             for (let i = 0; i < totalSubsets; i++) {
                 const subset: [string, string][] = [];
                 for (let j = 0; j < cartesianProduct.length; j++) {
@@ -134,9 +134,22 @@ module Equivalence {
                 }
                 subsets.push(subset);
             }
+            
+            // any subsets that has processes that dont have matching actions are removed
+            subsets = subsets.filter(set => this.hasOnlyMatchingActions(set));
 
             return subsets;
         }
+
+        hasOnlyMatchingActions(subset: [string, string][]) {
+            console.log("subset", subset)
+            return subset.every(pair => {
+                const aActions = this.attackSuccGen.getSuccessors(pair[0]).possibleActions().sort();
+                const bActions = this.attackSuccGen.getSuccessors(pair[1]).possibleActions().sort();
+                return (aActions.length == bActions.length && aActions.every((act, i) => act.equals(bActions[i]!)))
+            })
+        }
+
 
         // Create a coupling for every combination of target processes in each dist
         createCouplingNodes(data) {
