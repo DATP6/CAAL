@@ -360,9 +360,6 @@ module Activity {
                                 // for each target process in the distrubution, create transition from dot to target
                                 this.showProcess(proc);
 
-                                if (isNaN(probability)) {
-                                    console.error('NaN prop for', proc);
-                                }
                                 this.uiGraph.showTransitions(strProcId, proc.id, [
                                     { dashed: true, label: probability }
                                 ]);

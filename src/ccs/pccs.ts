@@ -16,7 +16,7 @@ module PCCS {
             this.unguardedRecursionChecker = new Traverse.PCCSUnguardedRecursionChecker();
         }
 
-        public newProbabilisticProcess(probability: { num: number; den: number }, subProcesses: CCS.Process[]) {
+        public newProbabilisticProcess(probability: { num: bigint; den: bigint }, subProcesses: CCS.Process[]) {
             let entry1 = { proc: subProcesses[0], weight: probability.num };
             let entry2 = { proc: subProcesses[1], weight: probability.den - probability.num };
             let dist = newDistribution([entry1, entry2]);
@@ -262,7 +262,6 @@ module PCCS {
             return (this.cache[process.id] ??= process.dispatchOn(this));
         }
 
-        // TODO: Someone sanity check this
         dispatchProbabilisticProcess(process: ProbabilisticProcess) {
             let result = this.cache[process.id];
             if (result) return result;
@@ -280,7 +279,7 @@ module PCCS {
             let result = this.cache[process.id];
             if (result) return result;
 
-            result = newDistribution([{ proc: process, weight: 1 }]);
+            result = newDistribution([{ proc: process, weight: 1n }]);
 
             return (this.cache[process.id] = result);
         }
@@ -289,7 +288,7 @@ module PCCS {
             let result = this.cache[process.id];
             if (result) return result;
 
-            result = newDistribution([{ proc: process, weight: 1 }]);
+            result = newDistribution([{ proc: process, weight: 1n }]);
 
             return (this.cache[process.id] = result);
         }
@@ -301,7 +300,7 @@ module PCCS {
             // TODO: Ensure this works for `K=A 0.5 B`, which it does not at the moment
             // Simply expanding it leads to infinite recursion.
             // May be enough to only expand if it starts as a probability
-            result = newDistribution([{ proc: process, weight: 1 }]);
+            result = newDistribution([{ proc: process, weight: 1n }]);
 
             return (this.cache[process.id] = result);
         }
