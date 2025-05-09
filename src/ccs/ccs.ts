@@ -185,8 +185,8 @@ module CCS {
     }
 
     export class Action {
-        private label: string;
-        private complement: boolean;
+        protected label: string;
+        protected complement: boolean;
 
         constructor(label: string, isComplement: boolean) {
             if (label === 'tau' && isComplement) {
@@ -205,7 +205,7 @@ module CCS {
         }
 
         equals(other: Action) {
-            return this.label === other.label && this.complement === other.complement;
+            return this.label === other.getLabel() && this.complement === other.isComplement();
         }
 
         toString(formatComplement = false) {

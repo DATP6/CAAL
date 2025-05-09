@@ -165,7 +165,9 @@ module Equivalence {
             returns: the action, alpha, leading to Q, Q itself, the next DG node, type of move (0,1,2).
         */
         public getAttackerOptions(dgNodeId: dg.DgNodeId): [CCS.Action, CCS.Process, dg.DgNodeId, number][] {
-            if (this.constructData[dgNodeId][0] !== 0) throw 'Bad node for attacker options';
+            console.log("attacker options:")
+            console.log(this.constructData[dgNodeId][0])
+            if ([1,2,3].includes(this.constructData[dgNodeId][0])) throw 'Bad node for attacker options';
 
             var hyperedges = this.getHyperEdges(dgNodeId);
             var result = [];
@@ -195,7 +197,9 @@ module Equivalence {
             matched with and the resulting dependency graph node
         */
         public getDefenderOptions(dgNodeId: dg.DgNodeId): [CCS.Process, dg.DgNodeId][] {
-            if (this.constructData[dgNodeId][0] === 0) throw 'Bad node for defender options';
+            console.log("defender options:")
+            console.log(this.constructData[dgNodeId])
+            if ([0,4].includes(this.constructData[dgNodeId][0])) throw 'Bad node for defender options';
 
             var hyperedge = this.getHyperEdges(dgNodeId)[0];
             var result = [];
@@ -208,6 +212,36 @@ module Equivalence {
                 result.push({
                     targetProcess: targetProcess,
                     nextNode: targetNode
+                });
+            });
+
+            return result;
+        }
+
+        /*
+            Returns information about the attackers options P -- alpha --> Q that the defender than have to match.
+            returns: the action, alpha, leading to Q, Q itself, the next DG node, type of move (0,1,2).
+        */
+        public getAttackerSuppOptions(dgNodeId: dg.DgNodeId): [CCS.Action, CCS.Process, dg.DgNodeId, number][] {
+            if (this.constructData[dgNodeId][0] !== 4) throw 'Bad node for attacker supp options';
+
+            var hyperedges = this.getHyperEdges(dgNodeId);
+            var result = [];
+
+            hyperedges.forEach((hyperedge) => {
+                //The dg nodes are constructed such that each hyperedge only have one target node.
+                //therefore no need to loop over the hyperedge.
+                var targetNode = hyperedge[0];
+                var data = this.constructData[targetNode];
+                var action = data[1];
+                var targetProcess = this.attackSuccGen.getProcessById(data[2]);
+                var move = data[0];
+
+                result.push({
+                    action: action,
+                    targetProcess: targetProcess,
+                    nextNode: targetNode,
+                    move: move
                 });
             });
 
@@ -1059,7 +1093,7 @@ module Equivalence {
     }
 
     // TODO: We need to have some kind of hashmap to avoid constructing duplicate nodes
-    export class ProbabilisticBisimDG implements dg.DependencyGraph {
+    export class ProbabilisticBisimDG implements dg.DependencyGraph, dg.PlayableDependencyGraph {
         private nodes: ProbabilisticDGNode[] = [];
         private cache: Map<string, number> = new Map();
         private badPairs: Set<string> = new Set();
@@ -1281,6 +1315,16 @@ module Equivalence {
             ]);
 
             return toConstructed(node, hyperedges);
+        }
+
+        public getAttackerOptions(dgNodeId: any): [ccs.Action, ccs.Process, any, number][] {
+            //TODO: implement
+            return []
+        }
+
+        public getDefenderOptions(dgNodeId: any): [ccs.Process, any][] {
+            //TODO: implement
+            return []
         }
     }
 }

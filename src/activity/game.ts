@@ -132,6 +132,10 @@ module Activity {
             }
         }
 
+        get inputMode(): InputMode {
+            return this.project.getInputMode();
+        }
+
         public getSuccessorGenerator(): CCS.SuccessorGenerator {
             return this.succGen;
         }
@@ -333,6 +337,7 @@ module Activity {
                 options = this.getOptions();
             }
 
+            // TODO: make sure this is actually the PCCS succgen
             this.succGen = CCS.getSuccGenerator(this.graph, {
                 inputMode: InputMode[this.project.getInputMode()],
                 time: options.time,
@@ -369,7 +374,21 @@ module Activity {
                 this.dgGame.stopGame();
             }
 
-            if (options.relation === 'Simulation') {
+            // PCCS currently only supports strong bisimulation
+            // It has its own game class as it is fundamentally different (i.e. each player has two actions)
+            if (this.project.getInputMode() === InputMode.PCCS) {
+                this.dgGame = new ProbabilisticBisimulationGame(
+                    this,
+                    this.graph as PCCS.Graph,
+                    attackerSuccessorGenerator as PCCS.StrictSuccessorGenerator,
+                    defenderSuccessorGenerator as PCCS.StrictSuccessorGenerator,
+                    options.leftProcess,
+                    options.rightProcess,
+                    options.time,
+                    options.type
+                )
+            }
+            else if (options.relation === 'Simulation') {
                 this.dgGame = new SimulationGame(
                     this,
                     this.graph,
@@ -562,13 +581,7 @@ module Activity {
         Left
     }
 
-    class Abstract {
-        protected abstract(): any {
-            throw new Error('Abstract method not implemented.');
-        }
-    }
-
-    class DgGame extends Abstract {
+    abstract class DgGame {
         protected dependencyGraph: dg.PlayableDependencyGraph;
         protected marking: dg.LevelMarking;
         protected graph: CCS.Graph;
@@ -601,8 +614,6 @@ module Activity {
             time: string,
             gameType: string
         ) {
-            super();
-
             this.gameActivity = gameActivity;
             this.gameLog = gameLog;
             this.graph = graph;
@@ -628,6 +639,10 @@ module Activity {
 
         public getGameLog(): GameLog {
             return this.gameLog;
+        }
+
+        get InputMode(): InputMode {
+            return this.gameActivity.inputMode;
         }
 
         public computeMarking(): dg.LevelMarking {
@@ -710,17 +725,15 @@ module Activity {
             }
         }
 
-        public play(
+        public abstract play(
             player: Player,
             destinationProcess: any,
             nextNode: dg.DgNodeId,
-            action: CCS.Action = this.lastAction,
+            action?: CCS.Action,
             move?: Move
-        ): void {
-            this.abstract();
-        }
+        ): void
 
-        protected preparePlayer(player: Player) {
+        public preparePlayer(player: Player) {
             var choices: any = this.getCurrentChoices(player.getPlayType());
 
             // determine if game is over
@@ -780,34 +793,20 @@ module Activity {
         }
 
         /* Abstract methods */
-        public getUniversalWinner(): Player {
-            return this.abstract();
-        }
-        public getCurrentWinner(): Player {
-            return this.abstract();
-        }
-        public getBestWinningAttack(choices: any): any {
-            this.abstract();
-        }
-        public getTryHardAttack(choices: any): any {
-            this.abstract();
-        }
-        public getWinningDefend(choices: any): any {
-            this.abstract();
-        }
-        public getTryHardDefend(choices: any): any {
-            this.abstract();
-        }
-        protected createDependencyGraph(
+        public abstract getUniversalWinner(): Player
+        public abstract getCurrentWinner(): Player
+        public abstract getBestWinningAttack(choices: any): any
+        public abstract getTryHardAttack(choices: any): any
+        public abstract getWinningDefend(choices: any): any
+        public abstract getTryHardDefend(choices: any): any
+        protected abstract createDependencyGraph(
             graph: CCS.Graph,
             currentLeft: any,
             currentRight: any
-        ): dg.PlayableDependencyGraph {
-            return this.abstract();
-        }
+        ): dg.PlayableDependencyGraph
     }
 
-    class DgComputerStrategy extends DgGame {
+    abstract class DgComputerStrategy extends DgGame {
         constructor(
             gameActivity: Game,
             gameLog: GameLog,
@@ -844,7 +843,7 @@ module Activity {
             var bestCandidateIndices = [];
             var bestRatio = 0;
 
-            choices.forEach((choice, i) => {
+            choices.forEach((choice: { nextNode: any; }, i: any) => {
                 var oneMarkings = 0;
                 var defenderChoices: any = this.dependencyGraph.getDefenderOptions(choice.nextNode);
 
@@ -917,12 +916,12 @@ module Activity {
     }
 
     class BisimulationGame extends DgComputerStrategy {
-        private leftProcessName: string;
-        private rightProcessName: string;
-        private bisimulationDg: Equivalence.BisimulationDG;
-        private bisimilar: boolean;
-        private attackerSuccessorGen: CCS.SuccessorGenerator;
-        private defenderSuccessorGen: CCS.SuccessorGenerator;
+        protected leftProcessName: string;
+        protected rightProcessName: string;
+        protected bisimulationDg: Equivalence.BisimulationDG | Equivalence.ProbabilisticBisimDG;
+        protected bisimilar: boolean;
+        protected attackerSuccessorGen: CCS.SuccessorGenerator;
+        protected defenderSuccessorGen: CCS.SuccessorGenerator;
 
         constructor(
             gameActivity: Game,
@@ -971,9 +970,11 @@ module Activity {
             player: Player,
             destinationProcess: any,
             nextNode: dg.DgNodeId,
-            action: CCS.Action = this.lastAction,
+            action?: CCS.Action,
             move?: Move
         ): void {
+            action = action ?? this.lastAction // default value
+
             var previousConfig = this.getCurrentConfiguration();
             var strictPath = [new CCS.Transition(action, destinationProcess)];
 
@@ -985,7 +986,7 @@ module Activity {
                 this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move, this);
 
                 this.lastAction = action;
-                this.lastMove = move;
+                this.lastMove = move!; // never undefined for attacker
 
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.preparePlayer(this.defender);
@@ -1099,9 +1100,10 @@ module Activity {
             player: Player,
             destinationProcess: any,
             nextNode: dg.DgNodeId,
-            action: CCS.Action = this.lastAction,
+            action?: CCS.Action,
             move?: Move
         ): void {
+            action = action ?? this.lastAction
             var previousConfig = this.getCurrentConfiguration();
             var strictPath = [new CCS.Transition(action, destinationProcess)];
 
@@ -1113,7 +1115,7 @@ module Activity {
                 this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move, this);
 
                 this.lastAction = action;
-                this.lastMove = move;
+                this.lastMove = move!;
 
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.preparePlayer(this.defender);
@@ -1171,9 +1173,157 @@ module Activity {
         }
     }
 
-    class Player extends Abstract {
+
+    class ProbabilisticBisimulationGame extends BisimulationGame {
+        private consecutivePlay = false
+
+        constructor(
+            gameActivity: Game,
+            graph: PCCS.Graph,
+            attackerSuccessorGen: PCCS.StrictSuccessorGenerator,
+            defenderSuccessorGen: PCCS.StrictSuccessorGenerator,
+            leftProcessName: string,
+            rightProcessName: string,
+            time: string,
+            gameType: string
+        ) {
+            super(
+                gameActivity,
+                graph,
+                attackerSuccessorGen,
+                defenderSuccessorGen,
+                leftProcessName,
+                rightProcessName,
+                time,
+                gameType,
+            ); // creates dependency graph and marking
+        }
+
+        public override startGame(): void {
+            super.startGame();
+
+            // TODO: insert extra stuff here
+        }
+
+        public override preparePlayer(player: Player) {
+            var choices: any = this.getCurrentChoices(player.getPlayType());
+
+            // determine if game is over
+            if (choices.length === 0) {
+                // the player to be prepared cannot make a move
+                // the player to prepare has lost, announce it
+                this.gameLog.printWinner(player === this.attacker ? this.defender : this.attacker);
+
+                // stop game
+                this.stopGame();
+            } else {
+                // save the old winner, and then update who wins
+                var oldWinner = this.currentWinner;
+                this.currentWinner = this.getCurrentWinner();
+
+                // if winner changed, let the user know
+                if (oldWinner !== this.currentWinner) this.gameLog.printWinnerChanged(this.currentWinner);
+
+                // tell the player to prepare for his turn
+                player.prepareTurn(choices, this);
+            }
+        }
+
+        public prepareCoupling() {
+            let choices = this.getCurrentChoices(PlayType.Attacker);
+        }
+
+        // used to detect cycles
+        public override getConfigurationStr(configuration: any): string {
+            var result = '(';
+
+            result += this.graph.getLabel(configuration.left);
+            result += ', ';
+            result += this.graph.getLabel(configuration.right);
+            result += ')';
+
+            return result;
+        }
+
+        public override play(
+            player: Player,
+            destinationProcess: any,
+            nextNode: dg.DgNodeId,
+            action: CCS.Action = this.lastAction,
+            move?: Move
+        ): void {
+            // TODO: should probably change moves and such
+            var previousConfig = this.getCurrentConfiguration();
+            var strictPath = [new CCS.Transition(action, destinationProcess)];
+
+            // change the current node id to the next
+            this.currentNodeId = nextNode;
+
+            // "binary" counter to determine if player has taken their two turns
+            // UNUSED ATM
+            this.consecutivePlay = !this.consecutivePlay
+
+            if (player.getPlayType() == PlayType.Attacker) {
+                var sourceProcess = move === Move.Left ? previousConfig.left : previousConfig.right;
+                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
+
+                this.lastAction = action;
+                this.lastMove = move!; // never undefined for attacker
+
+                this.saveCurrentProcess(destinationProcess, this.lastMove);
+                this.preparePlayer(this.defender);
+            } else {
+                // the play is a defense, flip the saved last move
+                this.lastMove = this.lastMove === Move.Right ? Move.Left : Move.Right;
+
+                var sourceProcess = this.lastMove === Move.Left ? previousConfig.left : previousConfig.right;
+                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this);
+
+                this.saveCurrentProcess(destinationProcess, this.lastMove);
+
+                this.round++;
+                this.gameLog.printRound(this.round, this.getCurrentConfiguration());
+
+                if (!this.cycleExists()) this.defender.prepareCoupling([], this);
+
+                if (this.defenderSuccessorGen instanceof Traverse.AbstractingSuccessorGenerator) {
+                    strictPath = (<Traverse.AbstractingSuccessorGenerator>this.defenderSuccessorGen).getStrictPath(
+                        sourceProcess.id,
+                        action,
+                        destinationProcess.id
+                    );
+                }
+            }
+
+            this.gameActivity.onPlay(strictPath, this.lastMove);
+            this.gameActivity.centerNode(destinationProcess, this.lastMove);
+        }
+
+        public playCoupling(rightDist: PCCS.ProbabilisticProcess, leftDist: PCCS.ProbabilisticProcess) {
+            // TODO: print coupling in gamelog
+            this.attacker.prepareSuppPair([], this)
+        }
+
+        public playSupportPair(nextNodePair: [dg.DgNodeId, dg.DgNodeId]) {
+            // TODO: print pair in gamelog
+            this.preparePlayer(this.attacker);
+        }
+
+        protected override createDependencyGraph(
+            graph: CCS.Graph,
+            currentLeft: any,
+            currentRight: any
+        ): dg.PlayableDependencyGraph {
+            return (this.bisimulationDg = new Equivalence.ProbabilisticBisimDG(
+                this.attackerSuccessorGen,
+                this.currentLeft.id,
+                this.currentRight.id,
+            ));
+        }
+    }
+
+    abstract class Player {
         constructor(private playType: PlayType) {
-            super();
         }
 
         public prepareTurn(choices: any, game: DgGame): void {
@@ -1193,9 +1343,7 @@ module Activity {
             return this.playType;
         }
 
-        public abortPlay(): void {
-            // virtual, override
-        }
+        public abstract abortPlay(): void
 
         public playTypeStr(allLower: boolean = false): string {
             if (allLower) {
@@ -1205,17 +1353,31 @@ module Activity {
             }
         }
 
+        // only for PCCS
+        // must be implemented by both human and computer and call this (super)
+        public prepareCoupling(choices: any, game: DgGame): void {
+            if (this.playType !== PlayType.Defender) {
+                throw 'Attacker cannot create a coupling'
+            } else if (game.InputMode !== InputMode.PCCS) {
+                throw 'Cannot create a coupling for non PCCS processes'
+            }
+        }
+
+        public prepareSuppPair(choises: any, game: DgGame): void {
+            if (this.playType !== PlayType.Attacker) {
+                throw 'Defender cannot select state pairs '
+            } else if (game.InputMode !== InputMode.PCCS) {
+                throw 'Cannot create select state pairs for non PCCS processes'
+            }
+        }
+
         /* Abstract methods */
-        protected prepareAttack(choices: any, game: DgGame): void {
-            this.abstract();
-        }
-        protected prepareDefend(choices: any, game: DgGame): void {
-            this.abstract();
-        }
+        protected abstract prepareAttack(choices: any, game: DgGame): void
+        protected abstract prepareDefend(choices: any, game: DgGame): void
     }
 
     class Human extends Player {
-        private $table;
+        private $table: JQuery;
 
         constructor(
             playType: PlayType,
@@ -1234,6 +1396,27 @@ module Activity {
         protected prepareDefend(choices: any, game: DgGame): void {
             this.fillTable(choices, game, false);
             game.getGameLog().printPrepareDefend(game.getLastMove());
+        }
+
+        public override prepareCoupling(choices: any, game: DgGame): void {
+            super.prepareCoupling([], game)
+            // TODO: implement
+            this.fillCouplingTable(choices, game)
+            game.getGameLog().printPrepareCoupling()
+        }
+
+        public override prepareSuppPair(choices: any, game: DgGame): void {
+            super.prepareSuppPair([], game)
+            this.fillSuppPairTable(choices, game)
+            game.getGameLog().printPrepareSuppPair()
+        }
+
+        private fillCouplingTable(choices: any, game: DgGame): void {
+            //TODO: implement
+        }
+
+        private fillSuppPairTable(choices: any, game: DgGame): void {
+            //TODO: implement
         }
 
         private fillTable(choices: any, game: DgGame, isAttack: boolean): void {
@@ -1287,16 +1470,6 @@ module Activity {
                     this.clickChoice(choice, game, isAttack);
                 });
 
-                // highlight the edge
-                $(row).on('mouseenter', (event) => {
-                    //this.highlightChoices(choice, game, isAttack, true, event);
-                });
-
-                // remove the highlight
-                $(row).on('mouseleave', (event) => {
-                    //this.highlightChoices(choice, game, isAttack, false, event);
-                });
-
                 row.append($sourceTd, $actionTd, $targetTd);
                 this.$table.append(row);
             });
@@ -1308,33 +1481,6 @@ module Activity {
 
         private labelFor(process: CCS.Process): string {
             return this.gameActivity.labelFor(process);
-        }
-
-        private highlightChoices(choice: any, game: DgGame, isAttack: boolean, entering: boolean, event) {
-            var move: Move;
-
-            if (isAttack) {
-                move = choice.move === 1 ? Move.Left : Move.Right; // 1: left, 2: right
-            } else {
-                move = game.getLastMove() === Move.Left ? Move.Right : Move.Left; // this is flipped because of defender role
-            }
-
-            if (entering) {
-                var targetId = $(event.currentTarget).data('targetId');
-                if (move === Move.Left) {
-                    this.gameActivity.highlightChoices(true, targetId); // highlight the left graph
-                } else {
-                    this.gameActivity.highlightChoices(false, targetId); // highlight the right graph
-                }
-                $(event.currentTarget).css('background', 'rgba(0, 0, 0, 0.07)'); // color the row
-            } else {
-                if (move === Move.Left) {
-                    this.gameActivity.removeHighlightChoices(true);
-                } else {
-                    this.gameActivity.removeHighlightChoices(false);
-                }
-                $(event.currentTarget).css('background', ''); // remove highlight
-            }
         }
 
         private clickChoice(choice: any, game: DgGame, isAttack: boolean): void {
@@ -1358,7 +1504,7 @@ module Activity {
     class Computer extends Player {
         static Delay: number = 1500;
 
-        private delayedPlay;
+        private delayedPlay: number | undefined;
 
         constructor(playType: PlayType) {
             super(playType);
@@ -1380,6 +1526,42 @@ module Activity {
             if (game.isCurrentWinner(this))
                 this.delayedPlay = setTimeout(() => this.winningDefend(choices, game), Computer.Delay);
             else this.delayedPlay = setTimeout(() => this.losingDefend(choices, game), Computer.Delay);
+        }
+
+        public override prepareCoupling(choices: any, game: DgGame): void {
+            super.prepareCoupling([], game)
+            // select strategy
+            if (game.isCurrentWinner(this))
+                this.delayedPlay = setTimeout(() => this.winningCoupling(choices, game), Computer.Delay);
+            else this.delayedPlay = setTimeout(() => this.losingCoupling(choices, game), Computer.Delay);
+        }
+
+        public override prepareSuppPair(choices: any, game: DgGame): void {
+            super.prepareSuppPair([], game)
+            // select strategy
+            if (game.isCurrentWinner(this))
+                this.delayedPlay = setTimeout(() => this.winningSuppPair(choices, game), Computer.Delay);
+            else this.delayedPlay = setTimeout(() => this.losingSuppPair(choices, game), Computer.Delay);
+        }
+
+        private winningCoupling(choices: any, game: DgGame) {
+            // TODO: implement
+            /// game.play...
+        }
+
+        private losingCoupling(choices: any, game: DgGame) {
+            // TODO: implement
+            /// game.play...
+        }
+
+        private winningSuppPair(choices: any, game: DgGame) {
+            // TODO: implement
+            /// game.play...
+        }
+
+        private losingSuppPair(choices: any, game: DgGame) {
+            // TODO: implement
+            /// game.play...
         }
 
         private losingAttack(choices: any, game: DgGame): void {
@@ -1406,14 +1588,13 @@ module Activity {
         }
     }
 
-    class GameLog extends Abstract {
+    abstract class GameLog {
         private $log: JQuery;
 
         constructor(
             protected time: string,
             private gameActivity?: Game
         ) {
-            super();
             this.$log = $('#game-log');
             this.$log.empty();
         }
@@ -1466,6 +1647,14 @@ module Activity {
                 'Pick a transition on the ' + (lastMove === Move.Left ? 'right.' : 'left.'),
                 "<p class='game-prompt'>"
             );
+        }
+
+        public printPrepareCoupling() {
+            this.println('Pick a new game configuration.', "<p class='game-prompt'>");
+        }
+
+        public printPrepareSuppPair() {
+            this.println('Pick a pair in the support of the current configuration.', "<p class='game-prompt'>");
         }
 
         public printConfiguration(configuration: any): void {
@@ -1599,9 +1788,7 @@ module Activity {
             return this.gameActivity.labelFor(process);
         }
 
-        public printIntro(gameType: string, configuration: any, winner: Player, attacker: Player): void {
-            this.abstract();
-        }
+        public abstract printIntro(gameType: string, configuration: any, winner: Player, attacker: Player): void
     }
 
     class BisimulationGameLog extends GameLog {
