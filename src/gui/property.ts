@@ -13,7 +13,7 @@ module Property {
         private static counter: number = 0;
         protected id: number;
         private error: string = '';
-        private timer: number;
+        private timer: ReturnType<typeof setInterval>;
         private elapsedTime: string;
         private $timeCell: JQuery;
         private $row: JQuery;
