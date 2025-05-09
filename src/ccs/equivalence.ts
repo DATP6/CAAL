@@ -2,6 +2,8 @@
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
 
+declare var solver;
+
 module Equivalence {
     import ccs = CCS;
     import hml = HML;
@@ -919,35 +921,6 @@ module Equivalence {
         return s.reduce<T[][]>((acc, curr) => acc.concat(acc.map((x) => x.concat([curr]))), [[]]);
     }
 
-    /**
-     * A string representation of a given node in the dependency graph.
-     * The keys of two nodes are equal if they have the same kind and the same kind-specific data.
-     * Note that the construction data does not have to be equal.
-     */
-    function cacheKey(node: ProbabilisticDGNode): string {
-        const kindDataKey = (node: ProbabilisticDGNode): string => {
-            const sep = ';;';
-            switch (node.kind) {
-                case ProbDGNodeKind.NoSide:
-                    return [node.leftId, node.rightId].sort().join(sep);
-                case ProbDGNodeKind.SidedState:
-                    return [node.leftId, node.rightId].sort().join(sep) + sep + node.side;
-                case ProbDGNodeKind.Distribution:
-                    return [node.leftDist.cacheKey((k) => k), node.rightDist.cacheKey((k) => k)].sort().join(sep);
-                case ProbDGNodeKind.Support:
-                    return (
-                        node.support
-                            .map((p) => '<' + p.sort().join(',') + '>')
-                            .sort()
-                            .join('::') +
-                        sep +
-                        [node.leftDist.cacheKey((k) => k), node.rightDist.cacheKey((k) => k)].sort().join(sep)
-                    );
-            }
-        };
-        return node.kind + '//' + kindDataKey(node);
-    }
-
     function hasValidCoupling(
         leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
         rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
@@ -1058,12 +1031,69 @@ module Equivalence {
         return hasSolution(math.lup(augmented).U);
     }
 
+    type Record<T> = { [key: string]: T };
+
+    function lpCoupling(
+        leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
+        rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
+        support: [CCS.ProcessId, CCS.ProcessId][]
+    ): boolean {
+        const ln = leftDist; //.normalized();
+        const lSize = ln.size();
+        const rn = rightDist; //.normalized();
+        const rSize = rn.size();
+
+        const ls = ln.map((e) => ({ ...e, weight: e.weight * rSize }));
+        const rs = rn.map((e) => ({ ...e, weight: e.weight * lSize }));
+
+        const variables: Record<Record<number>> = {};
+        const ints: Record<number> = {};
+
+        const lSupp = ls.support().sort();
+        const rSupp = rs.support().sort();
+
+        for (let i = 0; i < lSupp.length; i++) {
+            for (let j = 0; j < rSupp.length; j++) {
+                const [tl, tr] = [lSupp[i], rSupp[j]];
+                if (support.some(([sl, sr]) => sl === tl && sr == tr)) {
+                    const varName = `${i},${j}`;
+                    variables[varName] = {
+                        cost: 0,
+                        [`row${i}`]: 1,
+                        [`col${j}`]: 1
+                    };
+                    ints[varName] = 1;
+                }
+            }
+        }
+
+        const constraints: Record<{ equal: number }> = {};
+
+        for (let i = 0; i < lSupp.length; i++) {
+            constraints[`row${i}`] = { equal: ls.get(lSupp[i]) };
+        }
+
+        for (let i = 0; i < rSupp.length; i++) {
+            constraints[`col${i}`] = { equal: rs.get(rSupp[i]) };
+        }
+
+        const result = solver.Solve({
+            optimize: 'cost',
+            opType: 'min',
+            constraints,
+            variables,
+            ints
+        });
+        return result.feasible;
+    }
+
     export class ProbabilisticBisimDG implements dg.LazyPartialDependencyGraph {
         private nodes: ProbabilisticDGNode[] = [];
         private cache: Map<string, number> = new Map();
         private badPairs: Set<string> = new Set();
         private pairDependencies: Map<string, Set<dg.DgNodeId>> = new Map();
         private badNodes: Set<dg.DgNodeId> = new Set();
+        private distCache: Map<MultiSetUtil.MultiSet<CCS.ProcessId>, string> = new Map();
 
         constructor(
             private succGen: CCS.SuccessorGenerator,
@@ -1099,7 +1129,7 @@ module Equivalence {
                 return;
             }
 
-            const key = cacheKey(node);
+            const key = this.cacheKey(node);
 
             this.badPairs.add(key);
 
@@ -1112,7 +1142,7 @@ module Equivalence {
          * @returns The index of the node in the nodes array
          */
         private getOrAddNode(node: ProbabilisticDGNode): number {
-            const key = cacheKey(node);
+            const key = this.cacheKey(node);
             if (this.cache.get(key)) {
                 return this.cache.get(key);
             }
@@ -1210,15 +1240,15 @@ module Equivalence {
             const prod: [CCS.ProcessId, CCS.ProcessId][] = [];
 
             for (const a of leftSupport) {
+                const aActions = this.succGen.getSuccessors(a).possibleActions().sort();
                 for (const b of rightSupport) {
-                    const aActions = this.succGen.getSuccessors(a).possibleActions().sort();
                     const bActions = this.succGen.getSuccessors(b).possibleActions().sort();
                     if (aActions.length !== bActions.length || !aActions.every((act, i) => act.equals(bActions[i]!))) {
                         continue;
                     }
                     if (
                         this.badPairs.has(
-                            cacheKey({
+                            this.cacheKey({
                                 kind: ProbDGNodeKind.NoSide,
                                 leftId: a,
                                 rightId: b,
@@ -1257,6 +1287,7 @@ module Equivalence {
         private constructSupportNode(
             node: ProbDGSupportNode & UnconstructedProbDGNode
         ): ProbDGSupportNode & ConstructedProbDGNode {
+            const nodeKey = this.cacheKey(node);
             for (const [leftId, rightId] of node.support) {
                 const toAdd: ProbDGNoSideNode & UnconstructedProbDGNode = {
                     kind: ProbDGNodeKind.NoSide,
@@ -1264,7 +1295,7 @@ module Equivalence {
                     rightId,
                     isConstructed: false
                 };
-                const key = cacheKey(toAdd);
+                const key = this.cacheKey(toAdd);
 
                 if (this.badPairs.has(key)) {
                     return toConstructed(node, [[]]);
@@ -1274,12 +1305,12 @@ module Equivalence {
                     this.pairDependencies.set(key, new Set());
                 }
 
-                const nodeId = this.cache.get(cacheKey(node));
+                const nodeId = this.cache.get(nodeKey);
                 this.pairDependencies.get(key).add(nodeId);
             }
 
             // If we can't make a valid coupling, we just go to empty set
-            if (!hasValidCoupling(node.leftDist, node.rightDist, node.support)) {
+            if (!lpCoupling(node.leftDist, node.rightDist, node.support)) {
                 return toConstructed(node, [[]]);
             }
 
@@ -1293,6 +1324,43 @@ module Equivalence {
             ]);
 
             return toConstructed(node, hyperedges);
+        }
+        /**
+         * A string representation of a given node in the dependency graph.
+         * The keys of two nodes are equal if they have the same kind and the same kind-specific data.
+         * Note that the construction data does not have to be equal.
+         */
+        private cacheKey(node: ProbabilisticDGNode): string {
+            const distCacheKey = (dist: MultiSetUtil.MultiSet<ccs.ProcessId>): string => {
+                if (!this.distCache.has(dist)) {
+                    this.distCache.set(
+                        dist,
+                        dist.cacheKey((k) => k)
+                    );
+                }
+                return this.distCache.get(dist);
+            };
+            const kindDataKey = (node: ProbabilisticDGNode): string => {
+                const sep = ';;';
+                switch (node.kind) {
+                    case ProbDGNodeKind.NoSide:
+                        return [node.leftId, node.rightId].sort().join(sep);
+                    case ProbDGNodeKind.SidedState:
+                        return [node.leftId, node.rightId].sort().join(sep) + sep + node.side;
+                    case ProbDGNodeKind.Distribution:
+                        return [distCacheKey(node.leftDist), distCacheKey(node.rightDist)].sort().join(sep);
+                    case ProbDGNodeKind.Support:
+                        return (
+                            node.support
+                                .map((p) => '<' + p.sort().join(',') + '>')
+                                .sort()
+                                .join('::') +
+                            sep +
+                            [distCacheKey(node.leftDist), distCacheKey(node.rightDist)].sort().join(sep)
+                        );
+                }
+            };
+            return node.kind + '//' + kindDataKey(node);
         }
 
         private getHyperedgeIterator(node: ConstructedProbDGNode): dg.Iterator<dg.LazyHyperedge> {
