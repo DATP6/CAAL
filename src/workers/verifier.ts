@@ -8,8 +8,8 @@ declare var HMLParser;
 declare var THMLParser;
 
 importScripts(
-    // TODO: Check that this import is correct. We actually need to run the code to do this
     '../math-14.4.0.js',
+    '../lp-solver-0.4.24.js',
     '../ccs_grammar.js',
     '../tccs_grammar.js',
     '../pccs_grammar.js',
