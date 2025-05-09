@@ -34,6 +34,11 @@ module DependencyGraph {
         getDefenderOptions(dgNodeId: DgNodeId): [CCS.Process, DgNodeId][];
     }
 
+    export interface PlayableProbabilisticDG extends PlayableDependencyGraph {
+        getCouplingOptions(dgNodeId: DgNodeId): any;
+        getSuppPairOptions(dgNodeId: DgNodeId): any;
+    }
+
     export class MuCalculusNode {
         constructor(
             public process: ccs.Process,

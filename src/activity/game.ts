@@ -451,16 +451,39 @@ module Activity {
                 );
 
                 Object.keys(groupedByTargetProcessId).forEach((strProcId) => {
-                    var group = groupedByTargetProcessId[strProcId],
-                        data = group.map((t) => {
-                            return { label: t.action.toString(false) };
+                    var group = groupedByTargetProcessId[strProcId];
+                    var data = group.map((t) => {
+                        return { label: t.action.toString() };
+                    });
+                    var targetProcess: PCCS.ProbabilisticProcess = group[0].targetProcess;
+
+                    if (this.project.getInputMode() === InputMode.PCCS) {
+                        this.showProbabilityDistrubution(strProcId, graph); // Show dot
+                        graph.showTransitions(fromProcess.id, strProcId, data); // transition from fromProcess to dot
+                        targetProcess.dist.getProbabilities().forEach(({ proc, probability }) => {
+                            // for each target process in the distrubution, create transition from dot to target
+                            this.showProcess(proc, graph);
+
+                            if (isNaN(probability)) {
+                                console.error('NaN prop for', proc);
+                            }
+                            graph.showTransitions(strProcId, proc.id, [
+                                { dashed: true, label: probability }
+                            ]);
                         });
-                    this.showProcess(this.graph.processById(strProcId), graph);
-                    graph.showTransitions(fromProcess.id, strProcId, data);
+                    } else {
+                        this.showProcess(targetProcess, graph);
+                        graph.showTransitions(fromProcess.id, strProcId, data);
+                    }
                 });
             }
 
             this.highlightNodes();
+        }
+
+        private showProbabilityDistrubution(process: string, graph: GUI.ProcessGraphUI): void {
+            // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
+            graph.showProcess(process, { probabilityDistrubution: true });
         }
 
         private showProcess(process: CCS.Process, graph: GUI.ProcessGraphUI): void {
@@ -474,13 +497,13 @@ module Activity {
 
         public onPlay(strictPath: CCS.Transition[], move: Move): void {
             if (!strictPath) return;
-
-            var graph = move === Move.Left ? this.leftGraph : this.rightGraph;
-            for (var i = 0; i < strictPath.length; i++) {
-                this.draw(strictPath[i].targetProcess, graph, 1);
-            }
-            var expandDepth = move === Move.Left ? this.$leftDepth.val() : this.$rightDepth.val();
-            this.draw(strictPath[strictPath.length - 1].targetProcess, graph, expandDepth);
+            this.highlightNodes();
+            // var graph = move === Move.Left ? this.leftGraph : this.rightGraph;
+            // for (var i = 0; i < strictPath.length; i++) {
+            //     this.draw(strictPath[i].targetProcess, graph, 1);
+            // }
+            // var expandDepth = move === Move.Left ? this.$leftDepth.val() : this.$rightDepth.val();
+            // this.draw(strictPath[strictPath.length - 1].targetProcess, graph, expandDepth);
         }
 
         public highlightNodes(): void {
