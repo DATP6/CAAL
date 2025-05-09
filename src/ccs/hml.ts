@@ -42,16 +42,17 @@ module HML {
     }
 
     export class Fraction {
-        public numerator: number;
-        public denominator: number;
-
-        constructor(numerator: number, denominator: number) {
-            this.numerator = numerator;
-            this.denominator = denominator;
-        }
+        constructor(
+            public numerator: number,
+            public denominator: number
+        ) {}
 
         toString(): string {
             return `${this.numerator}/${this.denominator}`;
+        }
+
+        reverse(): Fraction {
+            return new Fraction(this.denominator - this.numerator, this.denominator);
         }
 
         compare(op: RelationOp, other: Fraction): boolean {

@@ -683,6 +683,9 @@ module Traverse {
         }
 
         dispatchDiamondFormula(formula: hml.DiamondFormula) {
+            this.doCallback('enterDiamond', formula);
+            formula.subformula.dispatchOn(this);
+            this.doCallback('leaveDiamond', formula);
             return formula;
         }
 

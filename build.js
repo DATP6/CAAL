@@ -170,6 +170,7 @@ function createTscFileTask(targetFile, sourceFiles, options, comment, onFinish) 
         if (options.definitionFile) command += ' -d';
         if (options.sourceMap) command += ' --sourcemap';
         command += ' --target es2015';
+        command += ' --skipLibCheck';
         command += ' --out ' + targetFile + ' ' + sourceFiles.join(' ');
         jake.exec(command, { printStdout: true }, function () {
             onFinish(complete);

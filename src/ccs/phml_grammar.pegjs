@@ -26,8 +26,8 @@ SimplePhiFormula = P:PhiDisjunction _ {return P;}
 
 FixedPoint = _ V:Variable _ [mM][aA][xX] "=" _ P:Disjunction { return formulas.newMaxFixedPoint(V, P); }
 		   / _ V:Variable _ [mM][iI][nN] "=" _ P:Disjunction { return formulas.newMinFixedPoint(V, P); }
-           / _ V:Variable _ [mM][aA][xX] "=" _ Pd:PhiDisjunction { return formulas.newMaxFixedPoint(V, Pd); }
-           / _ V:Variable _ [mM][iI][nN] "=" _ Pd:PhiDisjunction { return formulas.newMinFixedPoint(V, Pd); }
+           // / _ V:Variable _ [mM][aA][xX] "=" _ Pd:PhiDisjunction { return formulas.newMaxFixedPoint(V, Pd); }
+           // / _ V:Variable _ [mM][iI][nN] "=" _ Pd:PhiDisjunction { return formulas.newMinFixedPoint(V, Pd); }
            
 
 Disjunction = P:Conjunction Whitespace _ "or" Whitespace _ Q:Disjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
@@ -39,7 +39,7 @@ Conjunction = M:Modal Whitespace _ "and" Whitespace _ P:Conjunction { return P i
 PhiDisjunction = P:PhiConjunction Whitespace _ "or" Whitespace _ Q:PhiDisjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
 			/ P:PhiConjunction { return P; }
 
-PhiConjunction = Pt:PhiProbTerm Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([Pt].concat(P.subFormulas)) : formulas.newConj([Pt, P]); }
+PhiConjunction = Pt:PhiProbTerm Whitespace _ "and" Whitespace _ P:PhiConjunction { return P instanceof hml.ConjFormula ? formulas.newConj([Pt].concat(P.subFormulas)) : formulas.newConj([Pt, P]); }
 			/ Pt:PhiProbTerm { return Pt; }
 
 Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return formulas.newWeakForAll(AM, F); }
@@ -51,15 +51,17 @@ Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return fo
 
 // Additions
 PhiProbTerm
-    = Diamond _ R:Relational_op P:Probability _ S:SimpleFormula {return formulas.newDiamondFormula(R,P,S);}
+    = Diamond _ R:Relational_op P:Probability _ S:Disjunction {return formulas.newDiamondFormula(R,P,S);}
 	/ PhiUnary 
 
-PhiUnary 
+PhiUnary "term"
 	= PhiParenFormula
 	/ _ "tt" { return formulas.newTrue(); }
+	// = _ "tt" { return formulas.newTrue(); }
 	/ _ "ff" { return formulas.newFalse(); }
 	/ _ "T" { return formulas.newTrue(); }
 	/ _ "F" { return formulas.newFalse(); }
+	// / PhiParenFormula
 
 PhiParenFormula
 	= _ "(" _ F:PhiDisjunction _ ")" { return F; }
@@ -115,12 +117,12 @@ Diamond
 
 Probability
     = N:Integer"/"D:Integer { return formulas.newProbability(N, D) }
+    / "0"? "." N:[0-9] { const digits = String(N).length; return formulas.newProbability(parseInt(N), Math.pow(10, digits)); } 
+    / "1" { return formulas.newProbability(1, 1); }
 
 Relational_op 
     = S:"<=" { return formulas.newRelationalOp(S); }
     / S:"<" { return formulas.newRelationalOp(S); }
-    // = S:"<" { return formulas.newRelationalOp(S); }
-    // / S:"<=" { return formulas.newRelationalOp(S); }
     / S:"==" { return formulas.newRelationalOp(S); }
     / S:">=" { return formulas.newRelationalOp(S); }
     / S:">" { return formulas.newRelationalOp(S); }
