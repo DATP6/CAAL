@@ -70,6 +70,47 @@ module PCCS {
         }
     }
 
+    export class SupportAction extends CCS.Action {
+        private pair: string;
+
+        constructor(pair: string) {
+            super(null, false);
+            this.pair = pair
+        }
+
+        equals(other: SupportAction) {
+            return false
+        }
+
+        toString()  {
+            return this.pair
+        }
+
+        clone(): SupportAction {
+            return new SupportAction(this.pair);
+        }
+    }
+    export class CouplingAction extends CCS.Action {
+        private pairs: string[]
+
+        constructor(pairs: string[]) {
+            super(null, false);
+            this.pairs = pairs
+        }
+
+        equals(other: CouplingAction) {
+            return false
+        }
+
+        toString() {
+            return this.pairs.join(' ')
+        }
+
+        clone(): CouplingAction {
+            return new CouplingAction(this.pairs);
+        }
+    }
+
     export class StrictSuccessorGenerator
         extends CCS.StrictSuccessorGenerator
         implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet>
