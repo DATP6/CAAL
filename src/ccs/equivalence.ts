@@ -1093,7 +1093,7 @@ module Equivalence {
     }
 
     // TODO: We need to have some kind of hashmap to avoid constructing duplicate nodes
-    export class ProbabilisticBisimDG implements dg.DependencyGraph, dg.PlayableDependencyGraph {
+    export class ProbabilisticBisimDG implements dg.DependencyGraph, dg.PlayableProbabilisticDG {
         private nodes: ProbabilisticDGNode[] = [];
         private cache: Map<string, number> = new Map();
         private badPairs: Set<string> = new Set();
@@ -1325,6 +1325,13 @@ module Equivalence {
         public getDefenderOptions(dgNodeId: any): [ccs.Process, any][] {
             //TODO: implement
             return []
+        }
+
+        public getCouplingOptions(dgNodeId: dg.DgNodeId): any {
+
+        }
+        public getSuppPairOptions(dgNodeId: dg.DgNodeId): any {
+
         }
     }
 }
