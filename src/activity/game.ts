@@ -1228,6 +1228,7 @@ module Activity {
             // TODO: insert extra stuff here
         }
 
+
         public override preparePlayer(player: Player) {
             var choices: any = this.getCurrentChoices(player.getPlayType());
 
@@ -1267,6 +1268,22 @@ module Activity {
 
             return result;
         }
+
+        public override getCurrentChoices(playType: PlayType): any {
+            let bisimDG = this.dependencyGraph as dg.PlayableProbabilisticDG // safe type narrowing
+            const nodeType = bisimDG.getNodeType(this.currentNodeId) as Equivalence.ProbDGNodeKind;
+
+            switch (nodeType) {
+                case Equivalence.ProbDGNodeKind.NoSide:
+                    return bisimDG.getAttackerOptions(this.currentNodeId);
+                case Equivalence.ProbDGNodeKind.SidedState:
+                    return bisimDG.getDefenderOptions(this.currentNodeId);
+                case Equivalence.ProbDGNodeKind.Distribution:
+                    return bisimDG.getCouplingOptions(this.currentNodeId);
+                case Equivalence.ProbDGNodeKind.Support:
+                    return bisimDG.getSuppPairOptions(this.currentNodeId);
+            }
+       }
 
         public override play(
             player: Player,
@@ -1332,11 +1349,22 @@ module Activity {
             this.preparePlayer(this.attacker);
         }
 
+
+        public override computeMarking(): dg.LevelMarking {
+            this.dependencyGraph = this.createDependencyGraph(this.graph, this.currentLeft, this.currentRight);
+            this.marking = this.createMarking();
+            return this.marking;
+        }
+
+        protected override createMarking(): dg.LevelMarking {
+            return dg.liuSmolkaLocal2(this.currentNodeId, this.dependencyGraph);
+        }
+
         protected override createDependencyGraph(
             graph: CCS.Graph,
             currentLeft: any,
             currentRight: any
-        ): dg.PlayableDependencyGraph {
+        ): dg.PlayableProbabilisticDG {
             return (this.bisimulationDg = new Equivalence.ProbabilisticBisimDG(
                 this.attackerSuccessorGen,
                 this.currentLeft.id,
@@ -1532,7 +1560,7 @@ module Activity {
         constructor(playType: PlayType) {
             super(playType);
         }
-
+        
         public abortPlay(): void {
             clearTimeout(this.delayedPlay);
         }
@@ -1867,11 +1895,11 @@ module Activity {
             }
         }
 
-        public printPrepareAttack() {
+        public override printPrepareAttack() {
             this.println('Pick a transition on the left.', "<p class='game-prompt'>");
         }
 
-        public printPrepareDefend(lastMove: Move) {
+        public override printPrepareDefend(lastMove: Move) {
             this.println('Pick a transition on the right.', "<p class='game-prompt'>");
         }
     }

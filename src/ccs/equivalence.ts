@@ -2,6 +2,7 @@
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
 /// <reference path="../../lib/util.d.ts" />
+/// <reference path="flowGraph.ts" />
 
 module Equivalence {
     import ccs = CCS;
@@ -165,9 +166,8 @@ module Equivalence {
             returns: the action, alpha, leading to Q, Q itself, the next DG node, type of move (0,1,2).
         */
         public getAttackerOptions(dgNodeId: dg.DgNodeId): [CCS.Action, CCS.Process, dg.DgNodeId, number][] {
-            console.log("attacker options:")
-            console.log(this.constructData[dgNodeId][0])
-            if ([1,2,3].includes(this.constructData[dgNodeId][0])) throw 'Bad node for attacker options';
+            if (this.constructData[dgNodeId][0] !== 0)
+                throw "Bad node for attacker options";
 
             var hyperedges = this.getHyperEdges(dgNodeId);
             var result = [];
@@ -197,9 +197,8 @@ module Equivalence {
             matched with and the resulting dependency graph node
         */
         public getDefenderOptions(dgNodeId: dg.DgNodeId): [CCS.Process, dg.DgNodeId][] {
-            console.log("defender options:")
-            console.log(this.constructData[dgNodeId])
-            if ([0,4].includes(this.constructData[dgNodeId][0])) throw 'Bad node for defender options';
+            if (this.constructData[dgNodeId][0] === 0)
+                throw "Bad node for defender options";
 
             var hyperedge = this.getHyperEdges(dgNodeId)[0];
             var result = [];
@@ -877,14 +876,14 @@ module Equivalence {
         return stringParts.join('\n\t');
     }
 
-    enum ProbDGNodeKind {
+    export enum ProbDGNodeKind {
         NoSide,
         SidedState,
         Distribution,
         Support
     }
 
-    enum Side {
+    export enum Side {
         Left,
         Right
     }
@@ -919,6 +918,7 @@ module Equivalence {
         kind: ProbDGNodeKind.Distribution;
         leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
         rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
+        action: CCS.Action;
     }
 
     interface ProbDGSupportNode {
@@ -1118,6 +1118,11 @@ module Equivalence {
             return dg.copyHyperEdges(constructedNode.hyperedges);
         }
 
+        getNodeType(id: dg.DgNodeId): ProbDGNodeKind {
+            const node = this.nodes[id]!;
+            return node.kind;
+        }
+
         getAllHyperEdges(): [dg.DgNodeId, dg.Hyperedge][] {
             const result: [dg.DgNodeId, dg.Hyperedge][] = [];
             for (let i = 0; i < this.nodes.length; i++) {
@@ -1169,6 +1174,7 @@ module Equivalence {
             }
         }
 
+        // s,t LR
         private constructNoSideNode(
             node: ProbDGNoSideNode & UnconstructedProbDGNode
         ): ProbDGNoSideNode & ConstructedProbDGNode {
@@ -1193,12 +1199,14 @@ module Equivalence {
             return toConstructed(node, [[leftIdx], [rightIdx]]);
         }
 
+        // s,t,L|R --alpha-> pi, rho
         private constructSidedStateNode(
             node: ProbDGSidedStateNode & UnconstructedProbDGNode
         ): ProbDGSidedStateNode & ConstructedProbDGNode {
             const [attackerProc, defenderProc] = (
-                node.side == Side.Left ? [node.leftId, node.rightId] : [node.rightId, node.leftId]
+                node.side === Side.Left ? [node.leftId, node.rightId] : [node.rightId, node.leftId]
             ) as [CCS.ProcessId, CCS.ProcessId];
+            console.log("break here!")
 
             const hyperedges = this.succGen
                 .getSuccessors(attackerProc)
@@ -1207,7 +1215,7 @@ module Equivalence {
                     this.succGen
                         .getSuccessors(defenderProc)
                         .toArray()
-                        .filter((defense) => attack.action.equals(defense.action))
+                        .filter((defense) => attack.action.equals(defense.action)) // match actions
                         .map((defense) => {
                             if (!isProcessDist(attack.targetProcess)) {
                                 throw `Target processes of attack was not a distribution. Attack: ${attack}.`;
@@ -1217,7 +1225,7 @@ module Equivalence {
                             }
 
                             const [leftDist, rightDist] =
-                                node.side == Side.Left
+                                node.side === Side.Left
                                     ? [attack.targetProcess.dist, defense.targetProcess.dist]
                                     : [defense.targetProcess.dist, attack.targetProcess.dist];
 
@@ -1225,7 +1233,8 @@ module Equivalence {
                                 kind: ProbDGNodeKind.Distribution,
                                 isConstructed: false,
                                 leftDist: leftDist.map(({ proc, weight }) => ({ proc: proc.id, weight })),
-                                rightDist: rightDist.map(({ proc, weight }) => ({ proc: proc.id, weight }))
+                                rightDist: rightDist.map(({ proc, weight }) => ({ proc: proc.id, weight })),
+                                action: defense.action
                             };
                             return this.getOrAddNode(target);
                         })
@@ -1234,6 +1243,7 @@ module Equivalence {
             return toConstructed(node, hyperedges);
         }
 
+        // pi,rho --> Supp(omega)
         private constructDistributionNode(
             node: ProbDGDistributionNode & UnconstructedProbDGNode
         ): ProbDGDistributionNode & ConstructedProbDGNode {
@@ -1242,17 +1252,19 @@ module Equivalence {
             // TODO: This could probably just be a Set, but I don't wanna fight the build system
             const prod: [CCS.ProcessId, CCS.ProcessId][] = [];
 
+            // do not try to create couplings when actions do not match
             for (const a of leftSupport) {
                 for (const b of rightSupport) {
                     const aActions = this.succGen.getSuccessors(a).possibleActions().sort();
                     const bActions = this.succGen.getSuccessors(b).possibleActions().sort();
-                    if (aActions.length == bActions.length && aActions.every((act, i) => act.equals(bActions[i]!))) {
+                    if (aActions.length === bActions.length && aActions.every((act, i) => act.equals(bActions[i]!))) {
                         prod.push([a, b]);
                     }
                 }
             }
 
             const powerAll = powerset(prod);
+            // filter out elements that do not contain all states in both left and right support
             const power = powerAll.filter(
                 (supp) =>
                     leftSupport.every((p) => supp.some(([q, _]) => p === q)) &&
@@ -1285,6 +1297,7 @@ module Equivalence {
             return toConstructed(node, [targets]);
         }
 
+        // pi, rho, Supp(omega) --> s,t in Supp(omega) LR
         private constructSupportNode(
             node: ProbDGSupportNode & UnconstructedProbDGNode
         ): ProbDGSupportNode & ConstructedProbDGNode {
@@ -1301,9 +1314,14 @@ module Equivalence {
             }
 
             // If we can't make a valid coupling, we just go to empty set
-            if (!hasValidCoupling(node.leftDist, node.rightDist, node.support)) {
+            let g = new FlowGraph(node.leftDist, node.rightDist)
+            console.log("before", node.support)
+            const foo = !g.couplingExists(node.support)
+            console.log(foo)
+            if (foo) {
                 return toConstructed(node, [[]]);
             }
+            console.log("after", node.support)
 
             const hyperedges = node.support.map(([leftId, rightId]) => [
                 this.getOrAddNode({
@@ -1318,20 +1336,75 @@ module Equivalence {
         }
 
         public getAttackerOptions(dgNodeId: any): [ccs.Action, ccs.Process, any, number][] {
-            //TODO: implement
-            return []
+            let result = [];
+            let node = this.nodes[dgNodeId] as ProbDGNoSideNode;
+            let l = this.getHyperEdges(node.leftId)
+            let r = this.getHyperEdges(node.rightId)
+
+            l.forEach((hyperedge) => {
+                // the attacker chooses the hyperedge, not the target vertex v in T
+                // therefore we only care about the action, which we get try to get from the first target
+                if (hyperedge.length === 0) {
+                    return;
+                }
+                let target = hyperedge[0] as ProbDGDistributionNode;
+
+                // a bit unsure about this one, maybe we should write an entirely new method with some other return type
+                result.push({
+                    action: target.action,
+                    targetProcess: target.leftDist, // identifier for action taken is the dist
+                    nextNode: target, // entire node
+                    move: target.action
+                });
+            });
+
+            r.forEach((hyperedge) => {
+                // the attacker chooses the hyperedge, not the target vertex v in T
+                // therefore we only care about the action, which we get try to get from the first target
+                if (hyperedge.length === 0) {
+                    return;
+                }
+                let target = hyperedge[0] as ProbDGDistributionNode;
+
+                // a bit unsure about this one, maybe we should write an entirely new method with some other return type
+                result.push({
+                    action: target.action,
+                    targetProcess: target.rightDist, // identifier for action taken is the dist
+                    nextNode: target,
+                    move: target.action
+                });
+            });
+
+            return result;
         }
 
         public getDefenderOptions(dgNodeId: any): [ccs.Process, any][] {
-            //TODO: implement
-            return []
+            var hyperedges = this.getHyperEdges(dgNodeId)[0];
+            var result = [];
+
+            // hyperedges.forEach((targetNode) => {
+            //     var side = this.nodes[targetNode].Side === Equivalence.Side.Left ? "leftId" : "rightId";
+            //     var node = this.nodes[targetNode];
+            //     if (node[side]) {
+            //         throw new Error(`Node ${targetNode} not found`);
+            //         var targetProcess = this.succGen.getProcessById(node[side]);
+            //     }
+            //
+            //     result.push({
+            //         targetProcess: targetProcess,
+            //         nextNode: targetNode
+            //     });
+            // });
+
+            return result;
         }
 
         public getCouplingOptions(dgNodeId: dg.DgNodeId): any {
-
+            return null;
         }
-        public getSuppPairOptions(dgNodeId: dg.DgNodeId): any {
 
+        public getSuppPairOptions(dgNodeId: dg.DgNodeId): any {
+            return null;
         }
     }
 }
