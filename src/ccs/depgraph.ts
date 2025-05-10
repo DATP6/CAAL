@@ -37,6 +37,7 @@ module DependencyGraph {
     export interface PlayableProbabilisticDG extends PlayableDependencyGraph {
         getCouplingOptions(dgNodeId: DgNodeId): any;
         getSuppPairOptions(dgNodeId: DgNodeId): any;
+        getNodeType(id: DgNodeId): number; // actually an enum, but that calls for recursive imports
     }
 
     export class MuCalculusNode {
