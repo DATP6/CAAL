@@ -2,7 +2,7 @@
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
 /// <reference path="../../lib/util.d.ts" />
-/// <reference path="flowGraph.ts" />
+/// <reference path="flow_graph.ts" />
 
 module Equivalence {
     import ccs = CCS;
@@ -971,7 +971,7 @@ module Equivalence {
                     return node.leftDist.cacheKey((k) => k) + sep + node.rightDist.cacheKey((k) => k);
                 case ProbDGNodeKind.Support:
                     return (
-                        node.support.map((p) => '<' + p.sort().join(',') + '>').join('::') +
+                        node.support.map((p) => '<' + p.join(',') + '>').join('::') +
                         sep +
                         node.leftDist.cacheKey((k) => k) +
                         sep +
@@ -980,116 +980,6 @@ module Equivalence {
             }
         };
         return node.kind + '//' + kindDataKey(node);
-    }
-
-    function hasValidCoupling(
-        leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
-        rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
-        support: [CCS.ProcessId, CCS.ProcessId][]
-    ): boolean {
-        const hasSolution = (m: any): boolean => {
-            const arr = m.toArray();
-            for (let i = m.size()[0]!! - 1; i >= 0; i--) {
-                const row = arr[i];
-
-                for (let j = 0; j < row.length; j++) {
-                    if (row[j] == 0) {
-                        continue;
-                    }
-
-                    if (j == row.length - 1) {
-                        return false;
-                    }
-                    return true;
-                }
-            }
-            return true;
-        };
-        const toEchelon = (m) => {
-            let result = m.map((x) => math.fraction(x));
-            let h = 0;
-            let k = 0;
-            const rows = m.size()[0]!!;
-            const columns = m.size()[1]!!;
-            while (h < rows && k < columns) {
-                let iMax = h;
-                for (let i = h; i < rows; i++) {
-                    if (result.get([i, k]).gt(result.get([iMax, k]))) {
-                        iMax = i;
-                    }
-                }
-                if (result.get([iMax, k]).equals(0)) {
-                    k++;
-                } else {
-                    result.swapRows(h, iMax);
-                    let tmp = result.get([h, k]);
-                    for (let j = k; j < columns; j++) {
-                        result.set([h, j], result.get([h, j]).div(tmp));
-                    }
-                    for (let i = h + 1; i < rows; i++) {
-                        let factor = result.get([i, k]).div(result.get([h, k]));
-                        result.set([i, k], 0);
-                        for (let j = k + 1; j < columns; j++) {
-                            result.set([i, j], result.get([i, j]).sub(result.get([h, j]).mul(factor)));
-                        }
-                    }
-                    h++;
-                    k++;
-                }
-            }
-            return result;
-        };
-
-        const toMatrix = (ms: MultiSetUtil.MultiSet<ccs.ProcessId>) => {
-            const size = ms.size();
-            return math.matrix(
-                ms
-                    .getEntries()
-                    .sort(({ proc: a }, { proc: b }) => a.localeCompare(b))
-                    .map(({ proc, weight }) => ({ proc, weight: math.fraction(weight, size) }))
-            );
-        };
-
-        const pi = toMatrix(leftDist);
-        const rho = toMatrix(rightDist);
-
-        const sCount = pi.size()[0]!;
-        const tCount = rho.size()[0]!;
-
-        const varCount = sCount * tCount;
-
-        const A = math.matrix(math.zeros(sCount + tCount, varCount));
-
-        for (let i = 0; i < sCount; i++) {
-            for (let j = 0; j < tCount; j++) {
-                const [tl, tr] = [pi.get([i]).proc, rho.get([j]).proc];
-                if (support.some(([sl, sr]) => sl === tl && sr == tr)) {
-                    A.set([i, i * sCount + j], 1);
-                }
-            }
-        }
-
-        for (let i = 0; i < tCount; i++) {
-            for (let j = 0; j < sCount; j++) {
-                const [tl, tr] = [pi.get([j]).proc, rho.get([i]).proc];
-                if (support.some(([sl, sr]) => sl === tl && sr == tr)) {
-                    A.set([i + sCount, j * sCount + i], 1);
-                }
-            }
-        }
-
-        const b = math.matrix(
-            math.concat(
-                pi.map(({ weight }) => weight),
-                rho.map(({ weight }) => weight)
-            )
-        );
-
-        const augmented = math.matrix(math.concat(A, math.reshape(b, [-1, 1])));
-
-        const echelon = toEchelon(augmented);
-
-        return hasSolution(echelon);
     }
 
     // TODO: We need to have some kind of hashmap to avoid constructing duplicate nodes
@@ -1206,7 +1096,6 @@ module Equivalence {
             const [attackerProc, defenderProc] = (
                 node.side === Side.Left ? [node.leftId, node.rightId] : [node.rightId, node.leftId]
             ) as [CCS.ProcessId, CCS.ProcessId];
-            console.log("break here!")
 
             const hyperedges = this.succGen
                 .getSuccessors(attackerProc)
@@ -1312,16 +1201,12 @@ module Equivalence {
                     return toConstructed(node, [[]]);
                 }
             }
-
+            
             // If we can't make a valid coupling, we just go to empty set
             let g = new FlowGraph(node.leftDist, node.rightDist)
-            console.log("before", node.support)
-            const foo = !g.couplingExists(node.support)
-            console.log(foo)
-            if (foo) {
+            if (!g.couplingExists(node.support)) {
                 return toConstructed(node, [[]]);
             }
-            console.log("after", node.support)
 
             const hyperedges = node.support.map(([leftId, rightId]) => [
                 this.getOrAddNode({

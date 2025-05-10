@@ -7,22 +7,25 @@ class FlowGraph {
     private rightEntries: { proc: CCS.ProcessId; weight: number; }[];
 
     constructor(distLeft: MultiSetUtil.MultiSet<CCS.ProcessId>, distRight: MultiSetUtil.MultiSet<CCS.ProcessId>) {
+        // Ensure that the left and right distributions have the same size
+        let lcm = distLeft.leastCommonMultiple(distRight);
+        distLeft.scale(lcm / distLeft.size());
+        distRight.scale(lcm / distRight.size());
+        
         this.leftEntries = distLeft.getEntries();
         this.rightEntries = distRight.getEntries();
+        // Create a graph with size equal to the number of entries in both distributions + 2 (for source and sink)
         this.size = this.leftEntries.length + this.rightEntries.length + 2; // +2 for source and sink
         this.graph = Array.from({ length: this.size }, () => Array(this.size).fill(0));
-
-        distLeft.getEntries().forEach((entry, index) => {
+        this.leftEntries.forEach((entry, index) => {
             this.graph[0][index + 1] = entry.weight; // Source to left distribution
         });
-        distRight.getEntries().forEach((entry, index) => {
+        this.rightEntries.forEach((entry, index) => {
             this.graph[index + this.leftEntries.length + 1][this.size - 1] = entry.weight; // Right distribution to sink
         });
     }
 
     couplingExists(support: [string, string][]): boolean {
-        console.log(this.leftEntries)
-        console.log(this.rightEntries)
         for (let i = 0; i < support.length; i++) {
             let leftIndex = this.leftEntries.findIndex(entry => entry.proc === support[i][0]);
             let rightIndex = this.rightEntries.findIndex(entry => entry.proc === support[i][1]);
@@ -30,7 +33,6 @@ class FlowGraph {
         }
 
         this.fordFulkerson(0, this.size - 1);
-        console.log(this.graph)
         // coupling exists if all residual capacities from source to sink are 0
         return this.graph[0].every((capacity) => capacity === 0)
     }

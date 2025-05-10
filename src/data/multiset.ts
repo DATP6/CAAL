@@ -69,7 +69,27 @@ module MultiSetUtil {
                 .map(({ proc }) => keyConversion(proc))
                 .join(separator);
         }
+
+        // Find the common size of two multisets
+        public leastCommonMultiple(other: MultiSet<T>) {
+            return lcm(this.size(), other.size());
+        }
+
+        public scale(scale: number) {
+            const entries = this.getEntries();
+            entries.map((e) => (this._map.set(e.proc, e.weight * scale)));
+        }
     }
+
+
+    const gcd = (a: number, b: number): number => {
+        if (b === 0) return a;
+        return gcd(b, a % b);
+    };
+
+    const lcm = (a, b) => {
+        return Math.abs(a * b) / gcd(a, b);
+    };
 
     const singleWeightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
         if (weightA === 0) return setB.clone();
