@@ -1274,11 +1274,11 @@ module Activity {
             const nodeType = bisimDG.getNodeType(this.currentNodeId) as Equivalence.ProbDGNodeKind;
 
             switch (nodeType) {
-                case Equivalence.ProbDGNodeKind.NoSide:
+                case Equivalence.ProbDGNodeKind.NoSide: // Attacker chooses side (L/R) and transition
                     return bisimDG.getAttackerOptions(this.currentNodeId);
-                case Equivalence.ProbDGNodeKind.SidedState:
+                case Equivalence.ProbDGNodeKind.OneDistribution: // Defender chooses transition with same label as attacker's last action
                     return bisimDG.getDefenderOptions(this.currentNodeId);
-                case Equivalence.ProbDGNodeKind.Distribution:
+                case Equivalence.ProbDGNodeKind.Distribution: 
                     return bisimDG.getCouplingOptions(this.currentNodeId);
                 case Equivalence.ProbDGNodeKind.Support:
                     return bisimDG.getSuppPairOptions(this.currentNodeId);
