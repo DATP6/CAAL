@@ -119,6 +119,7 @@ Probability
     = N:Integer"/"D:Integer { return formulas.newProbability(N, D) }
     / "0"? "." N:[0-9] { const digits = String(N).length; return formulas.newProbability(parseInt(N), Math.pow(10, digits)); } 
     / "1" { return formulas.newProbability(1, 1); }
+    / "0" { return formulas.newProbability(0, 1); }
 
 Relational_op 
     = S:"<=" { return formulas.newRelationalOp(S); }
