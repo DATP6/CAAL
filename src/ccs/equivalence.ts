@@ -862,7 +862,7 @@ module Equivalence {
 
     interface ConstructedProbDGNode {
         isConstructed: true;
-        hyperedges: dg.Hyperedge[];
+        hyperedges: dg.Iterator<dg.LazyHyperedge>;
     }
 
     interface UnconstructedProbDGNode {
@@ -891,13 +891,11 @@ module Equivalence {
     interface ProbDGSupportNode {
         kind: ProbDGNodeKind.Support;
         support: [CCS.ProcessId, CCS.ProcessId][];
-        leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
-        rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
     }
 
     function toConstructed<T>(
         node: T & UnconstructedProbDGNode,
-        hyperedges: dg.Hyperedge[]
+        hyperedges: dg.Iterator<dg.LazyHyperedge>
     ): T & ConstructedProbDGNode {
         // SAFETY: We immediately set isConstructed and hyperedges to valid values
         const newNode = node as unknown as T & ConstructedProbDGNode;
@@ -921,116 +919,6 @@ module Equivalence {
         return s.reduce<T[][]>((acc, curr) => acc.concat(acc.map((x) => x.concat([curr]))), [[]]);
     }
 
-    function hasValidCoupling(
-        leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
-        rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
-        support: [CCS.ProcessId, CCS.ProcessId][]
-    ): boolean {
-        const hasSolution = (m: any): boolean => {
-            const arr = m.toArray();
-            for (let i = m.size()[0]!! - 1; i >= 0; i--) {
-                const row = arr[i];
-
-                for (let j = 0; j < row.length; j++) {
-                    if (row[j] == 0) {
-                        continue;
-                    }
-
-                    if (j == row.length - 1) {
-                        return false;
-                    }
-                    return true;
-                }
-            }
-            return true;
-        };
-        const toEchelon = (m) => {
-            let result = m.map((x) => math.fraction(x));
-            let h = 0;
-            let k = 0;
-            const rows = m.size()[0]!!;
-            const columns = m.size()[1]!!;
-            while (h < rows && k < columns) {
-                let iMax = h;
-                for (let i = h; i < rows; i++) {
-                    if (result.get([i, k]).gt(result.get([iMax, k]))) {
-                        iMax = i;
-                    }
-                }
-                if (result.get([iMax, k]).equals(0)) {
-                    k++;
-                } else {
-                    result.swapRows(h, iMax);
-                    let tmp = result.get([h, k]);
-                    for (let j = k; j < columns; j++) {
-                        result.set([h, j], result.get([h, j]).div(tmp));
-                    }
-                    for (let i = h + 1; i < rows; i++) {
-                        let factor = result.get([i, k]).div(result.get([h, k]));
-                        result.set([i, k], 0);
-                        for (let j = k + 1; j < columns; j++) {
-                            result.set([i, j], result.get([i, j]).sub(result.get([h, j]).mul(factor)));
-                        }
-                    }
-                    h++;
-                    k++;
-                }
-            }
-            return result;
-        };
-
-        const toMatrix = (ms: MultiSetUtil.MultiSet<ccs.ProcessId>) => {
-            const size = ms.size();
-            return math.matrix(
-                ms
-                    .getEntries()
-                    .sort(({ proc: a }, { proc: b }) => a.localeCompare(b))
-                    .map(({ proc, weight }) => ({ proc, weight: math.fraction(weight, size) }))
-            );
-        };
-
-        const pi = toMatrix(leftDist);
-        const rho = toMatrix(rightDist);
-
-        const sCount = pi.size()[0]!;
-        const tCount = rho.size()[0]!;
-
-        const varCount = sCount * tCount;
-
-        const A = math.matrix(math.zeros(sCount + tCount, varCount));
-
-        for (let i = 0; i < sCount; i++) {
-            for (let j = 0; j < tCount; j++) {
-                const [tl, tr] = [pi.get([i]).proc, rho.get([j]).proc];
-                if (support.some(([sl, sr]) => sl === tl && sr == tr)) {
-                    A.set([i, i * sCount + j], 1);
-                }
-            }
-        }
-
-        for (let i = 0; i < tCount; i++) {
-            for (let j = 0; j < sCount; j++) {
-                const [tl, tr] = [pi.get([j]).proc, rho.get([i]).proc];
-                if (support.some(([sl, sr]) => sl === tl && sr == tr)) {
-                    A.set([i + sCount, j * sCount + i], 1);
-                }
-            }
-        }
-
-        const b = math.matrix(
-            math.concat(
-                pi.map(({ weight }) => weight),
-                rho.map(({ weight }) => weight)
-            )
-        );
-
-        const augmented = math.matrix(math.concat(A, math.reshape(b, [-1, 1])), 'sparse');
-
-        // const echelon = toEchelon(augmented);
-
-        return hasSolution(math.lup(augmented).U);
-    }
-
     type Record<T> = { [key: string]: T };
 
     function lpCoupling(
@@ -1038,24 +926,33 @@ module Equivalence {
         rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
         support: [CCS.ProcessId, CCS.ProcessId][]
     ): boolean {
-        const ln = leftDist; //.normalized();
+        const ln = leftDist;
         const lSize = ln.size();
-        const rn = rightDist; //.normalized();
+        const rn = rightDist;
         const rSize = rn.size();
 
         const ls = ln.map((e) => ({ ...e, weight: e.weight * rSize }));
         const rs = rn.map((e) => ({ ...e, weight: e.weight * lSize }));
+        const lSupp = ls.support();
+        const rSupp = rs.support();
 
         const variables: Record<Record<number>> = {};
         const ints: Record<number> = {};
+        const constraints: Record<{ equal: number }> = {};
 
-        const lSupp = ls.support().sort();
-        const rSupp = rs.support().sort();
+        const targetSup: Record<Record<boolean>> = {};
+
+        for (const [sl, sr] of support) {
+            if (!(sl in targetSup)) {
+                targetSup[sl] = {};
+            }
+            targetSup[sl]![sr] = true;
+        }
 
         for (let i = 0; i < lSupp.length; i++) {
             for (let j = 0; j < rSupp.length; j++) {
-                const [tl, tr] = [lSupp[i], rSupp[j]];
-                if (support.some(([sl, sr]) => sl === tl && sr == tr)) {
+                const [tl, tr] = [lSupp[i]!, rSupp[j]!];
+                if ((targetSup[tl] ?? {})[tr]) {
                     const varName = `${i},${j}`;
                     variables[varName] = {
                         cost: 0,
@@ -1067,16 +964,15 @@ module Equivalence {
             }
         }
 
-        const constraints: Record<{ equal: number }> = {};
-
         for (let i = 0; i < lSupp.length; i++) {
-            constraints[`row${i}`] = { equal: ls.get(lSupp[i]) };
+            constraints[`row${i}`] = { equal: ls.get(lSupp[i]!) };
         }
 
         for (let i = 0; i < rSupp.length; i++) {
-            constraints[`col${i}`] = { equal: rs.get(rSupp[i]) };
+            constraints[`col${i}`] = { equal: rs.get(rSupp[i]!) };
         }
 
+        // TODO: glpk.js might be faster for big systems
         const result = yalps.solve({
             optimize: 'cost',
             opType: 'min',
@@ -1085,6 +981,16 @@ module Equivalence {
             ints
         });
         return result.status === 'optimal';
+    }
+
+    function toIter<T>(arr: T[]): dg.Iterator<T> {
+        let index = 0;
+        const next = () => {
+            return arr[index++];
+        };
+        const reset = () => (index = 0);
+        const support = arr;
+        return { next, reset, support };
     }
 
     export class ProbabilisticBisimDG implements dg.LazyPartialDependencyGraph {
@@ -1112,7 +1018,7 @@ module Equivalence {
             const node = this.nodes[id]!;
             const constructedNode = isConstructed(node) ? node : this.constructNode(node);
             this.nodes[id] = constructedNode;
-            return this.getHyperedgeIterator(constructedNode);
+            return constructedNode.hyperedges;
         }
 
         public markNode(nodeId: dg.DgNodeId, isOne: boolean): void {
@@ -1183,7 +1089,9 @@ module Equivalence {
             const leftIdx = this.getOrAddNode(left);
             const rightIdx = this.getOrAddNode(right);
 
-            return toConstructed(node, [[leftIdx], [rightIdx]]);
+            const iter = toIter([[leftIdx], [rightIdx]].map(toIter));
+
+            return toConstructed(node, iter);
         }
 
         private constructSidedStateNode(
@@ -1197,34 +1105,36 @@ module Equivalence {
                 .getSuccessors(attackerProc)
                 .toArray()
                 .map((attack) =>
-                    this.succGen
-                        .getSuccessors(defenderProc)
-                        .toArray()
-                        .filter((defense) => attack.action.equals(defense.action))
-                        .map((defense) => {
-                            if (!isProcessDist(attack.targetProcess)) {
-                                throw `Target processes of attack was not a distribution. Attack: ${attack}.`;
-                            }
-                            if (!isProcessDist(defense.targetProcess)) {
-                                throw `Target processes of defense was not a distribution. Defense: ${defense}.`;
-                            }
+                    toIter(
+                        this.succGen
+                            .getSuccessors(defenderProc)
+                            .toArray()
+                            .filter((defense) => attack.action.equals(defense.action))
+                            .map((defense) => {
+                                if (!isProcessDist(attack.targetProcess)) {
+                                    throw `Target processes of attack was not a distribution. Attack: ${attack}.`;
+                                }
+                                if (!isProcessDist(defense.targetProcess)) {
+                                    throw `Target processes of defense was not a distribution. Defense: ${defense}.`;
+                                }
 
-                            const [leftDist, rightDist] =
-                                node.side == Side.Left
-                                    ? [attack.targetProcess.dist, defense.targetProcess.dist]
-                                    : [defense.targetProcess.dist, attack.targetProcess.dist];
+                                const [leftDist, rightDist] =
+                                    node.side == Side.Left
+                                        ? [attack.targetProcess.dist, defense.targetProcess.dist]
+                                        : [defense.targetProcess.dist, attack.targetProcess.dist];
 
-                            const target: ProbDGDistributionNode & UnconstructedProbDGNode = {
-                                kind: ProbDGNodeKind.Distribution,
-                                isConstructed: false,
-                                leftDist: leftDist.map(({ proc, weight }) => ({ proc: proc.id, weight })),
-                                rightDist: rightDist.map(({ proc, weight }) => ({ proc: proc.id, weight }))
-                            };
-                            return this.getOrAddNode(target);
-                        })
+                                const target: ProbDGDistributionNode & UnconstructedProbDGNode = {
+                                    kind: ProbDGNodeKind.Distribution,
+                                    isConstructed: false,
+                                    leftDist: leftDist.map(({ proc, weight }) => ({ proc: proc.id, weight })),
+                                    rightDist: rightDist.map(({ proc, weight }) => ({ proc: proc.id, weight }))
+                                };
+                                return this.getOrAddNode(target);
+                            })
+                    )
                 );
 
-            return toConstructed(node, hyperedges);
+            return toConstructed(node, toIter(hyperedges));
         }
 
         private constructDistributionNode(
@@ -1265,61 +1175,110 @@ module Equivalence {
                     rightSupport.every((p) => supp.some(([_, q]) => p === q))
             );
 
-            const targets = power.map((support) => {
-                const target: ProbDGSupportNode & UnconstructedProbDGNode = {
-                    kind: ProbDGNodeKind.Support,
-                    isConstructed: false,
-                    leftDist: node.leftDist,
-                    rightDist: node.rightDist,
-                    support
-                };
+            // TODO: There is probably a decent bit of performance to be gained by making this lazy
+            const targets = power
+                .map((support) => {
+                    const target: ProbDGSupportNode & UnconstructedProbDGNode = {
+                        kind: ProbDGNodeKind.Support,
+                        isConstructed: false,
+                        support
+                    };
 
-                return this.getOrAddNode(target);
-            });
+                    const nodeId = this.getOrAddNode(target);
+                    return nodeId;
+                })
+                .sort();
 
-            return toConstructed(node, [targets]);
+            const support = { ref: targets };
+
+            let index = 0;
+            const checkedGood: boolean[] = [];
+
+            const next = () => {
+                const he = support.ref;
+                while (index < he.length - 1) {
+                    const targetIndex = he[index];
+                    if (!targetIndex) {
+                        throw new Error('Distribution is pointing at undefined target');
+                    }
+
+                    if (targetIndex === -1) {
+                        index++;
+                        continue;
+                    }
+
+                    const target = this.nodes[targetIndex]!;
+
+                    if (target.kind !== ProbDGNodeKind.Support) {
+                        throw new Error('Distribution is pointing to a non-support node');
+                    }
+                    if (this.badNodes.has(targetIndex)) {
+                        he[index++] = -1;
+                        continue;
+                    }
+
+                    if (checkedGood[targetIndex]) {
+                        break;
+                    }
+
+                    for (const [leftId, rightId] of target.support) {
+                        const targetPair: ProbDGNoSideNode & UnconstructedProbDGNode = {
+                            kind: ProbDGNodeKind.NoSide,
+                            leftId,
+                            rightId,
+                            isConstructed: false
+                        };
+                        const key = this.cacheKey(targetPair);
+
+                        if (this.badPairs.has(key)) {
+                            this.badNodes.add(targetIndex);
+                            he[index++] = -1;
+                            continue;
+                        }
+
+                        if (!this.pairDependencies.has(key)) {
+                            this.pairDependencies.set(key, new Set());
+                        }
+
+                        this.pairDependencies.get(key).add(targetIndex);
+                    }
+
+                    if (lpCoupling(node.leftDist, node.rightDist, target.support)) {
+                        checkedGood[targetIndex] = true;
+                        break;
+                    } else {
+                        he[index++] = -1;
+                        continue;
+                    }
+                }
+                return he[index++];
+            };
+
+            const reset = () => {
+                index = 0;
+                support.ref = support.ref.filter((x) => x !== -1);
+            };
+
+            const iter: dg.LazyHyperedge = { next, reset, support };
+
+            return toConstructed(node, toIter([iter]));
         }
 
         private constructSupportNode(
             node: ProbDGSupportNode & UnconstructedProbDGNode
         ): ProbDGSupportNode & ConstructedProbDGNode {
-            const nodeKey = this.cacheKey(node);
-            for (const [leftId, rightId] of node.support) {
-                const toAdd: ProbDGNoSideNode & UnconstructedProbDGNode = {
-                    kind: ProbDGNodeKind.NoSide,
-                    leftId,
-                    rightId,
-                    isConstructed: false
-                };
-                const key = this.cacheKey(toAdd);
+            const hyperedges = node.support
+                .map(([leftId, rightId]) => [
+                    this.getOrAddNode({
+                        kind: ProbDGNodeKind.NoSide,
+                        leftId,
+                        rightId,
+                        isConstructed: false
+                    } as ProbDGNoSideNode & UnconstructedProbDGNode)
+                ])
+                .map(toIter);
 
-                if (this.badPairs.has(key)) {
-                    return toConstructed(node, [[]]);
-                }
-
-                if (!this.pairDependencies.has(key)) {
-                    this.pairDependencies.set(key, new Set());
-                }
-
-                const nodeId = this.cache.get(nodeKey);
-                this.pairDependencies.get(key).add(nodeId);
-            }
-
-            // If we can't make a valid coupling, we just go to empty set
-            if (!lpCoupling(node.leftDist, node.rightDist, node.support)) {
-                return toConstructed(node, [[]]);
-            }
-
-            const hyperedges = node.support.map(([leftId, rightId]) => [
-                this.getOrAddNode({
-                    kind: ProbDGNodeKind.NoSide,
-                    leftId,
-                    rightId,
-                    isConstructed: false
-                } as ProbDGNoSideNode & UnconstructedProbDGNode)
-            ]);
-
-            return toConstructed(node, hyperedges);
+            return toConstructed(node, toIter(hyperedges));
         }
         /**
          * A string representation of a given node in the dependency graph.
@@ -1336,69 +1295,41 @@ module Equivalence {
                 }
                 return this.distCache.get(dist);
             };
+            const pairKey = (p: [string, string]) => {
+                let l, r;
+                if (p[0] < p[1]) {
+                    l = p[0];
+                    r = p[1];
+                } else {
+                    l = p[1];
+                    r = p[0];
+                }
+                return '<' + l + ',' + r + '>';
+            };
             const kindDataKey = (node: ProbabilisticDGNode): string => {
                 const sep = ';;';
                 switch (node.kind) {
                     case ProbDGNodeKind.NoSide:
-                        return [node.leftId, node.rightId].sort().join(sep);
+                        return pairKey([node.leftId, node.rightId]);
                     case ProbDGNodeKind.SidedState:
-                        return [node.leftId, node.rightId].sort().join(sep) + sep + node.side;
+                        if (node.leftId <= node.rightId) {
+                            return node.leftId + sep + node.rightId + sep + node.side;
+                        } else {
+                            return (
+                                node.rightId +
+                                sep +
+                                node.leftId +
+                                sep +
+                                (node.side == Side.Left ? Side.Right : Side.Left)
+                            );
+                        }
                     case ProbDGNodeKind.Distribution:
                         return [distCacheKey(node.leftDist), distCacheKey(node.rightDist)].sort().join(sep);
                     case ProbDGNodeKind.Support:
-                        return (
-                            node.support
-                                .map((p) => '<' + p.sort().join(',') + '>')
-                                .sort()
-                                .join('::') +
-                            sep +
-                            [distCacheKey(node.leftDist), distCacheKey(node.rightDist)].sort().join(sep)
-                        );
+                        return node.support.map(pairKey).sort().join('::');
                 }
             };
             return node.kind + '//' + kindDataKey(node);
-        }
-
-        private getHyperedgeIterator(node: ConstructedProbDGNode): dg.Iterator<dg.LazyHyperedge> {
-            let index = 0;
-            const next = () => {
-                const he = node.hyperedges[index++];
-                if (!he) {
-                    return undefined;
-                }
-                return this.getTargetIterator(he);
-            };
-            const reset = () => (index = 0);
-            const support = node.hyperedges.map((h) => this.getTargetIterator(h));
-            return { next, reset, support };
-        }
-
-        private getTargetIterator(hyperedge: dg.Hyperedge): dg.LazyHyperedge {
-            let index = 0;
-            const support = { ref: hyperedge.sort() };
-            const next = () => {
-                const he = support.ref;
-                while (index < he.length - 1) {
-                    if (he[index] === -1) {
-                        index++;
-                        continue;
-                    }
-                    const node = this.nodes[he[index]!]!;
-                    if (node.kind !== ProbDGNodeKind.Support) {
-                        break;
-                    }
-                    if (!this.badNodes.has(he[index])) {
-                        break;
-                    }
-                    he[index] = -1;
-                }
-                return he[index++];
-            };
-            const reset = () => {
-                index = 0;
-                support.ref = support.ref.filter((x) => x !== -1);
-            };
-            return { next, reset, support };
         }
     }
 }
