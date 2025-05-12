@@ -9,7 +9,7 @@ declare var THMLParser;
 
 importScripts(
     '../math-14.4.0.js',
-    '../lp-solver-0.4.24.js',
+    '../yalps.js',
     '../ccs_grammar.js',
     '../tccs_grammar.js',
     '../pccs_grammar.js',
