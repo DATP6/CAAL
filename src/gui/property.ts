@@ -711,9 +711,16 @@ module Property {
             super(options, status);
         }
 
+        protected getProbSubscript(): string {
+            if (this.project.getInputMode() === InputMode.PCCS) {
+                return '<sub>' + 'p' + '</sub>';
+            } else {
+                return '';
+            }
+        }
         public getDescription(): string {
             var symbol = super.getType() === 'strong' ? '&#8764;' : '&#8776;';
-            return this.firstProcess + ' ' + symbol + super.getTimeSubscript() + ' ' + this.secondProcess;
+            return this.firstProcess + ' ' + symbol + this.getProbSubscript() + ' ' + this.secondProcess;
         }
 
         public getClassName(): string {
