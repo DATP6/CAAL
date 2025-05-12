@@ -15,7 +15,12 @@ module DependencyGraph {
     export interface GameOptions {
         nextNode: DgNodeId; // node of child in DG
         target: string; // pretty printed version of destination 
-        // process?: CCS.Process // only set for literal moves (not supp pair or coupling)
+    }
+    export interface SuppPairGameOptions extends GameOptions {
+        nextNode: DgNodeId; // node of child in DG
+        target: string; // pretty printed version of destination 
+        left: DgNodeId;
+        right: DgNodeId;
     }
     export interface MoveGameOptions extends GameOptions { // only for attackers move
         action: CCS.Action,

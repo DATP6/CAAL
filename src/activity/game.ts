@@ -1326,7 +1326,7 @@ module Activity {
 
                 // this.saveCurrentProcess(destinationProcess, this.lastMove);
 
-                this.round++;
+                this.round++; // TODO: THIS SHOULD INCREMENT WHEN WE CHOOSE SUPPORT PAIR
                 // this.gameLog.printRound(this.round, this.getCurrentConfiguration());
                 
                 const choices = this.getCurrentChoices(null!) // playType is unused in PCCS
@@ -1347,18 +1347,49 @@ module Activity {
         }
 
         public playCoupling(choice: dg.GameOptions) {
-            this.currentNodeId = choice.nextNode
+            this.currentNodeId = choice.nextNode;
 
             // TODO: print coupling in gamelog
-            const choices = this.getCurrentChoices(null!) // argument not needed in PCCS
-            this.attacker.prepareSuppPair([], this)
+            const choices = this.getCurrentChoices(null!) as dg.SuppPairGameOptions[] // argument not needed in PCCS
+            this.attacker.prepareSuppPair(choices, this)
         }
 
-        public playSupportPair(nextNodePair: [dg.DgNodeId, dg.DgNodeId]) {
+        public playSupportPair(nextNodePair: dg.SuppPairGameOptions) {
             // TODO: print pair in gamelog
+            this.currentLeft = nextNodePair.left;
+            this.currentRight = nextNodePair.right;
+            this.currentNodeId = nextNodePair.nextNode;
             this.preparePlayer(this.attacker);
+            // detect cycle
         }
 
+        public getBestWinningCoupling(choices: dg.GameOptions[]): dg.GameOptions {
+            for (var i = 0; i < choices.length; i++) {
+                if (this.marking.getMarking(choices[i].nextNode) === this.marking.ZERO) {
+                    return choices[i]!;
+                }
+            }
+            return choices[0]!
+        }
+
+        public getTryHardCoupling(choices: dg.GameOptions[]): dg.GameOptions {
+            // TODO: implement
+            return choices[0]!
+        }
+
+        public getWinningSupportPair(choices: dg.GameOptions[]): dg.GameOptions {
+            for (var i = 0; i < choices.length; i++) {
+                if (this.marking.getMarking(choices[i]?.nextNode) === this.marking.ZERO) {
+                    return choices[i]!;
+                }
+            }
+            return choices[0]!
+        }
+
+        public getTryHardSupportPair(choices: dg.GameOptions[]): dg.GameOptions {
+            // TODO: implement
+            return choices[0]!
+        }
 
         public override computeMarking(): dg.LevelMarking {
             this.dependencyGraph = this.createDependencyGraph(this.graph, this.currentLeft, this.currentRight);
@@ -1475,9 +1506,9 @@ module Activity {
             game.getGameLog().printPrepareCoupling()
         }
 
-        public override prepareSuppPair(choices: dg.GameOptions[], game: DgGame): void {
+        public override prepareSuppPair(choices: dg.SuppPairGameOptions[], game: DgGame): void {
             super.prepareSuppPair([], game) // only sanity check, does not care for choices
-            this.fillSuppPairTable(choices, game)
+            this.fillSuppPairTable(choices, game as ProbabilisticBisimulationGame)
             game.getGameLog().printPrepareSuppPair()
         }
 
@@ -1501,7 +1532,7 @@ module Activity {
             });
         }
 
-        private fillSuppPairTable(choices: dg.GameOptions[], game: DgGame): void {
+        private fillSuppPairTable(choices: dg.SuppPairGameOptions[], game: ProbabilisticBisimulationGame): void {
             this.$table.empty();
             choices.forEach((choice) => {
                 var row = $('<tr></tr>');
@@ -1513,7 +1544,7 @@ module Activity {
 
                 // onClick
                 $(row).on('click', (event) => {
-                    this.clickChoice(choice, game, false);
+                    this.clickSupportPairChoice(choice, game);
                 });
 
                 row.append($sourceTd, $targetTd);
@@ -1631,6 +1662,10 @@ module Activity {
             game.playCoupling(choice);
         }
         
+        private clickSupportPairChoice(choice: dg.SuppPairGameOptions, game: ProbabilisticBisimulationGame): void {
+            this.$table.empty();
+            game.playSupportPair(choice);
+        }
 
         private labelWithTooltip(process: CCS.Process): JQuery {
             return Tooltip.wrapProcess(this.labelFor(process));
@@ -1673,6 +1708,7 @@ module Activity {
 
         protected prepareAttack(choices: any, game: DgGame): void {
             // select strategy
+            console.log("COMPUTER ATTACK", choices);
             if (game.isCurrentWinner(this))
                 this.delayedPlay = setTimeout(() => this.winningAttack(choices, game), Computer.Delay);
             else this.delayedPlay = setTimeout(() => this.losingAttack(choices, game), Computer.Delay);
@@ -1680,12 +1716,14 @@ module Activity {
 
         protected prepareDefend(choices: any, game: DgGame): void {
             // select strategy
+            console.log("COMPUTER DEFEND", choices);
             if (game.isCurrentWinner(this))
                 this.delayedPlay = setTimeout(() => this.winningDefend(choices, game), Computer.Delay);
             else this.delayedPlay = setTimeout(() => this.losingDefend(choices, game), Computer.Delay);
         }
 
-        public override prepareCoupling(choices: dg.GameOptions[], game: DgGame): void {
+        public override prepareCoupling(choices: dg.GameOptions[], game: ProbabilisticBisimulationGame): void {
+            console.log("COMPUTER COUPLING", choices);
             super.prepareCoupling([], game)
             // select strategy
             if (game.isCurrentWinner(this))
@@ -1693,7 +1731,8 @@ module Activity {
             else this.delayedPlay = setTimeout(() => this.losingCoupling(choices, game), Computer.Delay);
         }
 
-        public override prepareSuppPair(choices: dg.GameOptions[], game: DgGame): void {
+        public override prepareSuppPair(choices: dg.SuppPairGameOptions[], game: ProbabilisticBisimulationGame): void {
+            console.log("COMPUTER SUPPPAIR", choices);
             super.prepareSuppPair([], game)
             // select strategy
             if (game.isCurrentWinner(this))
@@ -1701,24 +1740,28 @@ module Activity {
             else this.delayedPlay = setTimeout(() => this.losingSuppPair(choices, game), Computer.Delay);
         }
 
-        private winningCoupling(choices: any, game: DgGame) {
-            // TODO: implement
-            /// game.play...
+        private winningCoupling(choices: any, game: ProbabilisticBisimulationGame) {
+            console.log("winning coupling", choices);
+            let choice = game.getBestWinningCoupling(choices);
+            game.playCoupling(choice);
         }
 
-        private losingCoupling(choices: any, game: DgGame) {
-            // TODO: implement
-            /// game.play...
+        private losingCoupling(choices: any, game: ProbabilisticBisimulationGame) {
+            console.log("losing coupling", choices);
+            let tryHardChoice = game.getTryHardCoupling(choices);
+            game.playCoupling(tryHardChoice);
         }
 
-        private winningSuppPair(choices: any, game: DgGame) {
-            // TODO: implement
-            /// game.play...
+        private winningSuppPair(choices: any, game: ProbabilisticBisimulationGame) {
+            console.log("winning supp pair", choices);
+            let choice = game.getWinningSupportPair(choices);
+            game.playSupportPair(choice.nextNode);
         }
 
-        private losingSuppPair(choices: any, game: DgGame) {
-            // TODO: implement
-            /// game.play...
+        private losingSuppPair(choices: any, game: ProbabilisticBisimulationGame) {
+            console.log("losing supp pair", choices);
+            let tryHardChoice = game.getWinningSupportPair(choices);   
+            game.playSupportPair(tryHardChoice.nextNode);
         }
 
         private losingAttack(choices: any, game: DgGame): void {
@@ -1897,6 +1940,30 @@ module Activity {
             }
 
             this.println(this.render(template, context), '<p>');
+        }
+        
+        public printPCCSPlay(
+            player: Player,
+            source: CCS.Process,
+            destination: MultiSetUtil.MultiSet<string>,
+            move: Move,
+            game: DgGame
+        ): void {
+            throw 'printPCCSPlay cannot be invoked on non-PCCS bisimulation'
+        }
+        public printPCCSCoupling(
+            source: MultiSetUtil.MultiSet<string>,
+            destination: [string, string][],
+            game: DgGame
+        ): void {
+            throw 'printPCCSCoupling cannot be invoked on non-PCCS bisimulation'
+        }
+        public printPCCSSuppPair(
+            supp: [string, string][],
+            pair: [string, string],
+            game: DgGame
+        ): void {
+            throw 'printPCCSSuppPair cannot be invoked on non-PCCS bisimulation'
         }
 
         public printWinner(winner: Player): void {

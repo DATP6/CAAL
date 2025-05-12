@@ -1314,6 +1314,8 @@ module Equivalence {
                 return {
                     nextNode,
                     target: node.rightId + node.rightId, // for GUI
+                    left: node.leftId,
+                    right: node.rightId,
                 }
             })
         }
