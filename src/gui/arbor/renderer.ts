@@ -283,7 +283,7 @@ class Renderer {
      * @param {Point} pt
      */
     private drawDot(node: Node, pt: Point): void {
-        this.ctx.fillStyle = 'black'; // Set the fill color to black
+        this.ctx.fillStyle = node.data.status === 'selected' ? this.nodeStatusColors['selected'] : 'black'; // Set the fill color to black
         this.ctx.beginPath(); // Start a new path
         this.ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2); // Draw a circle at (pt.x, pt.y) with a radius of 5
         this.ctx.fill(); // Fill the circle with the current fill style (black)
