@@ -287,7 +287,6 @@ module PCCS {
         }
     }
 
-    // TODO: this class should use the cache to avoid recomputing the same process multiple times
     export class ProbabilityDistributionGenerator implements PCCS.ProcessDispatchHandler<Distribution> {
         private cache: { [id: string]: Distribution } = {};
 
@@ -303,7 +302,6 @@ module PCCS {
             return (this.cache[process.id] ??= process.dispatchOn(this));
         }
 
-        // TODO: Someone sanity check this
         dispatchProbabilisticProcess(process: ProbabilisticProcess) {
             let result = this.cache[process.id];
             if (result) return result;

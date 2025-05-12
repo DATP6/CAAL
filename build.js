@@ -156,7 +156,7 @@ function createTscFileTask(targetFile, sourceFiles, options, comment, onFinish) 
         var command = TSC;
         if (options.definitionFile) command += ' -d';
         if (options.sourceMap) command += ' --sourcemap';
-        command += ' --target es2017';
+        command += ' --target es2019';
         command += ' --allowJs';
         command += ' --out ' + targetFile + ' ' + sourceFiles.join(' ');
         jake.exec(command, { printStdout: true }, function () {

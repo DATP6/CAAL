@@ -1225,7 +1225,7 @@ module Equivalence {
                     return toConstructed(node, [[]]);
                 }
             }
-            
+
             // If we can't make a valid coupling, we just go to empty set
             let g = new FlowGraph(node.leftDist, node.rightDist)
             if (!g.couplingExists(node.support)) {
@@ -1244,43 +1244,67 @@ module Equivalence {
             return toConstructed(node, hyperedges);
         }
 
-        public getAttackerOptions(dgNodeId: any): [ccs.Action, ccs.Process, any, number][] {
-            let result = [];
-            var hyperedgesNoSideNode = this.getHyperEdges(dgNodeId);
-            let l = this.getHyperEdges(hyperedgesNoSideNode[0]![0]);
-            let r = this.getHyperEdges(hyperedgesNoSideNode[1]![0]);
-            
-            [l,r].forEach(side => side.forEach((hyperedge) => {
-                if (hyperedge.length === 0) {
-                    return;
-                }
-                let target = this.nodes[hyperedge[0]] as ProbDGOneDistributionNode;
-                result.push({
-                    action: target.action,
-                    targetProcess: target.dist.cacheKey((k) => k), 
-                    nextNode: target,
-                    move: target.action
-                });
-            }));
-            return result;
+
+        // TODO: fix return types for all the below methods :)
+
+        public getAttackerOptions(dgNodeId: any): any[] {
+            const hyperedgesNoSideNode = this.getHyperEdges(dgNodeId);
+            const l = this.getHyperEdges(hyperedgesNoSideNode[0]![0]);
+            const r = this.getHyperEdges(hyperedgesNoSideNode[1]![0]);
+
+            return [l,r].flatMap((side: dg.Hyperedge[]) =>
+                side
+                    .filter((hyperedge: dg.DgNodeId) => hyperedge.length !== 0)
+                    .map((hyperedge: dg.DgNodeId) => {
+                        const target = this.nodes[hyperedge[0]] as ProbDGOneDistributionNode;
+                        return [
+                            target.action,
+                            target.dist.cacheKey((k) => k), // FIX: this is not a process
+                            target,
+                            target.action
+                        ] as unknown as [ccs.Action, ccs.Process, any, number];
+                    }
+                )
+            );
         }
 
-        public getDefenderOptions(dgNodeId: any): [ccs.Process, any][] {
-            return this.getHyperEdges(dgNodeId)[0]!.map((target) => {
-                let processId = (this.nodes[target] as ProbDGOneDistributionNode).proc;
-                return [
-                    this.succGen.getProcessById(processId),
-                    processId
-                ]
-            });
+        public getDefenderOptions(dgNodeId: any): any[] {
+            const isLeft = (this.nodes[dgNodeId] as ProbDGOneDistributionNode).side === Side.Right
+
+            return this
+                .getHyperEdges(dgNodeId)[0]!
+                .map((target) => {
+                    const childNode = this.nodes[target] as ProbDGDistributionNode
+                    return [
+                        target, // DG-ID of child
+                        isLeft ? childNode.rightDist : childNode.leftDist,
+                    ]
+                }
+            );
         }
 
         public getCouplingOptions(dgNodeId: dg.DgNodeId): any {
-            return null;
+            return this
+                .getHyperEdges(dgNodeId)[0]!
+                .map((target: dg.DgNodeId) => {
+                    const node = this.nodes[target] as ProbDGSupportNode
+                    return [
+                        target, // DG-ID of child
+                        node.support, // support for GUI
+                    ]
+                });
         }
 
         public getSuppPairOptions(dgNodeId: dg.DgNodeId): any {
-            return null;
+            const edges = this.getHyperEdges(dgNodeId);
+            return edges.map((edge) => {
+                const target = edge[0];
+                const node = this.nodes[target] as ProbDGNoSideNode
+                return [
+                    target, // DG-ID of child
+                    node.rightId + node.rightId // for GUI
+                ]
+            })
         }
     }
 }
