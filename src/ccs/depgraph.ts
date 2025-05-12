@@ -11,6 +11,16 @@ module DependencyGraph {
 
     export type DgNodeId = any; //toString()-able
     export type Hyperedge = Array<DgNodeId>;
+    
+    export interface GameOptions {
+        nextNode: DgNodeId; // node of child in DG
+        target: string; // pretty printed version of destination 
+        // process?: CCS.Process // only set for literal moves (not supp pair or coupling)
+    }
+    export interface MoveGameOptions extends GameOptions { // only for attackers move
+        action: CCS.Action,
+        side: number // enum: Side
+    }
 
     export function copyHyperEdges(hyperEdges: Hyperedge[]): Hyperedge[] {
         var result = [];
@@ -30,13 +40,15 @@ module DependencyGraph {
     }
 
     export interface PlayableDependencyGraph extends PartialDependencyGraph {
-        getAttackerOptions(dgNodeId: DgNodeId): [CCS.Action, CCS.Process, DgNodeId, number][];
-        getDefenderOptions(dgNodeId: DgNodeId): [CCS.Process, DgNodeId][];
+        getAttackerOptions(dgNodeId: DgNodeId): [CCS.Action, CCS.Process, DgNodeId, number][] | MoveGameOptions[];
+        getDefenderOptions(dgNodeId: DgNodeId): [CCS.Process, DgNodeId][] | GameOptions[];
     }
 
     export interface PlayableProbabilisticDG extends PlayableDependencyGraph {
-        getCouplingOptions(dgNodeId: DgNodeId): any;
-        getSuppPairOptions(dgNodeId: DgNodeId): any;
+        getAttackerOptions(dgNodeId: DgNodeId): MoveGameOptions[];
+        getDefenderOptions(dgNodeId: DgNodeId): GameOptions[];
+        getCouplingOptions(dgNodeId: DgNodeId): GameOptions[];
+        getSuppPairOptions(dgNodeId: DgNodeId): GameOptions[];
         getNodeType(id: DgNodeId): number; // actually an enum, but that calls for recursive imports
     }
 

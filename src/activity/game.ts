@@ -646,6 +646,10 @@ module Activity {
             this.currentRight = currentRight;
         }
 
+        public isPCCS(): boolean {
+            return this.graph instanceof PCCS.Graph;
+        }
+
         public getTransitionStr(isAttack: boolean, action: string): string {
             var timedSubScript: string =
                 this.time === 'timed' ? '<sub>t</sub>' : this.time === 'untimed' ? '<sub>u</sub>' : '';
@@ -979,7 +983,7 @@ module Activity {
             return this.gameType;
         }
 
-        public startGame(): void {
+        public override startGame(): void {
             this.gameLog.printIntro(
                 this.gameType,
                 this.getCurrentConfiguration(),
@@ -1061,7 +1065,7 @@ module Activity {
             return this.marking.getMarking(this.currentNodeId) === this.marking.ONE ? this.attacker : this.defender;
         }
 
-        protected createMarking(): dg.LevelMarking {
+        protected override createMarking(): dg.LevelMarking {
             var marking = dg.solveDgGlobalLevel(this.bisimulationDg);
             this.bisimilar = marking.getMarking(0) === marking.ZERO;
             return marking;
@@ -1109,7 +1113,7 @@ module Activity {
             return this.gameType;
         }
 
-        public startGame(): void {
+        public override startGame(): void {
             this.gameLog.printIntro(
                 this.gameType,
                 this.getCurrentConfiguration(),
@@ -1189,7 +1193,7 @@ module Activity {
             return this.marking.getMarking(this.currentNodeId) === this.marking.ONE ? this.attacker : this.defender;
         }
 
-        protected createMarking(): dg.LevelMarking {
+        protected override createMarking(): dg.LevelMarking {
             var marking = dg.solveDgGlobalLevel(this.simulationDG);
             this.isSimilar = marking.getMarking(0) === marking.ZERO;
             return marking;
@@ -1231,12 +1235,12 @@ module Activity {
 
         public override preparePlayer(player: Player) {
             var choices: any = this.getCurrentChoices(player.getPlayType());
-
+            console.log('choices', choices);
             // determine if game is over
             if (choices.length === 0) {
                 // the player to be prepared cannot make a move
                 // the player to prepare has lost, announce it
-                this.gameLog.printWinner(player === this.attacker ? this.defender : this.attacker);
+                // this.gameLog.printWinner(player === this.attacker ? this.defender : this.attacker);
 
                 // stop game
                 this.stopGame();
@@ -1269,7 +1273,7 @@ module Activity {
             return result;
         }
 
-        public override getCurrentChoices(playType: PlayType): any {
+        public override getCurrentChoices(playType: PlayType): dg.GameOptions[] {
             let bisimDG = this.dependencyGraph as dg.PlayableProbabilisticDG // safe type narrowing
             const nodeType = bisimDG.getNodeType(this.currentNodeId) as Equivalence.ProbDGNodeKind;
 
@@ -1283,7 +1287,8 @@ module Activity {
                 case Equivalence.ProbDGNodeKind.Support:
                     return bisimDG.getSuppPairOptions(this.currentNodeId);
             }
-       }
+            throw 'invalid node for choices'
+        }
 
         public override play(
             player: Player,
@@ -1305,26 +1310,27 @@ module Activity {
 
             if (player.getPlayType() == PlayType.Attacker) {
                 var sourceProcess = move === Move.Left ? previousConfig.left : previousConfig.right;
-                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
+                // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
 
                 this.lastAction = action;
                 this.lastMove = move!; // never undefined for attacker
 
-                this.saveCurrentProcess(destinationProcess, this.lastMove);
+                // this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.preparePlayer(this.defender);
-            } else {
+            } else { // DEFENDER PLAYING
                 // the play is a defense, flip the saved last move
                 this.lastMove = this.lastMove === Move.Right ? Move.Left : Move.Right;
 
                 var sourceProcess = this.lastMove === Move.Left ? previousConfig.left : previousConfig.right;
-                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this);
+                // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this);
 
-                this.saveCurrentProcess(destinationProcess, this.lastMove);
+                // this.saveCurrentProcess(destinationProcess, this.lastMove);
 
                 this.round++;
-                this.gameLog.printRound(this.round, this.getCurrentConfiguration());
-
-                if (!this.cycleExists()) this.defender.prepareCoupling([], this);
+                // this.gameLog.printRound(this.round, this.getCurrentConfiguration());
+                
+                const choices = this.getCurrentChoices(null!) // playType is unused in PCCS
+                this.defender.prepareCoupling(choices, this);
 
                 if (this.defenderSuccessorGen instanceof Traverse.AbstractingSuccessorGenerator) {
                     strictPath = (<Traverse.AbstractingSuccessorGenerator>this.defenderSuccessorGen).getStrictPath(
@@ -1335,12 +1341,16 @@ module Activity {
                 }
             }
 
-            this.gameActivity.onPlay(strictPath, this.lastMove);
-            this.gameActivity.centerNode(destinationProcess, this.lastMove);
+            // TODO: we need process instead of multiset if we have to use these functions
+            // this.gameActivity.onPlay(strictPath, this.lastMove);
+            // this.gameActivity.centerNode(destinationProcess, this.lastMove);
         }
 
-        public playCoupling(rightDist: PCCS.ProbabilisticProcess, leftDist: PCCS.ProbabilisticProcess) {
+        public playCoupling(choice: dg.GameOptions) {
+            this.currentNodeId = choice.nextNode
+
             // TODO: print coupling in gamelog
+            const choices = this.getCurrentChoices(null!) // argument not needed in PCCS
             this.attacker.prepareSuppPair([], this)
         }
 
@@ -1414,7 +1424,7 @@ module Activity {
             }
         }
 
-        public prepareSuppPair(choises: any, game: DgGame): void {
+        public prepareSuppPair(choices: any, game: DgGame): void {
             if (this.playType !== PlayType.Attacker) {
                 throw 'Defender cannot select state pairs '
             } else if (game.InputMode !== InputMode.PCCS) {
@@ -1440,42 +1450,85 @@ module Activity {
         }
 
         protected prepareAttack(choices: any, game: DgGame): void {
-            this.fillTable(choices, game, true);
+            if (game.isPCCS()) {
+                this.fillTablePCCS(choices as dg.MoveGameOptions[], game, true);
+            } else {
+                this.fillTable(choices, game, true);
+            }
             game.getGameLog().printPrepareAttack();
         }
 
         protected prepareDefend(choices: any, game: DgGame): void {
-            this.fillTable(choices, game, false);
+            if (game.isPCCS()) {
+                this.fillTablePCCS(choices , game, false);
+            } else {
+                this.fillTable(choices, game, false);
+            }
             game.getGameLog().printPrepareDefend(game.getLastMove());
         }
 
-        public override prepareCoupling(choices: any, game: DgGame): void {
-            super.prepareCoupling([], game)
-            // TODO: implement
+        public override prepareCoupling(choices: dg.GameOptions[], game: DgGame): void {
+            super.prepareCoupling([], game) // only sanity check, does not care for choices
+            console.log("PREPARING COUPLING")
+
             this.fillCouplingTable(choices, game)
             game.getGameLog().printPrepareCoupling()
         }
 
-        public override prepareSuppPair(choices: any, game: DgGame): void {
-            super.prepareSuppPair([], game)
+        public override prepareSuppPair(choices: dg.GameOptions[], game: DgGame): void {
+            super.prepareSuppPair([], game) // only sanity check, does not care for choices
             this.fillSuppPairTable(choices, game)
             game.getGameLog().printPrepareSuppPair()
         }
 
-        private fillCouplingTable(choices: any, game: DgGame): void {
-            //TODO: implement
+        private fillCouplingTable(choices: dg.GameOptions[], game: DgGame): void {
+            this.$table.empty();
+            choices.forEach((choice) => {
+                var row = $('<tr></tr>');
+                row.attr('data-target-id', choice.target); // attach multiset that is dist
+
+                let $sourceTd = $("<td id='source'></td>").append("source coupling");
+                let $targetTd = $("<td id='target'></td>").append(choice.target);
+                let $actionTd = $("<td id='action'></td>").append("choose coupling pls :)");
+
+                // onClick
+                $(row).on('click', (event) => {
+                    this.clickCouplingChoice(choice, game as ProbabilisticBisimulationGame);
+                });
+
+                row.append($sourceTd, $targetTd);
+                this.$table.append(row);
+            });
         }
 
-        private fillSuppPairTable(choices: any, game: DgGame): void {
-            //TODO: implement
+        private fillSuppPairTable(choices: dg.GameOptions[], game: DgGame): void {
+            this.$table.empty();
+            choices.forEach((choice) => {
+                var row = $('<tr></tr>');
+                row.attr('data-target-id', choice.target); // attach multiset that is dist
+
+                let $sourceTd = $("<td id='source'></td>").append("source pair");
+                let $targetTd = $("<td id='target'></td>").append(choice.target);
+                let $actionTd = $("<td id='action'></td>").append("choose next pair pls :)");
+
+                // onClick
+                $(row).on('click', (event) => {
+                    this.clickChoice(choice, game, false);
+                });
+
+                row.append($sourceTd, $targetTd);
+                this.$table.append(row);
+            });
         }
 
         private fillTable(choices: any, game: DgGame, isAttack: boolean): void {
             var currentConfiguration = game.getCurrentConfiguration();
             var actionTransition: string;
+            console.log('choices in filtable', choices);
 
             if (!isAttack) {
                 actionTransition = game.getTransitionStr(isAttack, game.getLastAction().toString(true));
+                //  return '=' + action + '=>' + timedSubScript;
             }
 
             this.$table.empty();
@@ -1525,6 +1578,59 @@ module Activity {
                 this.$table.append(row);
             });
         }
+
+        private fillTablePCCS(choices: dg.MoveGameOptions[], game: DgGame, isAttack: boolean): void {
+            const currentConfiguration = game.getCurrentConfiguration();
+            this.$table.empty();
+            choices.forEach((choice) => {
+                var row = $('<tr></tr>');
+                console.log('choice', choice);
+                row.attr('data-target-id', choice.target); // attach multiset that is dist
+
+                let sourceProcess
+                if (isAttack) {
+                    sourceProcess = choice.side == 1 ? currentConfiguration.left : currentConfiguration.right;
+                } else {
+                    sourceProcess = choice.side == 1 ? currentConfiguration.right: currentConfiguration.left;
+                }
+                
+                let $source = this.labelWithTooltip(sourceProcess);
+                let $sourceTd = $("<td id='source'></td>").append($source);
+                let $targetTd = $("<td id='target'></td>").append(choice.target);
+
+                // Display the action
+                let $actionTd
+                if (isAttack) {
+                    $actionTd = $("<td id='action'></td>").append("-" + choice.action.toString(true) + "->");
+                } else {
+                    $actionTd = $("<td id='action'></td>").append("-" + game.getLastAction() + "->");
+                }
+                // onClick
+                $(row).on('click', (event) => {
+                    this.clickChoicePCCS(choice, game, isAttack);
+                });
+
+                row.append($sourceTd, $actionTd, $targetTd);
+                this.$table.append(row);
+            });
+        }
+
+        private clickChoicePCCS(choice: dg.GameOptions, game: DgGame, isAttack: boolean): void {
+            this.$table.empty();
+            if (isAttack) {
+                let c = choice as dg.MoveGameOptions // type narrowing
+                let move: Move = c.side == Move.Left ? Move.Left : Move.Right; // 1: left, 2: right
+                game.play(this, c.target, c.nextNode, c.action, move);
+            } else {
+                game.play(this, choice.target, choice.nextNode);
+            }
+        }
+
+        private clickCouplingChoice(choice: dg.GameOptions, game: ProbabilisticBisimulationGame): void {
+            this.$table.empty();
+            game.playCoupling(choice);
+        }
+        
 
         private labelWithTooltip(process: CCS.Process): JQuery {
             return Tooltip.wrapProcess(this.labelFor(process));
@@ -1579,7 +1685,7 @@ module Activity {
             else this.delayedPlay = setTimeout(() => this.losingDefend(choices, game), Computer.Delay);
         }
 
-        public override prepareCoupling(choices: any, game: DgGame): void {
+        public override prepareCoupling(choices: dg.GameOptions[], game: DgGame): void {
             super.prepareCoupling([], game)
             // select strategy
             if (game.isCurrentWinner(this))
@@ -1587,7 +1693,7 @@ module Activity {
             else this.delayedPlay = setTimeout(() => this.losingCoupling(choices, game), Computer.Delay);
         }
 
-        public override prepareSuppPair(choices: any, game: DgGame): void {
+        public override prepareSuppPair(choices: dg.GameOptions[], game: DgGame): void {
             super.prepareSuppPair([], game)
             // select strategy
             if (game.isCurrentWinner(this))
@@ -1848,7 +1954,7 @@ module Activity {
         }
 
         public printIntro(gameType: string, configuration: any, winner: Player, attacker: Player): void {
-            var template = 'You are playing {1} in {2} {3} bisimulation game.';
+            var template = 'You are playing {1} in {2} {3} probabilistic bisimulation game.';
 
             var context = {
                 1: { text: attacker instanceof Computer ? 'defender' : 'attacker' },

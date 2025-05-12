@@ -936,6 +936,7 @@ module Equivalence {
         rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
     }
 
+
     function toConstructed<T>(
         node: T & UnconstructedProbDGNode,
         hyperedges: dg.Hyperedge[]
@@ -1245,9 +1246,19 @@ module Equivalence {
         }
 
 
-        // TODO: fix return types for all the below methods :)
 
-        public getAttackerOptions(dgNodeId: any): any[] {
+        private prettyPrintDist(dist: MultiSetUtil.MultiSet<string>) {
+            return '[' + dist.getEntries().map(({ proc, weight }) => 
+                proc.toString() + '↦' + weight.toString()
+            ) + ']';
+        }
+        private prettyPrintSupp(dist: [string, string][]) {
+            return '{' + dist.map(([leftId, rightId]) => 
+                '(' + leftId.toString() + ',' + rightId.toString() + ')'
+            ).join(',') + '}';
+        }
+
+        public getAttackerOptions(dgNodeId: any): dg.MoveGameOptions[] {
             const hyperedgesNoSideNode = this.getHyperEdges(dgNodeId);
             const l = this.getHyperEdges(hyperedgesNoSideNode[0]![0]);
             const r = this.getHyperEdges(hyperedgesNoSideNode[1]![0]);
@@ -1257,53 +1268,53 @@ module Equivalence {
                     .filter((hyperedge: dg.DgNodeId) => hyperedge.length !== 0)
                     .map((hyperedge: dg.DgNodeId) => {
                         const target = this.nodes[hyperedge[0]] as ProbDGOneDistributionNode;
-                        return [
-                            target.action,
-                            target.dist.cacheKey((k) => k), // FIX: this is not a process
-                            target,
-                            target.action
-                        ] as unknown as [ccs.Action, ccs.Process, any, number];
+                        return {
+                            nextNode: hyperedge[0],
+                            target: this.prettyPrintDist(target.dist),
+                            action: target.action,
+                            side: side === l ? Side.Left : Side.Right,
+                        }
                     }
                 )
             );
         }
 
-        public getDefenderOptions(dgNodeId: any): any[] {
+        public getDefenderOptions(dgNodeId: any): dg.GameOptions[] {
             const isLeft = (this.nodes[dgNodeId] as ProbDGOneDistributionNode).side === Side.Right
 
             return this
                 .getHyperEdges(dgNodeId)[0]!
-                .map((target) => {
-                    const childNode = this.nodes[target] as ProbDGDistributionNode
-                    return [
-                        target, // DG-ID of child
-                        isLeft ? childNode.rightDist : childNode.leftDist,
-                    ]
+                .map((nextNode) => {
+                    const childNode = this.nodes[nextNode] as ProbDGDistributionNode
+                    return {
+                        nextNode,
+                        target: this.prettyPrintDist(isLeft ? childNode.rightDist : childNode.leftDist),
+                    }
                 }
             );
         }
 
-        public getCouplingOptions(dgNodeId: dg.DgNodeId): any {
+        public getCouplingOptions(dgNodeId: dg.DgNodeId): dg.GameOptions[] {
             return this
                 .getHyperEdges(dgNodeId)[0]!
-                .map((target: dg.DgNodeId) => {
-                    const node = this.nodes[target] as ProbDGSupportNode
-                    return [
-                        target, // DG-ID of child
-                        node.support, // support for GUI
-                    ]
+                .map((nextNode: dg.DgNodeId) => {
+                    const node = this.nodes[nextNode] as ProbDGSupportNode
+                    return {
+                        nextNode,
+                        target: this.prettyPrintSupp(node.support),
+                    }
                 });
         }
 
-        public getSuppPairOptions(dgNodeId: dg.DgNodeId): any {
+        public getSuppPairOptions(dgNodeId: dg.DgNodeId): dg.GameOptions[] {
             const edges = this.getHyperEdges(dgNodeId);
             return edges.map((edge) => {
-                const target = edge[0];
-                const node = this.nodes[target] as ProbDGNoSideNode
-                return [
-                    target, // DG-ID of child
-                    node.rightId + node.rightId // for GUI
-                ]
+                const nextNode = edge[0];
+                const node = this.nodes[nextNode] as ProbDGNoSideNode
+                return {
+                    nextNode,
+                    target: node.rightId + node.rightId, // for GUI
+                }
             })
         }
     }
