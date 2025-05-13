@@ -508,6 +508,8 @@ module Activity {
 
         public highlightNodes(): void {
             if (!this.dgGame) return;
+            console.log('highlightNodes');
+            console.log(this.dgGame.getCurrentConfiguration());
 
             var configuration = this.dgGame.getCurrentConfiguration();
             this.leftGraph.setSelected(configuration.left.id);
@@ -870,7 +872,7 @@ module Activity {
             var bestCandidateIndices = [];
             var bestRatio = 0;
 
-            choices.forEach((choice: { nextNode: any; }, i: any) => {
+            choices.forEach((choice: { nextNode: any; }, i: number) => {
                 var oneMarkings = 0;
                 var defenderChoices: any = this.dependencyGraph.getDefenderOptions(choice.nextNode);
 
@@ -1257,6 +1259,7 @@ module Activity {
             }
         }
 
+        // NOTE: IS THIS EVER USED?!?
         public prepareCoupling() {
             let choices = this.getCurrentChoices(PlayType.Attacker);
         }
@@ -1308,9 +1311,9 @@ module Activity {
             // UNUSED ATM
             this.consecutivePlay = !this.consecutivePlay
 
-            if (player.getPlayType() == PlayType.Attacker) {
+            if (player.getPlayType() == PlayType.Attacker) { // ATTACKER PLAYING
                 var sourceProcess = move === Move.Left ? previousConfig.left : previousConfig.right;
-                // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
+                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
 
                 this.lastAction = action;
                 this.lastMove = move!; // never undefined for attacker
@@ -1322,15 +1325,14 @@ module Activity {
                 this.lastMove = this.lastMove === Move.Right ? Move.Left : Move.Right;
 
                 var sourceProcess = this.lastMove === Move.Left ? previousConfig.left : previousConfig.right;
-                // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this);
+                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this)
 
                 // this.saveCurrentProcess(destinationProcess, this.lastMove);
-
-                this.round++; // TODO: THIS SHOULD INCREMENT WHEN WE CHOOSE SUPPORT PAIR
                 // this.gameLog.printRound(this.round, this.getCurrentConfiguration());
                 
                 const choices = this.getCurrentChoices(null!) // playType is unused in PCCS
                 this.defender.prepareCoupling(choices, this);
+                this.round++;
 
                 if (this.defenderSuccessorGen instanceof Traverse.AbstractingSuccessorGenerator) {
                     strictPath = (<Traverse.AbstractingSuccessorGenerator>this.defenderSuccessorGen).getStrictPath(
@@ -1342,7 +1344,7 @@ module Activity {
             }
 
             // TODO: we need process instead of multiset if we have to use these functions
-            // this.gameActivity.onPlay(strictPath, this.lastMove);
+            this.gameActivity.onPlay(strictPath, this.lastMove);
             // this.gameActivity.centerNode(destinationProcess, this.lastMove);
         }
 
@@ -1356,39 +1358,12 @@ module Activity {
 
         public playSupportPair(nextNodePair: dg.SuppPairGameOptions) {
             // TODO: print pair in gamelog
-            this.currentLeft = nextNodePair.left;
-            this.currentRight = nextNodePair.right;
+            this.currentLeft = this.attackerSuccessorGen.getProcessById(nextNodePair.left);
+            this.currentRight = this.attackerSuccessorGen.getProcessById(nextNodePair.right);
             this.currentNodeId = nextNodePair.nextNode;
+            this.gameActivity.highlightNodes();
             this.preparePlayer(this.attacker);
             // detect cycle
-        }
-
-        public getBestWinningCoupling(choices: dg.GameOptions[]): dg.GameOptions {
-            for (var i = 0; i < choices.length; i++) {
-                if (this.marking.getMarking(choices[i].nextNode) === this.marking.ZERO) {
-                    return choices[i]!;
-                }
-            }
-            return choices[0]!
-        }
-
-        public getTryHardCoupling(choices: dg.GameOptions[]): dg.GameOptions {
-            // TODO: implement
-            return choices[0]!
-        }
-
-        public getWinningSupportPair(choices: dg.GameOptions[]): dg.GameOptions {
-            for (var i = 0; i < choices.length; i++) {
-                if (this.marking.getMarking(choices[i]?.nextNode) === this.marking.ZERO) {
-                    return choices[i]!;
-                }
-            }
-            return choices[0]!
-        }
-
-        public getTryHardSupportPair(choices: dg.GameOptions[]): dg.GameOptions {
-            // TODO: implement
-            return choices[0]!
         }
 
         public override computeMarking(): dg.LevelMarking {
@@ -1694,7 +1669,9 @@ module Activity {
 
     // such ai
     class Computer extends Player {
-        static Delay: number = 1500;
+        // TODO: set this back to something more realistic when not debugging
+        
+        static Delay: number = 250; // 0.75 seconds
 
         private delayedPlay: number | undefined;
 
@@ -1742,26 +1719,26 @@ module Activity {
 
         private winningCoupling(choices: any, game: ProbabilisticBisimulationGame) {
             console.log("winning coupling", choices);
-            let choice = game.getBestWinningCoupling(choices);
+            let choice = game.getWinningDefend(choices);
             game.playCoupling(choice);
         }
 
         private losingCoupling(choices: any, game: ProbabilisticBisimulationGame) {
             console.log("losing coupling", choices);
-            let tryHardChoice = game.getTryHardCoupling(choices);
+            let tryHardChoice = game.getTryHardDefend(choices);
             game.playCoupling(tryHardChoice);
         }
 
         private winningSuppPair(choices: any, game: ProbabilisticBisimulationGame) {
             console.log("winning supp pair", choices);
-            let choice = game.getWinningSupportPair(choices);
+            let choice = game.getBestWinningAttack(choices);
             game.playSupportPair(choice.nextNode);
         }
 
         private losingSuppPair(choices: any, game: ProbabilisticBisimulationGame) {
             console.log("losing supp pair", choices);
-            let tryHardChoice = game.getWinningSupportPair(choices);   
-            game.playSupportPair(tryHardChoice.nextNode);
+            let tryHardChoice = game.getTryHardAttack(choices);   
+            game.playSupportPair(tryHardChoice);
         }
 
         private losingAttack(choices: any, game: DgGame): void {
@@ -1880,7 +1857,7 @@ module Activity {
             player: Player,
             action: CCS.Action,
             source: CCS.Process,
-            destination: CCS.Process,
+            destination: CCS.Process | MultiSetUtil.MultiSet<string>,
             move: Move,
             game: DgGame
         ): void {
@@ -1906,11 +1883,11 @@ module Activity {
                         {
                             name: 'data-tooltip',
                             value: Tooltip.strongSequence(
-                                <Traverse.AbstractingSuccessorGenerator>this.gameActivity.getSuccessorGenerator(),
+                                <Traverse.AbstractingSuccessorGenerator>this.gameActivity!.getSuccessorGenerator(),
                                 source,
                                 action,
-                                destination,
-                                this.gameActivity.getGraph()
+                                (destination as CCS.Process), // TODO: fix if PCCS
+                                this.gameActivity!.getGraph()
                             )
                         }
                     ]
@@ -1941,22 +1918,59 @@ module Activity {
 
             this.println(this.render(template, context), '<p>');
         }
+
+        // private getTarget(
+        //     source: CCS.Process,
+        //     destination: CCS.Process | MultiSetUtil.MultiSet<string>,
+        //     isAttackerOrAbstract: boolean,
+        //     game: DgGame,
+        //     action: CCS.Action
+        // ) {
+        //     let actionContext;
+        //     if (isAttackerOrAbstract) {
+        //         actionContext = {
+        //             text: game.getTransitionStr(true, action.toString(true)),
+        //             tag: '<span>',
+        //             attr: [{ name: 'class', value: 'monospace' }]
+        //         };
+        //     } else {
+        //         actionContext = {
+        //             text: game.getTransitionStr(false, action.toString(true)),
+        //             tag: '<span>',
+        //             attr: [
+        //                 { name: 'class', value: 'ccs-tooltip-data' },
+        //                 {
+        //                     name: 'data-tooltip',
+        //                     value: Tooltip.strongSequence(
+        //                         <Traverse.AbstractingSuccessorGenerator>this.gameActivity!.getSuccessorGenerator(),
+        //                         source,
+        //                         action,
+        //                         destination,
+        //                         this.gameActivity!.getGraph()
+        //                     )
+        //                 }
+        //             ]
+        //         };
+        //     }
+        //     return actionContext;
+        // }
         
-        public printPCCSPlay(
-            player: Player,
-            source: CCS.Process,
-            destination: MultiSetUtil.MultiSet<string>,
-            move: Move,
-            game: DgGame
-        ): void {
-            throw 'printPCCSPlay cannot be invoked on non-PCCS bisimulation'
-        }
         public printPCCSCoupling(
             source: MultiSetUtil.MultiSet<string>,
             destination: [string, string][],
-            game: DgGame
+            game: DgGame,
+            isHuman: boolean
         ): void {
-            throw 'printPCCSCoupling cannot be invoked on non-PCCS bisimulation'
+            let template = '{1} picked the coupling {2}'
+
+            let context = {
+                1: { text: isHuman ? 'You (defender)' : 'Defender' },
+                2: {
+                    text: 'yes'
+                }
+            }
+
+            this.println(this.render(template, context), '<p>');
         }
         public printPCCSSuppPair(
             supp: [string, string][],
@@ -2008,8 +2022,13 @@ module Activity {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
 
-        protected labelFor(process: CCS.Process): string {
-            return this.gameActivity.labelFor(process);
+        // protected labelFor(process: CCS.Process): string {
+        protected labelFor(process: CCS.Process | MultiSetUtil.MultiSet<string>): string {
+            if ('id' in process) {
+                return this.gameActivity.labelFor(process);
+            } else { // is multiset
+                return process.prettyPrint()
+            }
         }
 
         public abstract printIntro(gameType: string, configuration: any, winner: Player, attacker: Player): void

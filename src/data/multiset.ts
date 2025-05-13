@@ -79,6 +79,12 @@ module MultiSetUtil {
             const entries = this.getEntries();
             entries.map((e) => (this._map.set(e.proc, e.weight * scale)));
         }
+
+        public prettyPrint() {
+            return '[' + this.getEntries().map(({ proc, weight }) => 
+                (proc as any).toString() + '↦' + weight.toString() // cast is necessary to keep TS happy
+            ) + ']';
+        }
     }
 
 
@@ -87,7 +93,7 @@ module MultiSetUtil {
         return gcd(b, a % b);
     };
 
-    const lcm = (a, b) => {
+    const lcm = (a: number, b: number) => {
         return Math.abs(a * b) / gcd(a, b);
     };
 

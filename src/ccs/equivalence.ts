@@ -920,6 +920,7 @@ module Equivalence {
         side: Side;
         proc: CCS.ProcessId;
         dist: MultiSetUtil.MultiSet<CCS.ProcessId>;
+        target: CCS.ProcessId;
         action: CCS.Action;
     }
 
@@ -927,6 +928,7 @@ module Equivalence {
         kind: ProbDGNodeKind.Distribution;
         leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
         rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
+        target: CCS.ProcessId;
     }
 
     interface ProbDGSupportNode {
@@ -1123,6 +1125,7 @@ module Equivalence {
                         side: node.side,
                         proc: defenderProc, 
                         dist: attackerDist.dist.map(({ proc, weight }) => ({ proc: proc.id, weight })),
+                        target: attackerDist.id,
                         action: attack.action
                     };
                     hyperedges.push([this.getOrAddNode(target)]);
@@ -1151,6 +1154,7 @@ module Equivalence {
                         isConstructed: false,
                         leftDist: leftDist,
                         rightDist: rightDist,
+                        target: defenderDist.id,
                     };
                     return this.getOrAddNode(target);
                 }); 
@@ -1288,7 +1292,8 @@ module Equivalence {
                     const childNode = this.nodes[nextNode] as ProbDGDistributionNode
                     return {
                         nextNode,
-                        target: this.prettyPrintDist(isLeft ? childNode.rightDist : childNode.leftDist),
+                        // target: this.prettyPrintDist(isLeft ? childNode.rightDist : childNode.leftDist),
+                        target: "Asd"
                     }
                 }
             );
@@ -1313,7 +1318,7 @@ module Equivalence {
                 const node = this.nodes[nextNode] as ProbDGNoSideNode
                 return {
                     nextNode,
-                    target: node.rightId + node.rightId, // for GUI
+                    target: node.leftId + ", " + node.rightId, // for GUI
                     left: node.leftId,
                     right: node.rightId,
                 }
