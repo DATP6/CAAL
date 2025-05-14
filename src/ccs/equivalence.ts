@@ -1274,7 +1274,8 @@ module Equivalence {
                         const target = this.nodes[hyperedge[0]] as ProbDGOneDistributionNode;
                         return {
                             nextNode: hyperedge[0],
-                            target: this.prettyPrintDist(target.dist),
+                            // target: this.prettyPrintDist(target.dist),
+                            target: target.target,
                             action: target.action,
                             side: side === l ? Side.Left : Side.Right,
                         }
@@ -1293,7 +1294,7 @@ module Equivalence {
                     return {
                         nextNode,
                         // target: this.prettyPrintDist(isLeft ? childNode.rightDist : childNode.leftDist),
-                        target: "Asd"
+                        target: childNode.target,
                     }
                 }
             );

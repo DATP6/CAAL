@@ -57,6 +57,7 @@ module GUI {
         public setSelected(name: string) {
             if (!name) return;
             var newSelectedNode = this.sys.getNode(name);
+            console.log('selected node', newSelectedNode);
 
             if (this.selectedNode && newSelectedNode) {
                 this.selectedNode.data.status = 'expanded';
