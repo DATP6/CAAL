@@ -602,8 +602,8 @@ module Activity {
         Defender
     }
     export enum Move {
-        Right,
-        Left
+        Left,
+        Right
     }
 
     abstract class DgGame {
@@ -756,14 +756,12 @@ module Activity {
 
         public abstract play(
             player: Player,
-            destinationProcess: any,
-            nextNode: dg.DgNodeId,
-            action?: CCS.Action,
-            move?: Move
+            choice: any,
         ): void
 
         public preparePlayer(player: Player) {
             var choices: any = this.getCurrentChoices(player.getPlayType());
+            console.log('choices', choices);
 
             // determine if game is over
             if (choices.length === 0) {
@@ -997,25 +995,25 @@ module Activity {
 
         public play(
             player: Player,
-            destinationProcess: any,
-            nextNode: dg.DgNodeId,
-            action?: CCS.Action,
-            move?: Move
+            choice: any,
         ): void {
-            action = action ?? this.lastAction // default value
-
+            let destinationProcess = choice.targetProcess;
+            let action = choice.action ?? this.lastAction // default value
+            console.log("choice.move: ", choice.move)
+            
             var previousConfig = this.getCurrentConfiguration();
             var strictPath = [new CCS.Transition(action, destinationProcess)];
-
+            
             // change the current node id to the next
-            this.currentNodeId = nextNode;
-
+            this.currentNodeId = choice.nextNode;
+            
             if (player.getPlayType() == PlayType.Attacker) {
-                var sourceProcess = move === Move.Left ? previousConfig.left : previousConfig.right;
-                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move, this);
+                const side = choice.move === 1 ? Move.Left : Move.Right; // choice.move is 1 for left transition and 2 for right transition in DG
+                var sourceProcess = side === Move.Left ? previousConfig.left : previousConfig.right;
+                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, side, this);
 
                 this.lastAction = action;
-                this.lastMove = move!; // never undefined for attacker
+                this.lastMove = side;
 
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.preparePlayer(this.defender);
@@ -1127,24 +1125,23 @@ module Activity {
 
         public play(
             player: Player,
-            destinationProcess: any,
-            nextNode: dg.DgNodeId,
-            action?: CCS.Action,
-            move?: Move
+            choice: any,
         ): void {
-            action = action ?? this.lastAction
+            let action = choice.action ?? this.lastAction
+            let destinationProcess = choice.targetProcess;
             var previousConfig = this.getCurrentConfiguration();
             var strictPath = [new CCS.Transition(action, destinationProcess)];
 
             // change the current node id to the next
-            this.currentNodeId = nextNode;
+            this.currentNodeId = choice.nextNode;
 
             if (player.getPlayType() == PlayType.Attacker) {
+                const side = choice.move === 1 ? Move.Left : Move.Right; // choice.move is 1 for left transition and 2 for right transition in DG
                 var sourceProcess = previousConfig.left;
-                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move, this);
+                this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, side, this);
 
                 this.lastAction = action;
-                this.lastMove = move!;
+                this.lastMove = side;
 
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.preparePlayer(this.defender);
@@ -1293,30 +1290,30 @@ module Activity {
 
         public override play(
             player: Player,
-            destinationProcess: any,
-            nextNode: dg.DgNodeId,
-            action: CCS.Action = this.lastAction,
-            move?: Move
+            choice: dg.MoveGameOptions,
         ): void {
-            console.log("PLAYING", player.playTypeStr(), destinationProcess, nextNode, action, move)
-            // TODO: should probably change moves and such
+            console.log("PLAYING", player.playTypeStr(), choice)
             var previousConfig = this.getCurrentConfiguration();
-            var strictPath = [new CCS.Transition(action, destinationProcess)];
+            let destinationProcess = this.attackerSuccessorGen.getProcessById(choice.target);
+            var strictPath = [new CCS.Transition(choice.action, destinationProcess)];
 
             // change the current node id to the next
-            this.currentNodeId = nextNode;
+            this.currentNodeId = choice.nextNode;
 
 
             if (player.getPlayType() == PlayType.Attacker) { // ATTACKER PLAYING
-                var sourceProcess = move === Move.Left ? previousConfig.left : previousConfig.right;
+                if (choice.side === Move.Left) console.log("LEFT SIDE")
+                else console.log("RIGHT SIDE")
+                console.log("move", choice.side)
+                var sourceProcess = choice.side === Move.Left ? previousConfig.left : previousConfig.right;
                 // TODO: once we have the destination process (with ID), we can call this properly
                 // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
 
-                this.lastAction = action;
-                this.lastMove = move!; // never undefined for attacker
+                this.lastAction = choice.action;
+                this.lastMove = choice.side;
 
                 console.log("DESTINATION PROCESS", destinationProcess)
-                this.saveCurrentProcess(this.attackerSuccessorGen.getProcessById(destinationProcess), this.lastMove);
+                this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.gameActivity.highlightNodes();
                 this.preparePlayer(this.defender);
             } else { // DEFENDER PLAYING
@@ -1326,7 +1323,7 @@ module Activity {
                 var sourceProcess = this.lastMove === Move.Left ? previousConfig.left : previousConfig.right;
                 // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this)
                 console.log("DESTINATION PROCESS", destinationProcess)
-                this.saveCurrentProcess(this.attackerSuccessorGen.getProcessById(destinationProcess), this.lastMove);
+                this.saveCurrentProcess(destinationProcess, this.lastMove);
 
                 this.gameActivity.highlightNodes();
         // this.gameLog.printRound(this.round, this.getCurrentConfiguration());
@@ -1337,7 +1334,7 @@ module Activity {
                 if (this.defenderSuccessorGen instanceof Traverse.AbstractingSuccessorGenerator) {
                     strictPath = (<Traverse.AbstractingSuccessorGenerator>this.defenderSuccessorGen).getStrictPath(
                         sourceProcess.id,
-                        action,
+                        choice.action,
                         destinationProcess.id
                     );
                 }
@@ -1601,11 +1598,11 @@ module Activity {
 
                 let sourceProcess
                 if (isAttack) {
-                    sourceProcess = choice.side == 1 ? currentConfiguration.left : currentConfiguration.right;
+                    sourceProcess = choice.side == Move.Left ? currentConfiguration.left : currentConfiguration.right;
                 } else {
-                    sourceProcess = choice.side == 1 ? currentConfiguration.right: currentConfiguration.left;
+                    sourceProcess = game.getLastMove() == Move.Left ? currentConfiguration.right: currentConfiguration.left;
                 }
-                
+
                 let $source = this.labelWithTooltip(sourceProcess);
                 let $sourceTd = $("<td id='source'></td>").append($source);
                 let $targetTd = $("<td id='target'></td>").append(choice.target);
@@ -1632,9 +1629,9 @@ module Activity {
             if (isAttack) {
                 let c = choice as dg.MoveGameOptions // type narrowing
                 let move: Move = c.side == Move.Left ? Move.Left : Move.Right; // 1: left, 2: right
-                game.play(this, c.target, c.nextNode, c.action, move);
+                game.play(this, choice);
             } else {
-                game.play(this, choice.target, choice.nextNode);
+                game.play(this, choice);
             }
         }
 
@@ -1660,9 +1657,9 @@ module Activity {
             this.$table.empty();
             if (isAttack) {
                 var move: Move = choice.move === 1 ? Move.Left : Move.Right; // 1: left, 2: right
-                game.play(this, choice.target, choice.nextNode, choice.action, move);
+                game.play(this, choice);
             } else {
-                game.play(this, choice.target, choice.nextNode);
+                game.play(this, choice);
             }
             this.gameActivity.removeHighlightChoices(true); // remove highlight from both graphs
             this.gameActivity.removeHighlightChoices(false); // remove highlight from both graphs
@@ -1677,7 +1674,7 @@ module Activity {
     class Computer extends Player {
         // TODO: set this back to something more realistic when not debugging
         
-        static Delay: number = 250; // 0.75 seconds
+        static Delay: number = 250;
 
         private delayedPlay: number | undefined;
 
@@ -1750,24 +1747,23 @@ module Activity {
         private losingAttack(choices: any, game: DgGame): void {
             var tryHardChoice = game.getTryHardAttack(choices);
             var move: Move = tryHardChoice.move == 1 ? Move.Left : Move.Right; // 1: left, 2: right
-            game.play(this, tryHardChoice.target, tryHardChoice.nextNode, tryHardChoice.action, move);
+            game.play(this, tryHardChoice);
         }
 
         private winningAttack(choices: any, game: DgGame): void {
             var choice: any = game.getBestWinningAttack(choices);
             var move: Move = choice.move == 1 ? Move.Left : Move.Right; // 1: left, 2: right
-
-            game.play(this, choice.target, choice.nextNode, choice.action, move);
+            game.play(this, choice);
         }
 
         private losingDefend(choices: any, game: DgGame): void {
             var tryHardChoice = game.getTryHardDefend(choices);
-            game.play(this, tryHardChoice.target, tryHardChoice.nextNode);
+            game.play(this, tryHardChoice);
         }
 
         private winningDefend(choices: any, game: DgGame): void {
             var choice = game.getWinningDefend(choices);
-            game.play(this, choice.target, choice.nextNode);
+            game.play(this, choice);
         }
     }
 

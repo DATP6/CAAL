@@ -115,6 +115,8 @@ module Activity {
                     var labelFor = this.graph.getLabel.bind(this.graph);
                     var subLabels = process.subProcesses.map((subProc) => labelFor(subProc));
                     text = '{' + subLabels.join(', ') + '}';
+                } else if (process instanceof PCCS.ProbabilisticProcess) {
+                    text = process.toString();
                 } else {
                     text = this.visitor.visit(process);
                 }

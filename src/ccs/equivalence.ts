@@ -1286,7 +1286,7 @@ module Equivalence {
 
         public getDefenderOptions(dgNodeId: any): dg.GameOptions[] {
             const isLeft = (this.nodes[dgNodeId] as ProbDGOneDistributionNode).side === Side.Right
-
+            console.log("defender options in equivalence ", this.getHyperEdges(dgNodeId))
             return this
                 .getHyperEdges(dgNodeId)[0]!
                 .map((nextNode) => {
