@@ -104,7 +104,7 @@ class Project {
                     new window['Property'][properties[i].className](properties[i].options, properties[i].status)
                 );
             } catch (e) {
-                console.log('Unknown property type');
+                console.log(`Unknown property type: ${properties[i].className}`);
             }
         }
     }

@@ -319,9 +319,11 @@ module Activity {
 
                 if (this.project.getInputMode() === InputMode.CCS) {
                     options['type'] = $('#ccsTransition option:selected').val();
-                } else {
+                } else if (this.project.getInputMode() === InputMode.TCCS) {
                     options['type'] = $('#tccsTransition option:selected').val();
                     options['time'] = $('#tccsTransition option:selected').data('time');
+                } else {
+                    options['type'] = $('#pccsTransition option:selected').val();
                 }
             } else {
                 propertyName = 'HML';
