@@ -46,10 +46,20 @@ module PCCS {
 
         toString() {
             if (this.ccs) return this.ccs;
-            return (this.ccs = this.dist
-                .getEntries()
-                .map((p) => '(' + p.proc.toString() + ', ' + p.weight + ')')
-                .join(' + '));
+            console.log("Dist: ", this.dist.getEntries());
+            let length = 0;
+            this.dist.getEntries().map((p) => length += p.weight);
+            if (length == 1) {
+                return (this.ccs = this.dist
+                    .getEntries()
+                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / length) * 100 + '%)')
+                    .join(','));
+            } else {
+                return (this.ccs = '(' + this.dist
+                    .getEntries()
+                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / length) * 100 + '%)')
+                    .join(',') + ')');
+            }
         }
 
         get id() {
@@ -82,7 +92,7 @@ module PCCS {
             return false
         }
 
-        toString()  {
+        toString() {
             return this.pair
         }
 
@@ -113,8 +123,7 @@ module PCCS {
 
     export class StrictSuccessorGenerator
         extends CCS.StrictSuccessorGenerator
-        implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet>
-    {
+        implements CCS.SuccessorGenerator, PCCS.ProcessDispatchHandler<CCS.TransitionSet> {
         public ProbabilityDistributionGenerator: ProbabilityDistributionGenerator;
 
         constructor(
@@ -417,8 +426,7 @@ module Traverse {
     export type Distribution = MultiSetUtil.MultiSet<CCS.Process>;
     export class PCCSUnguardedRecursionChecker
         extends Traverse.UnguardedRecursionChecker
-        implements PCCS.ProcessDispatchHandler<boolean>
-    {
+        implements PCCS.ProcessDispatchHandler<boolean> {
         dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
             var isUnguarded = false;
             process.dist.getEntries().forEach(({ proc: target }) => {
@@ -432,8 +440,7 @@ module Traverse {
 
     export class PCCSProcessTreeReducer
         extends Traverse.ProcessTreeReducer
-        implements CCS.ProcessVisitor<CCS.Process>, PCCS.ProcessDispatchHandler<CCS.Process>
-    {
+        implements CCS.ProcessVisitor<CCS.Process>, PCCS.ProcessDispatchHandler<CCS.Process> {
         constructor(private pccsgraph: PCCS.Graph) {
             super(pccsgraph);
         }

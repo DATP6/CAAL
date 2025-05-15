@@ -110,7 +110,7 @@ module Activity {
 
             if (process) {
                 if (process instanceof ccs.NamedProcess) {
-                    text = this.visitor.visit((<ccs.NamedProcess>process).subProcess);
+                    text = process.subProcess.id;
                 } else if (process instanceof ccs.CollapsedProcess) {
                     var labelFor = this.graph.getLabel.bind(this.graph);
                     var subLabels = process.subProcesses.map((subProc) => labelFor(subProc));
