@@ -283,12 +283,24 @@ class Renderer {
      * @param {Point} pt
      */
     private drawDot(node: Node, pt: Point): void {
-        this.ctx.fillStyle = node.data.status === 'selected' ? this.nodeStatusColors['selected'] : 'black'; // Set the fill color to black
-        this.ctx.beginPath(); // Start a new path
-        this.ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2); // Draw a circle at (pt.x, pt.y) with a radius of 5
-        this.ctx.fill(); // Fill the circle with the current fill style (black)
-        this.nodeBoxes[node.name] = [pt.x - 5, pt.y - 5, 10, 10]; // Save the bounds of the node-rect for drawing the edges correctly.
+        // pick the circle color
+        this.ctx.fillStyle = node.data.status === 'selected'
+            ? this.nodeStatusColors['selected']
+            : 'black';
+
+        // draw the circle
+        let label = node.data.label as string;
+        this.ctx.beginPath();
+        this.ctx.arc(pt.x, pt.y, 12, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // NOW draw the label in white (or whatever color)
+        this.drawLabel(pt.x, pt.y + 5, label, 'white');
+
+        // if you need the hit‑box for edges
+        this.nodeBoxes[node.name] = [pt.x - 12, pt.y - 12, 24, 24];
     }
+
 
     /**
      * Draws the rectangle of the node

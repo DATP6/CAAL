@@ -483,7 +483,8 @@ module Activity {
 
         private showProbabilityDistrubution(process: string, graph: GUI.ProcessGraphUI): void {
             // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            graph.showProcess(process, { probabilityDistrubution: true });
+            console.log("String: ", process);
+            graph.showProcess(process, { label: this.graph.getLabel(this.graph.processById(process)), probabilityDistrubution: true });
         }
 
         private showProcess(process: CCS.Process, graph: GUI.ProcessGraphUI): void {
@@ -1000,13 +1001,13 @@ module Activity {
             let destinationProcess = choice.targetProcess;
             let action = choice.action ?? this.lastAction // default value
             console.log("choice.move: ", choice.move)
-            
+
             var previousConfig = this.getCurrentConfiguration();
             var strictPath = [new CCS.Transition(action, destinationProcess)];
-            
+
             // change the current node id to the next
             this.currentNodeId = choice.nextNode;
-            
+
             if (player.getPlayType() == PlayType.Attacker) {
                 const side = choice.move === 1 ? Move.Left : Move.Right; // choice.move is 1 for left transition and 2 for right transition in DG
                 var sourceProcess = side === Move.Left ? previousConfig.left : previousConfig.right;
@@ -1326,8 +1327,8 @@ module Activity {
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
 
                 this.gameActivity.highlightNodes();
-        // this.gameLog.printRound(this.round, this.getCurrentConfiguration());
-                
+                // this.gameLog.printRound(this.round, this.getCurrentConfiguration());
+
                 const choices = this.getCurrentChoices(null!) // playType is unused in PCCS
                 this.defender.prepareCoupling(choices, this);
 
@@ -1469,7 +1470,7 @@ module Activity {
 
         protected prepareDefend(choices: any, game: DgGame): void {
             if (game.isPCCS()) {
-                this.fillTablePCCS(choices , game, false);
+                this.fillTablePCCS(choices, game, false);
             } else {
                 this.fillTable(choices, game, false);
             }
@@ -1600,7 +1601,7 @@ module Activity {
                 if (isAttack) {
                     sourceProcess = choice.side == Move.Left ? currentConfiguration.left : currentConfiguration.right;
                 } else {
-                    sourceProcess = game.getLastMove() == Move.Left ? currentConfiguration.right: currentConfiguration.left;
+                    sourceProcess = game.getLastMove() == Move.Left ? currentConfiguration.right : currentConfiguration.left;
                 }
 
                 let $source = this.labelWithTooltip(sourceProcess);
@@ -1639,7 +1640,7 @@ module Activity {
             this.$table.empty();
             game.playCoupling(choice);
         }
-        
+
         private clickSupportPairChoice(choice: dg.SuppPairGameOptions, game: ProbabilisticBisimulationGame): void {
             this.$table.empty();
             game.playSupportPair(choice);
@@ -1673,7 +1674,7 @@ module Activity {
     // such ai
     class Computer extends Player {
         // TODO: set this back to something more realistic when not debugging
-        
+
         static Delay: number = 250;
 
         private delayedPlay: number | undefined;
@@ -1681,7 +1682,7 @@ module Activity {
         constructor(playType: PlayType) {
             super(playType);
         }
-        
+
         public abortPlay(): void {
             clearTimeout(this.delayedPlay);
         }
@@ -1740,7 +1741,7 @@ module Activity {
 
         private losingSuppPair(choices: any, game: ProbabilisticBisimulationGame) {
             console.log("losing supp pair", choices);
-            let tryHardChoice = game.getTryHardAttack(choices);   
+            let tryHardChoice = game.getTryHardAttack(choices);
             game.playSupportPair(tryHardChoice);
         }
 
@@ -1920,7 +1921,7 @@ module Activity {
 
             this.println(this.render(template, context), '<p>');
         }
-        
+
         public printPCCSCoupling(
             // destination: [string, string][],
             destination: string,
@@ -1967,8 +1968,8 @@ module Activity {
                         winner instanceof Computer
                             ? 'You ({3}) have'
                             : winner.getPlayType() === PlayType.Attacker
-                              ? 'Defender has'
-                              : 'Attacker has'
+                                ? 'Defender has'
+                                : 'Attacker has'
                 },
                 2: { text: winner instanceof Computer ? 'lose' : 'win' },
                 3: { text: winner.getPlayType() === PlayType.Attacker ? 'defender' : 'attacker' }
