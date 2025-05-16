@@ -14,7 +14,7 @@ module DependencyGraph {
 
     export interface GameOptions {
         nextNode: DgNodeId; // node of child in DG
-        target: string; // pretty printed version of destination 
+        target: any; // pretty printed version of destination 
     }
     export interface SuppPairGameOptions extends GameOptions {
         nextNode: DgNodeId; // node of child in DG

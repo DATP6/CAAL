@@ -1309,7 +1309,7 @@ module Equivalence {
                     const node = this.nodes[nextNode] as ProbDGSupportNode
                     return {
                         nextNode,
-                        target: this.prettyPrintSupp(node.support),
+                        target: node.support,
                     }
                 });
         }

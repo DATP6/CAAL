@@ -1508,13 +1508,16 @@ module Activity {
                 var row = $('<tr></tr>');
                 row.attr('data-target-id', choice.target); // attach multiset that is dist
 
-                // Source configuration (dist, dist):
+                let $targetTd = $("<td id='target'></td>");
+                choice.target.forEach((target: [CCS.ProcessId, CCS.ProcessId]) => { // for each pair of processes in support(coupling)
+                    $targetTd.append(this.labelFromId(target[0]), this.labelFromId(target[1]), "  ");
+                });
+
+                // Source configuration (dist, dist[CCS.ProcessId, CCS.ProcessId]
                 const sourceLeft = this.labelWithTooltip(game.getCurrentConfiguration().left);
                 const sourceRight = this.labelWithTooltip(game.getCurrentConfiguration().right);
                 const $sourceTd = $("<td id='source'></td>").append(sourceLeft, " ", sourceRight);
                 const $actionTd = $("<td id='action'></td>"); // empty action td
-                let $targetTd = $("<td id='target'></td>").append(choice.target);
-                console.log("target IN FILL TABLE COUPLING", choice.target)
 
                 // onClick
                 $(row).on('click', (event) => {
@@ -1524,6 +1527,11 @@ module Activity {
                 row.append($sourceTd, $actionTd, $targetTd);
                 this.$table.append(row);
             });
+        }
+
+        private labelFromId(processId: CCS.ProcessId): JQuery {
+            const process = this.gameActivity.getGraph().processById(processId);
+            return Tooltip.wrapProcess(this.labelFor(process));
         }
 
         private fillSuppPairTable(choices: dg.SuppPairGameOptions[], game: ProbabilisticBisimulationGame): void {
@@ -1538,11 +1546,7 @@ module Activity {
                 const $sourceTd = $("<td id='source'></td>").append(sourceLeft, " ", sourceRight);
                 const $actionTd = $("<td id='action'></td>"); // empty action td
                 // Next configutation (process, process):
-                const targetProcessLeft = this.gameActivity.getSuccessorGenerator().getProcessById(choice.left);
-                const targetProcessRight = this.gameActivity.getSuccessorGenerator().getProcessById(choice.right);
-                const targetLeft = this.labelWithTooltip(targetProcessLeft);
-                const targetRight = this.labelWithTooltip(targetProcessRight);
-                const $targetTd = $("<td id='target'></td>").append(targetLeft, " ", targetRight);
+                const $targetTd = $("<td id='target'></td>").append(this.labelFromId(choice.left), " ", this.labelFromId(choice.right));
                 
                 // onClick
                 $(row).on('click', (event) => {
@@ -1627,9 +1631,7 @@ module Activity {
 
                 const $source = this.labelWithTooltip(sourceProcess);
                 const $sourceTd = $("<td id='source'></td>").append($source);
-                const targetProcess = this.gameActivity.getSuccessorGenerator().getProcessById(choice.target);
-                const $target = this.labelWithTooltip(targetProcess);
-                const $targetTd = $("<td id='target'></td>").append($target);
+                const $targetTd = $("<td id='target'></td>").append(this.labelFromId(choice.target));
 
                 // Display the action
                 let $actionTd
