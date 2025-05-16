@@ -422,7 +422,8 @@ nav.navbar {
     float: left;
 }
 
-#game-ccs-type {
+#game-ccs-type,
+#game-pccs-type {
     width: 95px;
     float: left;
 }
@@ -434,6 +435,11 @@ nav.navbar {
 
 #game-relation {
     width: 135px;
+    float: left;
+}
+
+#pccs-game-relation {
+    width: 210px;
     float: left;
 }
 
@@ -547,7 +553,9 @@ nav.navbar {
     #game-right-process,
     #game-ccs-type,
     #game-tccs-type,
-    #game-relation {
+    #game-pccs-type,
+    #game-relation,
+    #pccs-game-relation {
         width: 100%;
     }
 

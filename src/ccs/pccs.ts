@@ -46,18 +46,17 @@ module PCCS {
 
         toString() {
             if (this.ccs) return this.ccs;
-            console.log("Dist: ", this.dist.getEntries());
-            let length = 0;
-            this.dist.getEntries().map((p) => length += p.weight);
-            if (length == 1) {
+
+            const size = this.dist.size();
+            if (size === 1) {
                 return (this.ccs = this.dist
                     .getEntries()
-                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / length) * 100 + '%)')
+                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / size) * 100 + '%)')
                     .join(','));
             } else {
                 return (this.ccs = '(' + this.dist
                     .getEntries()
-                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / length) * 100 + '%)')
+                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / size) * 100 + '%)')
                     .join(',') + ')');
             }
         }

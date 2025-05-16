@@ -11,7 +11,7 @@ module DependencyGraph {
 
     export type DgNodeId = any; //toString()-able
     export type Hyperedge = Array<DgNodeId>;
-    
+
     export interface GameOptions {
         nextNode: DgNodeId; // node of child in DG
         target: string; // pretty printed version of destination 

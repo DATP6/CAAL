@@ -21,7 +21,9 @@ module Activity {
         private $rightProcessList: JQuery;
         private $ccsGameTypes: JQuery;
         private $tccsGameTypes: JQuery;
+        private $pccsGameTypes: JQuery;
         private $gameRelation: JQuery;
+        private $pccsGameRelation: JQuery;
         private $playerType: JQuery;
         private $restart: JQuery;
         private $leftContainer: JQuery;
@@ -53,7 +55,9 @@ module Activity {
             this.$rightProcessList = $('#game-right-process');
             this.$ccsGameTypes = $('#game-ccs-type');
             this.$tccsGameTypes = $('#game-tccs-type');
+            this.$pccsGameTypes = $('#game-pccs-type');
             this.$gameRelation = $('#game-relation');
+            this.$pccsGameRelation = $('#pccs-game-relation');
             this.$playerType = $('input[name=player-type]');
             this.$restart = $('#game-restart');
             this.$leftContainer = $('#game-left-canvas');
@@ -76,7 +80,9 @@ module Activity {
             this.$rightProcessList.on('change', () => this.newGame(false, true));
             this.$ccsGameTypes.on('change', () => this.newGame(true, true));
             this.$tccsGameTypes.on('change', () => this.newGame(true, true));
+            this.$pccsGameTypes.on('change', () => this.newGame(true, true));
             this.$gameRelation.on('change', () => this.newGame(false, false));
+            this.$pccsGameRelation.on('change', () => this.newGame(false, false));
             this.$playerType.on('change', () => this.newGame(false, false));
             this.$restart.on('click', () => this.newGame(false, false));
             this.$rightDepth.on('change', () =>
@@ -179,12 +185,28 @@ module Activity {
             this.fullscreen.onShow();
 
             if (this.changed || configuration) {
-                if (this.project.getInputMode() === InputMode.CCS) {
+                const inputMode = this.project.getInputMode()
+                if (inputMode === InputMode.CCS) {
                     this.$ccsGameTypes.show();
                     this.$tccsGameTypes.hide();
-                } else {
+                    this.$pccsGameTypes.hide();
+
+                    this.$gameRelation.show();
+                    this.$pccsGameRelation.hide();
+                } else if (inputMode === InputMode.TCCS) {
                     this.$ccsGameTypes.hide();
                     this.$tccsGameTypes.show();
+                    this.$pccsGameTypes.hide();
+
+                    this.$gameRelation.show();
+                    this.$pccsGameRelation.hide();
+                } else {
+                    this.$ccsGameTypes.hide();
+                    this.$tccsGameTypes.hide();
+                    this.$pccsGameTypes.show();
+
+                    this.$gameRelation.hide();
+                    this.$pccsGameRelation.show();
                 }
 
                 this.changed = false;
@@ -292,11 +314,14 @@ module Activity {
                 playerType: this.$playerType.filter(':checked').val()
             };
 
-            if (this.project.getInputMode() === InputMode.CCS) {
+            const inputMode = this.project.getInputMode()
+            if (inputMode === InputMode.CCS) {
                 options.type = this.$ccsGameTypes.val();
-            } else {
+            } else if (inputMode === InputMode.TCCS){
                 options.type = this.$tccsGameTypes.find('option:selected').val();
                 options.time = this.$tccsGameTypes.find('option:selected').data('time');
+            } else {
+                options.type = this.$pccsGameTypes.val();
             }
 
             return options;
@@ -306,15 +331,19 @@ module Activity {
             this.$leftProcessList.val(options.leftProcess);
             this.$rightProcessList.val(options.rightProcess);
 
-            if (this.project.getInputMode() === InputMode.CCS) {
+            const inputMode = this.project.getInputMode()
+            if (inputMode === InputMode.CCS) {
                 this.$ccsGameTypes.val(options.type);
-            } else {
+                this.$gameRelation.val(options.relation);
+            } else if (inputMode === InputMode.TCCS) {
                 this.$tccsGameTypes
                     .find('[value=' + options.type + '][data-time=' + options.time + ']')
                     .prop('selected', true);
+                this.$gameRelation.val(options.relation);
+            } else {
+                this.$pccsGameTypes.val(options.type)
+                this.$pccsGameRelation.val(options.relation);
             }
-
-            this.$gameRelation.val(options.relation);
 
             // Bootstrap radio buttons only support changes via click events.
             // Manually handle .active class.
@@ -337,7 +366,6 @@ module Activity {
                 options = this.getOptions();
             }
 
-            // TODO: make sure this is actually the PCCS succgen
             this.succGen = CCS.getSuccGenerator(this.graph, {
                 inputMode: InputMode[this.project.getInputMode()],
                 time: options.time,
@@ -483,7 +511,6 @@ module Activity {
 
         private showProbabilityDistrubution(process: string, graph: GUI.ProcessGraphUI): void {
             // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            console.log("String: ", process);
             graph.showProcess(process, { label: this.graph.getLabel(this.graph.processById(process)), probabilityDistrubution: true });
         }
 
@@ -509,8 +536,6 @@ module Activity {
 
         public highlightNodes(): void {
             if (!this.dgGame) return;
-            console.log('highlightNodes');
-            console.log(this.dgGame.getCurrentConfiguration());
 
             var configuration = this.dgGame.getCurrentConfiguration();
             this.leftGraph.setSelected(configuration.left.id);
@@ -762,7 +787,6 @@ module Activity {
 
         public preparePlayer(player: Player) {
             var choices: any = this.getCurrentChoices(player.getPlayType());
-            console.log('choices', choices);
 
             // determine if game is over
             if (choices.length === 0) {
@@ -999,7 +1023,6 @@ module Activity {
         ): void {
             let destinationProcess = choice.targetProcess;
             let action = choice.action ?? this.lastAction // default value
-            console.log("choice.move: ", choice.move)
 
             var previousConfig = this.getCurrentConfiguration();
             var strictPath = [new CCS.Transition(action, destinationProcess)];
@@ -1223,13 +1246,6 @@ module Activity {
             ); // creates dependency graph and marking
         }
 
-        public override startGame(): void {
-            super.startGame();
-
-            // TODO: insert extra stuff here
-        }
-
-
         public override preparePlayer(player: Player) {
             var choices: any = this.getCurrentChoices(player.getPlayType());
             // determine if game is over
@@ -1253,11 +1269,6 @@ module Activity {
             }
         }
 
-        // NOTE: IS THIS EVER USED?!?
-        public prepareCoupling() {
-            let choices = this.getCurrentChoices(PlayType.Attacker);
-        }
-
         // used to detect cycles
         public override getConfigurationStr(configuration: any): string {
             var result = '(';
@@ -1270,7 +1281,7 @@ module Activity {
             return result;
         }
 
-        public override getCurrentChoices(playType: PlayType): dg.GameOptions[] {
+        public override getCurrentChoices(_: PlayType): dg.GameOptions[] {
             let bisimDG = this.dependencyGraph as dg.PlayableProbabilisticDG // safe type narrowing
             const nodeType = bisimDG.getNodeType(this.currentNodeId) as Equivalence.ProbDGNodeKind;
 
@@ -1291,7 +1302,6 @@ module Activity {
             player: Player,
             choice: dg.MoveGameOptions,
         ): void {
-            console.log("PLAYING", player.playTypeStr(), choice)
             var previousConfig = this.getCurrentConfiguration();
             let destinationProcess = this.attackerSuccessorGen.getProcessById(choice.target);
             var strictPath = [new CCS.Transition(choice.action, destinationProcess)];
@@ -1301,17 +1311,14 @@ module Activity {
 
 
             if (player.getPlayType() == PlayType.Attacker) { // ATTACKER PLAYING
-                if (choice.side === Move.Left) console.log("LEFT SIDE")
-                else console.log("RIGHT SIDE")
-                console.log("move", choice.side)
                 var sourceProcess = choice.side === Move.Left ? previousConfig.left : previousConfig.right;
                 // TODO: once we have the destination process (with ID), we can call this properly
+                // const target = this.labelWithTooltip(sourceProcess);
                 // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
 
                 this.lastAction = choice.action;
                 this.lastMove = choice.side;
 
-                console.log("DESTINATION PROCESS (attack)", destinationProcess)
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.gameActivity.highlightNodes();
                 this.preparePlayer(this.defender);
@@ -1324,7 +1331,7 @@ module Activity {
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
 
                 this.gameActivity.highlightNodes();
-                
+
                 const choices = this.getCurrentChoices(null!) // playType is unused in PCCS
                 if (choices.length === 0) {
                     // the player to be prepared cannot make a move
@@ -1484,7 +1491,6 @@ module Activity {
 
         public override prepareCoupling(choices: dg.GameOptions[], game: DgGame): void {
             super.prepareCoupling([], game) // only sanity check, does not care for choices
-            console.log("PREPARING COUPLING")
 
             this.fillCouplingTable(choices, game)
             game.getGameLog().printPrepareCoupling()
@@ -1539,7 +1545,6 @@ module Activity {
         private fillTable(choices: any, game: DgGame, isAttack: boolean): void {
             var currentConfiguration = game.getCurrentConfiguration();
             var actionTransition: string;
-            console.log('choices in filtable', choices);
 
             if (!isAttack) {
                 actionTransition = game.getTransitionStr(isAttack, game.getLastAction().toString(true));
@@ -1599,7 +1604,6 @@ module Activity {
             this.$table.empty();
             choices.forEach((choice) => {
                 var row = $('<tr></tr>');
-                console.log('choice', choice);
                 row.attr('data-target-id', choice.target); // attach multiset that is dist
 
                 let sourceProcess
@@ -1694,7 +1698,6 @@ module Activity {
 
         protected prepareAttack(choices: any, game: DgGame): void {
             // select strategy
-            console.log("COMPUTER ATTACK", choices);
             if (game.isCurrentWinner(this))
                 this.delayedPlay = setTimeout(() => this.winningAttack(choices, game), Computer.Delay);
             else this.delayedPlay = setTimeout(() => this.losingAttack(choices, game), Computer.Delay);
@@ -1702,14 +1705,12 @@ module Activity {
 
         protected prepareDefend(choices: any, game: DgGame): void {
             // select strategy
-            console.log("COMPUTER DEFEND", choices);
             if (game.isCurrentWinner(this))
                 this.delayedPlay = setTimeout(() => this.winningDefend(choices, game), Computer.Delay);
             else this.delayedPlay = setTimeout(() => this.losingDefend(choices, game), Computer.Delay);
         }
 
         public override prepareCoupling(choices: dg.GameOptions[], game: ProbabilisticBisimulationGame): void {
-            console.log("COMPUTER COUPLING", choices);
             super.prepareCoupling([], game)
             // select strategy
             if (game.isCurrentWinner(this))
@@ -1718,7 +1719,6 @@ module Activity {
         }
 
         public override prepareSuppPair(choices: dg.SuppPairGameOptions[], game: ProbabilisticBisimulationGame): void {
-            console.log("COMPUTER SUPPPAIR", choices);
             super.prepareSuppPair([], game)
             // select strategy
             if (game.isCurrentWinner(this))
@@ -1727,48 +1727,42 @@ module Activity {
         }
 
         private winningCoupling(choices: any, game: ProbabilisticBisimulationGame) {
-            console.log("winning coupling", choices);
             let choice = game.getWinningDefend(choices);
             game.playCoupling(choice);
         }
 
         private losingCoupling(choices: any, game: ProbabilisticBisimulationGame) {
-            console.log("losing coupling", choices);
             let tryHardChoice = game.getTryHardDefend(choices);
             game.playCoupling(tryHardChoice);
         }
 
         private winningSuppPair(choices: any, game: ProbabilisticBisimulationGame) {
-            console.log("winning supp pair", choices);
             let choice = game.getBestWinningAttack(choices);
             game.playSupportPair(choice);
         }
 
         private losingSuppPair(choices: any, game: ProbabilisticBisimulationGame) {
-            console.log("losing supp pair", choices);
             let tryHardChoice = game.getTryHardAttack(choices);
             game.playSupportPair(tryHardChoice);
         }
 
         private losingAttack(choices: any, game: DgGame): void {
-            var tryHardChoice = game.getTryHardAttack(choices);
-            var move: Move = tryHardChoice.move == 1 ? Move.Left : Move.Right; // 1: left, 2: right
+            let tryHardChoice = game.getTryHardAttack(choices);
             game.play(this, tryHardChoice);
         }
 
         private winningAttack(choices: any, game: DgGame): void {
-            var choice: any = game.getBestWinningAttack(choices);
-            var move: Move = choice.move == 1 ? Move.Left : Move.Right; // 1: left, 2: right
+            let choice = game.getBestWinningAttack(choices);
             game.play(this, choice);
         }
 
         private losingDefend(choices: any, game: DgGame): void {
-            var tryHardChoice = game.getTryHardDefend(choices);
+            let tryHardChoice = game.getTryHardDefend(choices);
             game.play(this, tryHardChoice);
         }
 
         private winningDefend(choices: any, game: DgGame): void {
-            var choice = game.getWinningDefend(choices);
+            let choice = game.getWinningDefend(choices);
             game.play(this, choice);
         }
     }
@@ -1953,7 +1947,7 @@ module Activity {
             let template = '{1} picked the pair {2} from the support of the current configuration'
 
             let context = {
-                1: { text: isHuman ? 'You (defender)' : 'Defender' },
+                1: { text: isHuman ? 'You (attacker)' : 'Attacker' },
                 2: {
                     text: "(" + pair.join(", ") + ")"
                 }
