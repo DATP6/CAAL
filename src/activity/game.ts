@@ -1508,16 +1508,20 @@ module Activity {
                 var row = $('<tr></tr>');
                 row.attr('data-target-id', choice.target); // attach multiset that is dist
 
-                let $sourceTd = $("<td id='source'></td>").append("source coupling");
+                // Source configuration (dist, dist):
+                const sourceLeft = this.labelWithTooltip(game.getCurrentConfiguration().left);
+                const sourceRight = this.labelWithTooltip(game.getCurrentConfiguration().right);
+                const $sourceTd = $("<td id='source'></td>").append(sourceLeft, " ", sourceRight);
+                const $actionTd = $("<td id='action'></td>"); // empty action td
                 let $targetTd = $("<td id='target'></td>").append(choice.target);
-                let $actionTd = $("<td id='action'></td>").append("choose coupling pls :)");
+                console.log("target IN FILL TABLE COUPLING", choice.target)
 
                 // onClick
                 $(row).on('click', (event) => {
                     this.clickCouplingChoice(choice, game as ProbabilisticBisimulationGame);
                 });
 
-                row.append($sourceTd, $targetTd);
+                row.append($sourceTd, $actionTd, $targetTd);
                 this.$table.append(row);
             });
         }
@@ -1528,16 +1532,24 @@ module Activity {
                 var row = $('<tr></tr>');
                 row.attr('data-target-id', choice.target); // attach multiset that is dist
 
-                let $sourceTd = $("<td id='source'></td>").append("source pair");
-                let $targetTd = $("<td id='target'></td>").append(choice.target);
-                let $actionTd = $("<td id='action'></td>").append("choose next pair pls :)");
-
+                // Source configuration (dist, dist):
+                const sourceLeft = this.labelWithTooltip(game.getCurrentConfiguration().left);
+                const sourceRight = this.labelWithTooltip(game.getCurrentConfiguration().right);
+                const $sourceTd = $("<td id='source'></td>").append(sourceLeft, " ", sourceRight);
+                const $actionTd = $("<td id='action'></td>"); // empty action td
+                // Next configutation (process, process):
+                const targetProcessLeft = this.gameActivity.getSuccessorGenerator().getProcessById(choice.left);
+                const targetProcessRight = this.gameActivity.getSuccessorGenerator().getProcessById(choice.right);
+                const targetLeft = this.labelWithTooltip(targetProcessLeft);
+                const targetRight = this.labelWithTooltip(targetProcessRight);
+                const $targetTd = $("<td id='target'></td>").append(targetLeft, " ", targetRight);
+                
                 // onClick
                 $(row).on('click', (event) => {
                     this.clickSupportPairChoice(choice, game);
                 });
 
-                row.append($sourceTd, $targetTd);
+                row.append($sourceTd, $actionTd, $targetTd);
                 this.$table.append(row);
             });
         }
@@ -1613,9 +1625,11 @@ module Activity {
                     sourceProcess = game.getLastMove() == Move.Left ? currentConfiguration.right : currentConfiguration.left;
                 }
 
-                let $source = this.labelWithTooltip(sourceProcess);
-                let $sourceTd = $("<td id='source'></td>").append($source);
-                let $targetTd = $("<td id='target'></td>").append(choice.target);
+                const $source = this.labelWithTooltip(sourceProcess);
+                const $sourceTd = $("<td id='source'></td>").append($source);
+                const targetProcess = this.gameActivity.getSuccessorGenerator().getProcessById(choice.target);
+                const $target = this.labelWithTooltip(targetProcess);
+                const $targetTd = $("<td id='target'></td>").append($target);
 
                 // Display the action
                 let $actionTd
