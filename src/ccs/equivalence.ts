@@ -981,7 +981,10 @@ module Equivalence {
                 case ProbDGNodeKind.OneDistribution:
                     return node.side + sep + node.proc + sep + node.dist.cacheKey((k) => k);
                 case ProbDGNodeKind.Distribution:
-                    return node.leftDist.cacheKey((k) => k) + sep + node.rightDist.cacheKey((k) => k);
+                    // TODO: I kinda ruined the cacheKey here by adding node.target. To fix this, we need to
+                    // make leftDist and rightDist PCCS.ProbabilisticProcess to remove target again.
+                    // If we dont do this we cant return the correct target in GetDefenderOptions
+                    return node.leftDist.cacheKey((k) => k) + sep + node.rightDist.cacheKey((k) => k) + sep + node.target;
                 case ProbDGNodeKind.Support:
                     return (
                         node.support.map((p) => '<' + p.join(',') + '>').join('::') +
@@ -1285,15 +1288,14 @@ module Equivalence {
         }
 
         public getDefenderOptions(dgNodeId: any): dg.GameOptions[] {
-            const isLeft = (this.nodes[dgNodeId] as ProbDGOneDistributionNode).side === Side.Right
-            console.log("defender options in equivalence ", this.getHyperEdges(dgNodeId))
+            // const side = (this.nodes[dgNodeId] as ProbDGOneDistributionNode).side === Side.Left ? Side.Right : Side.Left;
             return this
                 .getHyperEdges(dgNodeId)[0]!
                 .map((nextNode) => {
                     const childNode = this.nodes[nextNode] as ProbDGDistributionNode
                     return {
                         nextNode,
-                        // target: this.prettyPrintDist(isLeft ? childNode.rightDist : childNode.leftDist),
+                        // target: side === Side.Left ? childNode.leftDist : childNode.rightDist,
                         target: childNode.target,
                     }
                 }

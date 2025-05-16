@@ -908,7 +908,6 @@ module Activity {
                     return choices[i];
                 }
             }
-
             throw 'No defender moves';
         }
 
@@ -1233,7 +1232,6 @@ module Activity {
 
         public override preparePlayer(player: Player) {
             var choices: any = this.getCurrentChoices(player.getPlayType());
-            console.log('choices', choices);
             // determine if game is over
             if (choices.length === 0) {
                 // the player to be prepared cannot make a move
@@ -1313,7 +1311,7 @@ module Activity {
                 this.lastAction = choice.action;
                 this.lastMove = choice.side;
 
-                console.log("DESTINATION PROCESS", destinationProcess)
+                console.log("DESTINATION PROCESS (attack)", destinationProcess)
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
                 this.gameActivity.highlightNodes();
                 this.preparePlayer(this.defender);
@@ -1323,13 +1321,17 @@ module Activity {
 
                 var sourceProcess = this.lastMove === Move.Left ? previousConfig.left : previousConfig.right;
                 // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this)
-                console.log("DESTINATION PROCESS", destinationProcess)
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
 
                 this.gameActivity.highlightNodes();
-                // this.gameLog.printRound(this.round, this.getCurrentConfiguration());
-
+                
                 const choices = this.getCurrentChoices(null!) // playType is unused in PCCS
+                if (choices.length === 0) {
+                    // the player to be prepared cannot make a move
+                    // the player to prepare has lost, announce it
+                    this.gameLog.printWinner(player === this.attacker ? this.defender : this.attacker);
+                    this.stopGame(); // stop the game if no coupling can be made
+                }
                 this.defender.prepareCoupling(choices, this);
 
                 if (this.defenderSuccessorGen instanceof Traverse.AbstractingSuccessorGenerator) {
@@ -1377,7 +1379,10 @@ module Activity {
         }
 
         protected override createMarking(): dg.LevelMarking {
-            return dg.liuSmolkaLocal2(this.currentNodeId, this.dependencyGraph);
+            // return dg.liuSmolkaLocal2(this.currentNodeId, this.dependencyGraph);
+            var marking = dg.solveDgGlobalLevel(this.bisimulationDg);
+            this.bisimilar = marking.getMarking(0) === marking.ZERO;
+            return marking;
         }
 
         protected override createDependencyGraph(
