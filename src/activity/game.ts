@@ -1939,22 +1939,36 @@ module Activity {
 
         public printPCCSCoupling(
             // destination: [string, string][],
-            destination: string,
+            support: [CCS.ProcessId, CCS.ProcessId][],
             isHuman: boolean
         ): void {
-            let template = '{1} picked a coupling with support {2}'
+            let template = '{1} picked a coupling with support '
 
             let context = {
                 1: { text: isHuman ? 'You (defender)' : 'Defender' },
-                2: {
-                    // text: "{" + destination.map(pair => "(" + pair.join(",") + ")").join(",") + "}"
-                    text: destination
-                }
             }
+
+            let text = this.render(template, context)
+            support.forEach((pair) => {
+                text += this.render("{1}{2}  ", { 
+                    1: {
+                        text: this.labelFor(this.gameActivity!.getGraph().processById(pair[0])),
+                        tag: '<span>',
+                        attr: [{ name: 'class', value: 'ccs-tooltip-process' }]
+                    },
+                    2: {
+                        text: this.labelFor(this.gameActivity!.getGraph().processById(pair[1])),
+                        tag: '<span>',
+                        attr: [{ name: 'class', value: 'ccs-tooltip-process' }]
+                    }
+                });
+            });
+
+
             if (isHuman)
                 this.removeLastPrompt();
 
-            this.println(this.render(template, context), '<p>');
+            this.println(text, '<p>');
         }
         public printPCCSSuppPair(
             pair: [string, string],
