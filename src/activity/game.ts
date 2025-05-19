@@ -1377,8 +1377,10 @@ module Activity {
             this.gameActivity.highlightNodes();
             this.gameActivity.centerNode(this.currentLeft, Move.Left);
             this.gameActivity.centerNode(this.currentRight, Move.Right);
-            this.preparePlayer(this.attacker);
-            // detect cycle
+
+            this.saveCurrentProcess(this.currentLeft, Move.Left);
+            this.saveCurrentProcess(this.currentRight, Move.Right);
+            if (!this.cycleExists()) this.preparePlayer(this.attacker);
         }
 
         public override computeMarking(): dg.LevelMarking {
