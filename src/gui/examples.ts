@@ -404,5 +404,130 @@ var examples: any[] = [
             }
         ],
         inputMode: 'CCS'
+    },
+    {
+        title: 'Probabilistic Beverage Machine',
+        ccs: [
+            '* The Beverage Machine from the PHML Paper',
+            "BM = coin.(('coffee.BM + 'tea.BM) 0.9 'error.BM);",
+            '',
+            '* The individual states in the Beverage Machine',
+            'S0 = coin.(S1 0.9 S2);',
+            "S1 = 'coffee.S0 + 'tea.S0;",
+            "S2 = 'error.S0;"
+        ].join('\n'),
+        properties: [
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'BM',
+                    definitions: [
+                        "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
+                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        "Z min= (<'error> tt) or (<-> >0 Z);"
+                    ].join('\n'),
+                    topFormula: 'X;'
+                    // comment: 'This property is checking the existence of deadlock.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'S0',
+                    definitions: [
+                        "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
+                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        "Z min= (<'error> tt) or (<-> >0 Z);"
+                    ].join('\n'),
+                    topFormula: 'X;'
+                    // comment: 'This property is checking the existence of deadlock.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'S1',
+                    definitions: [
+                        "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
+                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        "Z min= (<'error> tt) or (<-> >0 Z);"
+                    ].join('\n'),
+                    topFormula: 'X;'
+                    // comment: 'This property is checking the existence of deadlock.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'S2',
+                    definitions: [
+                        "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
+                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        "Z min= (<'error> tt) or (<-> >0 Z);"
+                    ].join('\n'),
+                    topFormula: 'X;'
+                    // comment: 'This property is checking the existence of deadlock.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'BM',
+                    definitions: '',
+                    topFormula: "<coin> >.9 <'coffee> tt;",
+                    comment: 'This property is checking whether the probability of getting coffee is greater than 90%.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'BM',
+                    definitions: '',
+                    topFormula: "<coin> >=.9 <'coffee> tt;",
+                    comment:
+                        'This property is checking whether the probability of getting coffee is greater than or equal to 90%.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'BM',
+                    definitions: '',
+                    topFormula: "<coin> >=.1 ['coffee] ff;",
+                    comment:
+                        'This property is checking whether the probability of getting coffee is less than or equal to 90%, having rewriten less than as greater than. The rule for this is <=p F <=> >=1-p F^c.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'BM',
+                    definitions: '',
+                    topFormula: "<coin> >.1 ['coffee] ff;",
+                    comment:
+                        'This property is checking whether the probability of getting coffee is less than 90%, having rewriten less than as greater than. The rule for this is <p F <=> >1-p F^c.'
+                }
+            },
+            {
+                className: 'HML',
+                status: 0,
+                options: {
+                    process: 'BM',
+                    definitions: '',
+                    topFormula: "<coin> ((>=.9 <'coffee> tt) and (>=.1 ['coffee] ff));",
+                    comment:
+                        'This property is checking whether the probability of getting coffee is equal to 90%, having rewriten equals as less than equals and greater than equals, where less than equals is then rewritten as greater than equals. The rule for this is <=p F <=> >=1-p F^c.'
+                }
+            }
+        ],
+        inputMode: 'PCCS'
     }
 ];
