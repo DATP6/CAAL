@@ -979,7 +979,7 @@ module Equivalence {
                 case ProbDGNodeKind.SidedState:
                     return node.leftId + sep + node.rightId + sep + node.side;
                 case ProbDGNodeKind.OneDistribution:
-                    return node.side + sep + node.proc + sep + node.dist.cacheKey((k) => k);
+                    return node.side + sep + node.proc + sep + node.dist.cacheKey((k) => k) + sep + node.action;
                 case ProbDGNodeKind.Distribution:
                     // TODO: I kinda ruined the cacheKey here by adding node.target. To fix this, we need to
                     // make leftDist and rightDist PCCS.ProbabilisticProcess to remove target again.
