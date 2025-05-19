@@ -1252,7 +1252,7 @@ module Activity {
             if (choices.length === 0) {
                 // the player to be prepared cannot make a move
                 // the player to prepare has lost, announce it
-                // this.gameLog.printWinner(player === this.attacker ? this.defender : this.attacker);
+                this.gameLog.printWinner(player === this.attacker ? this.defender : this.attacker);
 
                 // stop game
                 this.stopGame();
@@ -1357,8 +1357,11 @@ module Activity {
 
         public playCoupling(choice: dg.GameOptions) {
             this.currentNodeId = choice.nextNode;
-
             this.gameLog.printPCCSCoupling(choice.target, this.defender instanceof Human)
+            let oldWinner = this.currentWinner;
+            this.currentWinner = this.getCurrentWinner();
+            // if winner changed, let the user know
+            if (oldWinner !== this.currentWinner) this.gameLog.printWinnerChanged(this.currentWinner)
             const choices = this.getCurrentChoices(null!) as dg.SuppPairGameOptions[] // argument not needed in PCCS
             this.attacker.prepareSuppPair(choices, this)
         }
@@ -1367,7 +1370,6 @@ module Activity {
             this.currentLeft = this.attackerSuccessorGen.getProcessById(nextNodePair.left);
             this.currentRight = this.attackerSuccessorGen.getProcessById(nextNodePair.right);
             this.currentNodeId = nextNodePair.nextNode;
-
 
             this.gameLog.printPCCSSuppPair([nextNodePair.left, nextNodePair.right], this.attacker instanceof Human)
 

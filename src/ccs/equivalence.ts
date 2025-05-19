@@ -1303,15 +1303,19 @@ module Equivalence {
         }
 
         public getCouplingOptions(dgNodeId: dg.DgNodeId): dg.GameOptions[] {
-            return this
-                .getHyperEdges(dgNodeId)[0]!
+            let result = [];
+            this.getHyperEdges(dgNodeId)[0]!
                 .map((nextNode: dg.DgNodeId) => {
                     const node = this.nodes[nextNode] as ProbDGSupportNode
-                    return {
-                        nextNode,
-                        target: node.support,
+                    let g = new FlowGraph(node.leftDist, node.rightDist)
+                    if (g.couplingExists(node.support)) {
+                        result.push({
+                            nextNode,
+                            target: node.support,
+                        })
                     }
                 });
+            return result;
         }
 
         public getSuppPairOptions(dgNodeId: dg.DgNodeId): dg.GameOptions[] {
