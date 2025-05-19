@@ -88,7 +88,7 @@ IdentifierRest
 
 Integer = [1-9][0-9]*
 
-Probability = num:Integer "/" den:Integer { num = num.flat().join(""); den = den.flat().join(""); return { num: num , den: den }; }
+Probability = num:Integer "/" den:Integer { num = num.flat().join(""); den = den.flat().join(""); return { num: parseInt(num) , den: parseInt(den) }; }
             / "0"? "." N:[0-9]+ { N = N.join(""); const digits = String(N).length; return { num: parseInt(N), den: Math.pow(10, digits) } } 
 
 Action "action"
