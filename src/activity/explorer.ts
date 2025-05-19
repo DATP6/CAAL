@@ -253,7 +253,7 @@ module Activity {
                             this.showMessageBox(
                                 'System too large',
                                 'The bisimulation collapse is too large to compute in the browser.' +
-                                    (options.simplify ? '' : " Try enabling 'Structural Reduction'.")
+                                (options.simplify ? '' : " Try enabling 'Structural Reduction'.")
                             );
                             return;
                         } else {
@@ -325,7 +325,7 @@ module Activity {
 
         private showProbabilityDistrubution(process: string): void {
             // if (!process || this.uiGraph.getProcessDataObject(process.id)) return;
-            this.uiGraph.showProcess(process, { probabilityDistrubution: true });
+            this.uiGraph.showProcess(process, { label: this.graph.getLabel(this.graph.processById(process)), probabilityDistrubution: true });
         }
 
         private expand(process: CCS.Process): void {
@@ -378,6 +378,29 @@ module Activity {
             this.updateStatusTable(allTransitions[process.id]);
             this.uiGraph.setSelected(process.id.toString());
             this.centerProcess(process);
+        }
+
+        private updatePCCSTable(process: PCCS.ProbabilisticProcess) {
+            this.selectedProcess = process;
+            this.uiGraph.setSelected(process.id.toString());
+            this.$statusTable.empty();
+
+            let length = 0;
+            process.dist.getEntries().map((p) => length += p.weight);
+
+            process.dist.getEntries().forEach((dist) => {
+                let row = $('<tr>');
+                let percentage = (dist.weight / length) * 100
+
+                row.append($('<td>').append(this.sourceText(process)));
+                row.append($('<td>').append(Tooltip.wrap(percentage.toString() + '%')));
+                row.append($('<td>').append(this.sourceText(dist.proc)));
+
+                row.data('targetId', dist.proc.id);
+                row.data('action', dist.weight);
+
+                this.$statusTable.append(row);
+            });
         }
 
         private updateStatusTable(transitions: CCS.Transition[]): void {
@@ -463,8 +486,13 @@ module Activity {
             var targetId = $(e.currentTarget).data('targetId');
 
             if (targetId !== 'undefined') {
-                this.expand(this.graph.processById(targetId));
-                this.uiGraph.clearHighlights();
+                let target = this.graph.processById(targetId);
+                if (target instanceof PCCS.ProbabilisticProcess) {
+                    this.updatePCCSTable(target);
+                } else {
+                    this.expand(target);
+                    this.uiGraph.clearHighlights();
+                }
             }
         }
 
