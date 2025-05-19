@@ -1388,16 +1388,15 @@ module Activity {
         }
 
         protected override createMarking(): dg.LevelMarking {
-            // return dg.liuSmolkaLocal2(this.currentNodeId, this.dependencyGraph);
-            var marking = dg.solveDgGlobalLevel(this.bisimulationDg);
+            const marking = dg.solveDgGlobalLevel(this.bisimulationDg);
             this.bisimilar = marking.getMarking(0) === marking.ZERO;
             return marking;
         }
 
         protected override createDependencyGraph(
-            graph: CCS.Graph,
-            currentLeft: any,
-            currentRight: any
+            _: CCS.Graph,
+            __: any,
+            ___: any
         ): dg.PlayableProbabilisticDG {
             return (this.bisimulationDg = new Equivalence.ProbabilisticBisimDG(
                 this.attackerSuccessorGen,
@@ -1952,7 +1951,7 @@ module Activity {
 
             let text = this.render(template, context)
             support.forEach((pair) => {
-                text += this.render("{1}{2}  ", { 
+                text += this.render("{1}{2}  ", {
                     1: {
                         text: this.labelFor(this.gameActivity!.getGraph().processById(pair[0])),
                         tag: '<span>',
@@ -1976,12 +1975,19 @@ module Activity {
             pair: [string, string],
             isHuman: boolean
         ): void {
-            let template = '{1} picked the pair {2} from the support of the current configuration'
+            let template = '{1} picked the pair {2}{3} from the support of the current configuration'
 
             let context = {
                 1: { text: isHuman ? 'You (attacker)' : 'Attacker' },
                 2: {
-                    text: "(" + pair.join(", ") + ")"
+                    text: this.labelFor(this.gameActivity!.getGraph().processById(pair[0])),
+                    tag: '<span>',
+                    attr: [{ name: 'class', value: 'ccs-tooltip-process' }]
+                },
+                3: {
+                    text: this.labelFor(this.gameActivity!.getGraph().processById(pair[1])),
+                    tag: '<span>',
+                    attr: [{ name: 'class', value: 'ccs-tooltip-process' }]
                 }
             }
             if (isHuman)
@@ -2032,13 +2038,8 @@ module Activity {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
 
-        // protected labelFor(process: CCS.Process): string {
-        protected labelFor(process: CCS.Process | MultiSetUtil.MultiSet<string>): string {
-            if ('id' in process) {
-                return this.gameActivity!.labelFor(process);
-            } else { // is multiset
-                return process.prettyPrint()
-            }
+        protected labelFor(process: CCS.Process): string {
+            return this.gameActivity!.labelFor(process);
         }
 
         public abstract printIntro(gameType: string, configuration: any, winner: Player, attacker: Player): void

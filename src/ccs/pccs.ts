@@ -452,4 +452,13 @@ module Traverse {
             return this.pccsgraph.newDistributionProcess(newDistribution);
         }
     }
+
+    export class PCCSNotationVisitor
+        extends Traverse.CCSNotationVisitor
+        implements CCS.ProcessVisitor<string>, PCCS.ProcessDispatchHandler<string>
+    {
+        dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess): string {
+            return process.toString();
+        }
+    }
 }

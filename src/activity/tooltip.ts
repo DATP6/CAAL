@@ -89,10 +89,10 @@ module Activity {
     }
 
     export class ProcessTooltip extends Tooltip {
-        private visitor: Traverse.TCCSNotationVisitor;
+        private visitor: Traverse.CCSNotationVisitor;
         private graph: CCS.Graph;
 
-        constructor($container: JQuery) {
+        constructor($container: JQuery, isPccs: boolean = false) {
             var titleFunction = function (tooltipOwner, domElement) {
                 var process = tooltipOwner.graph.processByLabel($(domElement).text());
                 return getCCSNotation(process);
@@ -100,7 +100,8 @@ module Activity {
 
             super($container, titleFunction, 'ccs-tooltip-process');
 
-            this.visitor = new Traverse.TCCSNotationVisitor();
+            // we never need the basic CCS visitor, as the below extend them
+            this.visitor = (this.graph instanceof TCCS.Graph) ? new Traverse.TCCSNotationVisitor() : new Traverse.PCCSNotationVisitor();
             var getCCSNotation = this.ccsNotationForProcessId.bind(this);
         }
 
@@ -110,13 +111,11 @@ module Activity {
 
             if (process) {
                 if (process instanceof ccs.NamedProcess) {
-                    text = process.subProcess.id;
+                    text = this.visitor.visit((<ccs.NamedProcess>process).subProcess);
                 } else if (process instanceof ccs.CollapsedProcess) {
                     var labelFor = this.graph.getLabel.bind(this.graph);
                     var subLabels = process.subProcesses.map((subProc) => labelFor(subProc));
                     text = '{' + subLabels.join(', ') + '}';
-                } else if (process instanceof PCCS.ProbabilisticProcess) {
-                    text = process.toString();
                 } else {
                     text = this.visitor.visit(process);
                 }
