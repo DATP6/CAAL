@@ -1312,9 +1312,7 @@ module Activity {
 
             if (player.getPlayType() == PlayType.Attacker) { // ATTACKER PLAYING
                 var sourceProcess = choice.side === Move.Left ? previousConfig.left : previousConfig.right;
-                // TODO: once we have the destination process (with ID), we can call this properly
-                // const target = this.labelWithTooltip(sourceProcess);
-                // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, move!, this);
+                this.gameLog.printPlay(player, choice.action, sourceProcess, destinationProcess, choice.side + 1, this);
 
                 this.lastAction = choice.action;
                 this.lastMove = choice.side;
@@ -1327,7 +1325,7 @@ module Activity {
                 this.lastMove = this.lastMove === Move.Right ? Move.Left : Move.Right;
 
                 var sourceProcess = this.lastMove === Move.Left ? previousConfig.left : previousConfig.right;
-                // this.gameLog.printPlay(player, action, sourceProcess, destinationProcess, this.lastMove, this)
+                this.gameLog.printPlay(player, this.lastAction, sourceProcess, destinationProcess, this.lastMove, this)
                 this.saveCurrentProcess(destinationProcess, this.lastMove);
 
                 this.gameActivity.highlightNodes();
@@ -1352,7 +1350,7 @@ module Activity {
 
             // TODO: we need process instead of multiset if we have to use these functions
             this.gameActivity.onPlay(strictPath, this.lastMove);
-            // this.gameActivity.centerNode(destinationProcess, this.lastMove);
+            this.gameActivity.centerNode(destinationProcess, this.lastMove);
         }
 
         public playCoupling(choice: dg.GameOptions) {
@@ -1377,6 +1375,8 @@ module Activity {
             this.gameLog.printRound(this.round, this.getCurrentConfiguration());
 
             this.gameActivity.highlightNodes();
+            this.gameActivity.centerNode(this.currentLeft, Move.Left);
+            this.gameActivity.centerNode(this.currentRight, Move.Right);
             this.preparePlayer(this.attacker);
             // detect cycle
         }
@@ -1939,7 +1939,6 @@ module Activity {
         }
 
         public printPCCSCoupling(
-            // destination: [string, string][],
             support: [CCS.ProcessId, CCS.ProcessId][],
             isHuman: boolean
         ): void {
