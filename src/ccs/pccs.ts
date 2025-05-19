@@ -51,14 +51,26 @@ module PCCS {
             if (size === 1) {
                 return (this.ccs = this.dist
                     .getEntries()
-                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / size) * 100 + '%)')
+                    .map((p) => '(' + p.proc.toString() + '↦' + this.formatProbability((p.weight / size) * 100, 3) + '%)')
                     .join(','));
             } else {
                 return (this.ccs = '(' + this.dist
                     .getEntries()
-                    .map((p) => '(' + p.proc.toString() + '↦' + (p.weight / size) * 100 + '%)')
+                    .map((p) => '(' + p.proc.toString() + '↦' + this.formatProbability((p.weight / size) * 100, 3) + '%)')
                     .join(',') + ')');
             }
+        }
+
+        private formatProbability(num: number, maxDecimals: number): string {
+            let numStr = num.toString();
+            if (numStr.indexOf('.') === -1) {
+                return numStr;
+            }
+            let [integerPart, decimalPart] = numStr.split('.');
+            if (decimalPart.length > maxDecimals) {
+                return num.toFixed(maxDecimals);
+            }
+            return numStr;
         }
 
         get id() {

@@ -496,7 +496,7 @@ module Activity {
                                 console.error('NaN prop for', proc);
                             }
                             graph.showTransitions(strProcId, proc.id, [
-                                { dashed: true, label: probability }
+                                { dashed: true, label: this.formatProbability(probability, 4) }
                             ]);
                         });
                     } else {
@@ -507,6 +507,18 @@ module Activity {
             }
 
             this.highlightNodes();
+        }
+
+        private formatProbability(num: number, maxDecimals: number): string {
+            let numStr = num.toString();
+            if (numStr.indexOf('.') === -1) {
+                return numStr;
+            }
+            let [integerPart, decimalPart] = numStr.split('.');
+            if (decimalPart.length > maxDecimals) {
+                return num.toFixed(maxDecimals);
+            }
+            return numStr;
         }
 
         private showProbabilityDistrubution(process: string, graph: GUI.ProcessGraphUI): void {
