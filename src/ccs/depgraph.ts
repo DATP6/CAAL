@@ -80,39 +80,6 @@ module DependencyGraph {
                 throw new Error('Diamond formula was not dispatched with a probabilistic process');
             }
 
-            switch (formula.relational_operator) {
-                case HML.RelationOp.Less: // Flip to Greater with negation
-                    const formula1 = new HML.DiamondFormula(
-                        HML.RelationOp.Greater,
-                        formula.probability.reverse(),
-                        formula.subformula
-                    );
-                    const node1 = new MuCalculusNode(this.currentNode.process, formula1, !this.currentNode.isMin);
-                    return [[node1]];
-                case HML.RelationOp.LessEqual: // Flip to GreaterEqual with negation
-                    const formula2 = new HML.DiamondFormula(
-                        HML.RelationOp.GreaterEqual,
-                        formula.probability.reverse(),
-                        formula.subformula
-                    );
-                    const node2 = new MuCalculusNode(this.currentNode.process, formula2, !this.currentNode.isMin);
-                    return [[node2]];
-                case HML.RelationOp.Equal: // Rewrite as (GreaterEqual && LessEqual)
-                    const formula3left = new HML.DiamondFormula(
-                        HML.RelationOp.GreaterEqual,
-                        formula.probability,
-                        formula.subformula
-                    );
-                    let formula3right = new HML.DiamondFormula(
-                        HML.RelationOp.LessEqual,
-                        formula.probability,
-                        formula.subformula
-                    );
-                    let conjunction = new HML.ConjFormula([formula3left, formula3right]);
-                    const node3 = new MuCalculusNode(this.currentNode.process, conjunction, !this.currentNode.isMin);
-                    return [[node3]];
-            }
-
             console.log('[MDG Diamond] In:', formula);
 
             const distribution = this.currentNode.process.dist; // Potential successor states
@@ -120,9 +87,10 @@ module DependencyGraph {
             console.log('[MDG Diamond] Dist:', distribution);
 
             const processes = distribution.getEntries().map((e) => e.proc);
-            const powerset = processes
-                .reduce<CCS.Process[][]>((acc, curr) => acc.concat(acc.map((s) => [curr].concat(s))), [[]])
-                .filter((a) => a.length > 0); // Remove the empty set
+            const powerset = processes.reduce<CCS.Process[][]>(
+                (acc, curr) => acc.concat(acc.map((s) => [curr].concat(s))),
+                [[]]
+            );
 
             console.log('[MDG Diamond] Power:', powerset);
 

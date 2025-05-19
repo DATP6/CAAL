@@ -34,11 +34,8 @@ module HML {
     }
 
     export enum RelationOp {
-        Less = '<',
-        LessEqual = '<=',
         Greater = '>',
-        GreaterEqual = '>=',
-        Equal = '=='
+        GreaterEqual = '>='
     }
 
     export class Fraction {
@@ -60,12 +57,6 @@ module HML {
             const numOther = other.numerator * this.denominator;
 
             switch (op) {
-                case RelationOp.Less:
-                    return numThis < numOther;
-                case RelationOp.LessEqual:
-                    return numThis <= numOther;
-                case RelationOp.Equal:
-                    return numThis === numOther;
                 case RelationOp.Greater:
                     return numThis > numOther;
                 case RelationOp.GreaterEqual:
@@ -343,30 +334,16 @@ module HML {
         }
 
         newRelationalOp(op) {
-            let operator: RelationOp | undefined = undefined;
             switch (op) {
-                case '<':
-                    operator = RelationOp.Less;
-                    break;
-                case '<=':
-                    operator = RelationOp.LessEqual;
-                    break;
                 case '>':
-                    operator = RelationOp.Greater;
+                    return RelationOp.Greater;
                     break;
                 case '>=':
-                    operator = RelationOp.GreaterEqual;
-                    break;
-                case '==':
-                    operator = RelationOp.Equal;
+                    return RelationOp.GreaterEqual;
                     break;
                 default:
                     throw `'${op}' as an operator is not defined.`;
             }
-
-            if (operator == undefined) throw `${op} is not defined`;
-
-            return operator;
         }
 
         newStrongExists(actionMatcher: ActionMatcher, subFormula: Formula) {

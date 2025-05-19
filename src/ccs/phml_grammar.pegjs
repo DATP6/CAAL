@@ -122,9 +122,6 @@ Probability
     / "0" { return formulas.newProbability(0, 1); }
 
 Relational_op 
-    = S:"<=" { return formulas.newRelationalOp(S); }
-    / S:"<" { return formulas.newRelationalOp(S); }
-    / S:"==" { return formulas.newRelationalOp(S); }
-    / S:">=" { return formulas.newRelationalOp(S); }
+    = S:">=" { return formulas.newRelationalOp(S); }
     / S:">" { return formulas.newRelationalOp(S); }
 
