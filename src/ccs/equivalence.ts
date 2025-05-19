@@ -1203,6 +1203,18 @@ module Equivalence {
                     )
             );
 
+            // In the game the defender should always be able to choose a coupling,
+            // so if power is empty create a SupportNode with everything in the support
+            if (power.length === 0) {
+                let support = [];
+                leftSupport.forEach((leftId) => {
+                    rightSupport.forEach((rightId) => {
+                        support.push([leftId, rightId]);
+                    });
+                });
+                power.push(support);
+            }
+           
             const targets = power.map((support) => {
                 const target: ProbDGSupportNode & UnconstructedProbDGNode = {
                     kind: ProbDGNodeKind.Support,
