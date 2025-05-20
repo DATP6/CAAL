@@ -8,6 +8,8 @@ class FlowGraph {
 
     constructor(distLeft: MultiSetUtil.MultiSet<CCS.ProcessId>, distRight: MultiSetUtil.MultiSet<CCS.ProcessId>) {
         // Ensure that the left and right distributions have the same size
+        distLeft = distLeft.normalized();
+        distRight = distRight.normalized();
         let lcm = distLeft.leastCommonMultiple(distRight);
         distLeft.scale(lcm / distLeft.size());
         distRight.scale(lcm / distRight.size());
