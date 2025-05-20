@@ -53,6 +53,7 @@ module MultiSetUtil {
          * This means that `a.normalized()[x] = a[x]/gcd(a.weights)`.
          */
         public normalized(): MultiSet<T> {
+            if (this.support().length < 2) return this; // cannot gcd with less than 2 elements
             const d = math.gcd(...this.getEntries().map((e) => e.weight));
             return this.map((e) => ({ ...e, weight: e.weight / d }));
         }
@@ -72,7 +73,7 @@ module MultiSetUtil {
 
         // Find the common size of two multisets
         public leastCommonMultiple(other: MultiSet<T>) {
-            return lcm(this.size(), other.size());
+            return math.lcm(this.size(), other.size());
         }
 
         public scale(scale: number) {
@@ -86,16 +87,6 @@ module MultiSetUtil {
             ) + ']';
         }
     }
-
-
-    const gcd = (a: number, b: number): number => {
-        if (b === 0) return a;
-        return gcd(b, a % b);
-    };
-
-    const lcm = (a: number, b: number) => {
-        return Math.abs(a * b) / gcd(a, b);
-    };
 
     const singleWeightedUnion = <T>(setA: MultiSet<T>, weightA: number, setB: MultiSet<T>, weightB: number) => {
         if (weightA === 0) return setB.clone();
@@ -124,21 +115,20 @@ module MultiSetUtil {
             // Start with first index
             { accDist: dists[0].dist, accWeight: dists[0].weight }
         );
-        return accDist;
+        return accDist.normalized();
     };
 
     export const crossCombination = <T>(op: (procs: T[]) => T, left: MultiSet<T>, right: MultiSet<T>): MultiSet<T> => {
         if (left.size() === 0) return right;
         if (right.size() === 0) return left;
 
-        const crossCombinedMS = new MultiSet<T>([]);
+        let crossCombinedMS = new MultiSet<T>([]);
         for (const leftEntry of left.getEntries()) {
             for (const rightEntry of right.getEntries()) {
                 const newProc = op([leftEntry.proc, rightEntry.proc]);
                 crossCombinedMS.add({ proc: newProc, weight: leftEntry.weight * rightEntry.weight });
             }
         }
-
-        return crossCombinedMS;
+        return crossCombinedMS.normalized();
     };
 }
