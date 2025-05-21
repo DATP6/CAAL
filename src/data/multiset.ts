@@ -70,8 +70,8 @@ module MultiSetUtil {
          */
         public cacheKey(keyConversion: (a: T) => string, separator: string = '::'): string {
             return this.getEntries()
+                .sort((a, b) => keyConversion(a.proc).localeCompare(keyConversion(b.proc)))
                 .map(({ proc }) => keyConversion(proc))
-                .sort()
                 .join(separator);
         }
     }

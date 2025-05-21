@@ -655,7 +655,7 @@ module Equivalence {
 
     export function isProbabilisticBisimilar(succGen: ccs.SuccessorGenerator, leftProcessId, rightProcessId) {
         var bisimDG = new Equivalence.ProbabilisticBisimDG(succGen, leftProcessId, rightProcessId),
-            marking = dg.liuSmolkaLazy(0, bisimDG);
+            marking = dg.liuSmolkaLocal2(0, bisimDG);
         return marking.getMarking(0) === marking.ZERO;
     }
 
@@ -929,19 +929,18 @@ module Equivalence {
             const sep = ';;';
             switch (node.kind) {
                 case ProbDGNodeKind.NoSide:
-                    return [node.leftId, node.rightId].sort().join(sep);
+                    return node.leftId + sep + node.rightId;
                 case ProbDGNodeKind.SidedState:
-                    return [node.leftId, node.rightId].sort().join(sep) + sep + node.side;
+                    return node.leftId + sep + node.rightId + sep + node.side;
                 case ProbDGNodeKind.Distribution:
-                    return [node.leftDist.cacheKey((k) => k), node.rightDist.cacheKey((k) => k)].sort().join(sep);
+                    return node.leftDist.cacheKey((k) => k) + sep + node.rightDist.cacheKey((k) => k);
                 case ProbDGNodeKind.Support:
                     return (
-                        node.support
-                            .map((p) => '<' + p.sort().join(',') + '>')
-                            .sort()
-                            .join('::') +
+                        node.support.map((p) => '<' + p.sort().join(',') + '>').join('::') +
                         sep +
-                        [node.leftDist.cacheKey((k) => k), node.rightDist.cacheKey((k) => k)].sort().join(sep)
+                        node.leftDist.cacheKey((k) => k) +
+                        sep +
+                        node.rightDist.cacheKey((k) => k)
                     );
             }
         };
@@ -1051,19 +1050,18 @@ module Equivalence {
             )
         );
 
-        const augmented = math.matrix(math.concat(A, math.reshape(b, [-1, 1])), 'sparse');
+        const augmented = math.matrix(math.concat(A, math.reshape(b, [-1, 1])));
 
-        // const echelon = toEchelon(augmented);
+        const echelon = toEchelon(augmented);
 
-        return hasSolution(math.lup(augmented).U);
+        return hasSolution(echelon);
     }
 
-    export class ProbabilisticBisimDG implements dg.LazyPartialDependencyGraph {
+    // TODO: We need to have some kind of hashmap to avoid constructing duplicate nodes
+    export class ProbabilisticBisimDG implements dg.DependencyGraph {
         private nodes: ProbabilisticDGNode[] = [];
         private cache: Map<string, number> = new Map();
         private badPairs: Set<string> = new Set();
-        private pairDependencies: Map<string, Set<dg.DgNodeId>> = new Map();
-        private badNodes: Set<dg.DgNodeId> = new Set();
 
         constructor(
             private succGen: CCS.SuccessorGenerator,
@@ -1078,15 +1076,19 @@ module Equivalence {
             } as ProbDGNoSideNode & UnconstructedProbDGNode);
         }
 
-        public getBadNodes(): Set<dg.DgNodeId> {
-            return this.badNodes;
-        }
-
-        getHyperEdges(id: dg.DgNodeId): dg.Iterator<dg.LazyHyperedge> {
+        getHyperEdges(id: dg.DgNodeId): dg.Hyperedge[] {
             const node = this.nodes[id]!;
             const constructedNode = isConstructed(node) ? node : this.constructNode(node);
             this.nodes[id] = constructedNode;
-            return this.getHyperedgeIterator(constructedNode);
+            return dg.copyHyperEdges(constructedNode.hyperedges);
+        }
+
+        getAllHyperEdges(): [dg.DgNodeId, dg.Hyperedge][] {
+            const result: [dg.DgNodeId, dg.Hyperedge][] = [];
+            for (let i = 0; i < this.nodes.length; i++) {
+                result.push([i, this.getHyperEdges(i)]);
+            }
+            return result;
         }
 
         public markNode(nodeId: dg.DgNodeId, isOne: boolean): void {
@@ -1099,11 +1101,7 @@ module Equivalence {
                 return;
             }
 
-            const key = cacheKey(node);
-
-            this.badPairs.add(key);
-
-            this.pairDependencies.get(key)?.forEach((id) => this.badNodes.add(id));
+            this.badPairs.add(cacheKey(node));
         }
 
         /**
@@ -1213,22 +1211,9 @@ module Equivalence {
                 for (const b of rightSupport) {
                     const aActions = this.succGen.getSuccessors(a).possibleActions().sort();
                     const bActions = this.succGen.getSuccessors(b).possibleActions().sort();
-                    if (aActions.length !== bActions.length || !aActions.every((act, i) => act.equals(bActions[i]!))) {
-                        continue;
+                    if (aActions.length == bActions.length && aActions.every((act, i) => act.equals(bActions[i]!))) {
+                        prod.push([a, b]);
                     }
-                    if (
-                        this.badPairs.has(
-                            cacheKey({
-                                kind: ProbDGNodeKind.NoSide,
-                                leftId: a,
-                                rightId: b,
-                                isConstructed: false
-                            })
-                        )
-                    ) {
-                        continue;
-                    }
-                    prod.push([a, b]);
                 }
             }
 
@@ -1236,7 +1221,18 @@ module Equivalence {
             const power = powerAll.filter(
                 (supp) =>
                     leftSupport.every((p) => supp.some(([q, _]) => p === q)) &&
-                    rightSupport.every((p) => supp.some(([_, q]) => p === q))
+                    rightSupport.every((p) => supp.some(([_, q]) => p === q)) &&
+                    supp.every(
+                        ([leftId, rightId]) =>
+                            !this.badPairs.has(
+                                cacheKey({
+                                    kind: ProbDGNodeKind.NoSide,
+                                    leftId,
+                                    rightId,
+                                    isConstructed: false
+                                })
+                            )
+                    )
             );
 
             const targets = power.map((support) => {
@@ -1264,18 +1260,9 @@ module Equivalence {
                     rightId,
                     isConstructed: false
                 };
-                const key = cacheKey(toAdd);
-
-                if (this.badPairs.has(key)) {
+                if (this.badPairs.has(cacheKey(toAdd))) {
                     return toConstructed(node, [[]]);
                 }
-
-                if (!this.pairDependencies.has(key)) {
-                    this.pairDependencies.set(key, new Set());
-                }
-
-                const nodeId = this.cache.get(cacheKey(node));
-                this.pairDependencies.get(key).add(nodeId);
             }
 
             // If we can't make a valid coupling, we just go to empty set
@@ -1293,43 +1280,6 @@ module Equivalence {
             ]);
 
             return toConstructed(node, hyperedges);
-        }
-
-        private getHyperedgeIterator(node: ConstructedProbDGNode): dg.Iterator<dg.LazyHyperedge> {
-            let index = 0;
-            const next = () => {
-                const he = node.hyperedges[index++];
-                if (!he) {
-                    return undefined;
-                }
-                return this.getTargetIterator(he);
-            };
-            const reset = () => (index = 0);
-            const support = node.hyperedges.map((h) => this.getTargetIterator(h));
-            return { next, reset, support };
-        }
-
-        private getTargetIterator(hyperedge: dg.Hyperedge): dg.LazyHyperedge {
-            let index = 0;
-            const he = hyperedge.sort();
-            const next = () => {
-                while (he[index]) {
-                    const node = this.nodes[he[index]];
-                    if (!node) {
-                        break;
-                    }
-                    if (node.kind !== ProbDGNodeKind.Support) {
-                        break;
-                    }
-                    if (!this.badNodes.has(he[index])) {
-                        break;
-                    }
-                    he.splice(index, 1);
-                }
-                return he[index++];
-            };
-            const reset = () => (index = 0);
-            return { next, reset, support: he };
         }
     }
 }
