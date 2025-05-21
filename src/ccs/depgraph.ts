@@ -16,7 +16,7 @@ module DependencyGraph {
     export interface Iterator<T> {
         reset: () => void;
         next: () => T | undefined;
-        support: T[] | { ref: T[] };
+        support: T[];
     }
     export type LazyHyperedge = Iterator<DgNodeId>;
 
@@ -39,13 +39,6 @@ module DependencyGraph {
         };
         const reset = () => (returned = false);
         return { next, reset, support: [val] };
-    }
-
-    function support<T>(iter: Iterator<T>): T[] {
-        if ('ref' in iter.support) {
-            return iter.support.ref;
-        }
-        return iter.support;
     }
 
     export interface PartialDependencyGraph {
@@ -335,6 +328,40 @@ module DependencyGraph {
         return compareTargetNodes(edgeA[1], edgeB[1]);
     }
 
+    function compareLazyHyperedgeIters(
+        edgeA: [DgNodeId, Iterator<LazyHyperedge>],
+        edgeB: [DgNodeId, Iterator<LazyHyperedge>]
+    ): number {
+        if (edgeA[0] !== edgeB[0]) return edgeA[0] < edgeB[0] ? -1 : 1;
+        const lengthDiff = edgeA[1].support.length - edgeB[1].support.length;
+        if (lengthDiff !== 0) return lengthDiff;
+        for (let i = 0; i < edgeA[1].support.length; i++) {
+            const targetsA = edgeA[1].support[i]!.support;
+            const targetsB = edgeB[1].support[i]!.support;
+            const lengthDiffInner = targetsA.length - targetsB.length;
+            if (lengthDiffInner !== 0) return lengthDiffInner;
+
+            for (let j = 0; j < targetsA.length; j++) {
+                const elemA = targetsA[i];
+                const elemB = targetsB[i];
+                if (elemA !== elemB) return elemA < elemB ? -1 : 1;
+            }
+        }
+        return 0;
+    }
+
+    function compareLazyHyperedges(edgeA: [DgNodeId, LazyHyperedge], edgeB: [DgNodeId, LazyHyperedge]): number {
+        if (edgeA[0] !== edgeB[0]) return edgeA[0] < edgeB[0] ? -1 : 1;
+        const lengthDiff = edgeA[1].support.length - edgeB[1].support.length;
+        if (lengthDiff !== 0) return lengthDiff;
+        for (let i = 0; i < edgeA[1].support.length; i++) {
+            const elemA = edgeA[1].support[i];
+            const elemB = edgeB[1].support[i];
+            if (elemA !== elemB) return elemA < elemB ? -1 : 1;
+        }
+        return 0;
+    }
+
     export class MinFixedPointCalculator {
         private Deps = Object.create(null);
         private Level = Object.create(null);
@@ -440,27 +467,15 @@ module DependencyGraph {
     }
 
     export class LazyMinFixedPointCalculator {
-        private Deps: { [key: string]: Map<string, [DgNodeId, LazyHyperedge]> } = {};
+        private Deps: { [key: string]: SetUtil.Set<[DgNodeId, LazyHyperedge]> } = {};
         private Level: { [key: string]: number } = {};
         private nodesToBeSolved: DgNodeId[] = [];
-        private cacheKeyCache: { [nodeId: string]: Map<DgNodeId[], string> } = {};
 
         BOTTOM = 1;
         ZERO = 2;
         ONE = 3;
 
         constructor(private dg: LazyPartialDependencyGraph) {}
-
-        private lazyHyperedgeCacheKey([nodeId, hyperedge]: [DgNodeId, LazyHyperedge]) {
-            let map = this.cacheKeyCache[nodeId];
-            if (!map) {
-                map = this.cacheKeyCache[nodeId] = new Map();
-            }
-            if (!map.has(support(hyperedge))) {
-                map.set(support(hyperedge), nodeId + '//' + support(hyperedge).join(';;'));
-            }
-            return map.get(support(hyperedge));
-        }
 
         solve(solveNode?: DgNodeId): void {
             if (solveNode != undefined) {
@@ -478,6 +493,7 @@ module DependencyGraph {
             var Deps = this.Deps;
             var succGen = this.dg.getHyperEdges.bind(this.dg);
             var W: [DgNodeId, Iterator<LazyHyperedge>][] = [];
+            var edgeComparer = compareLazyHyperedges;
 
             function load(node: DgNodeId) {
                 var hyperedges = succGen(node);
@@ -487,7 +503,7 @@ module DependencyGraph {
             var solveNodeMarking = this.getMarking(solveNode);
             if (solveNodeMarking === this.BOTTOM) {
                 Level[solveNode] = Infinity;
-                Deps[solveNode] = new Map();
+                Deps[solveNode] = new SetUtil.OrderedSet(edgeComparer);
             } else if (solveNodeMarking === this.ONE) {
                 return;
             }
@@ -525,11 +541,11 @@ module DependencyGraph {
                         ++numOnes;
                         maxTargetLevel = Math.max(maxTargetLevel, Level[tNode]!);
                     } else if (tNodeMarking === ZERO) {
-                        Deps[tNode]!.set(this.lazyHyperedgeCacheKey([source, hEdge]), [source, hEdge]);
+                        Deps[tNode]!.add([source, hEdge]);
                     } else {
                         Level[tNode] = Infinity;
-                        Deps[tNode] = new Map();
-                        Deps[tNode]!.set(this.lazyHyperedgeCacheKey([source, hEdge]), [source, hEdge]);
+                        Deps[tNode] = new SetUtil.OrderedSet(edgeComparer);
+                        Deps[tNode]!.add([source, hEdge]);
                         load(tNode);
                     }
                 }
@@ -547,6 +563,7 @@ module DependencyGraph {
                     }
                 }
             }
+            console.log((this.dg as any)?.getBadNodes());
         }
 
         addNodeToBeSolved(node) {

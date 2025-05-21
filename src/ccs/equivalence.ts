@@ -1108,6 +1108,10 @@ module Equivalence {
             } as ProbDGNoSideNode & UnconstructedProbDGNode);
         }
 
+        public getBadNodes(): Set<dg.DgNodeId> {
+            return this.badNodes;
+        }
+
         getHyperEdges(id: dg.DgNodeId): dg.Iterator<dg.LazyHyperedge> {
             const node = this.nodes[id]!;
             const constructedNode = isConstructed(node) ? node : this.constructNode(node);
@@ -1375,30 +1379,25 @@ module Equivalence {
 
         private getTargetIterator(hyperedge: dg.Hyperedge): dg.LazyHyperedge {
             let index = 0;
-            const support = { ref: hyperedge.sort() };
+            const he = hyperedge.sort();
             const next = () => {
-                const he = support.ref;
-                while (index < he.length - 1) {
-                    if (he[index] === -1) {
-                        index++;
-                        continue;
+                while (he[index]) {
+                    const node = this.nodes[he[index]];
+                    if (!node) {
+                        break;
                     }
-                    const node = this.nodes[he[index]!]!;
                     if (node.kind !== ProbDGNodeKind.Support) {
                         break;
                     }
                     if (!this.badNodes.has(he[index])) {
                         break;
                     }
-                    he[index] = -1;
+                    he.splice(index, 1);
                 }
                 return he[index++];
             };
-            const reset = () => {
-                index = 0;
-                support.ref = support.ref.filter((x) => x !== -1);
-            };
-            return { next, reset, support };
+            const reset = () => (index = 0);
+            return { next, reset, support: he };
         }
     }
 }
