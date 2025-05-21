@@ -1539,7 +1539,6 @@ module Activity {
                     goodCouplings++;
                     i--;
                 } else if (badCouplings < 2 && marking !== game.markingOne) { // Not bisimilar
-                    console.log("badChoice added")
                     badCouplings++;
                     i--;
                 }
@@ -1548,28 +1547,45 @@ module Activity {
             // if we have less than 4 couplings, add until we have 4
             while (choicesToShow.length < 4 && choices.length !== 0) choicesToShow.push(choices.shift());
             choicesToShow.forEach((choice) => {
-                var row = $('<tr></tr>');
-                row.attr('data-target-id', choice.target); // attach multiset that is dist
-
-                let $targetTd = $("<td id='target'></td>");
-                choice.target.forEach((target: [CCS.ProcessId, CCS.ProcessId]) => { // for each pair of processes in support(coupling)
-                    $targetTd.append(this.labelFromId(target[0]), this.labelFromId(target[1]), "  ");
-                });
-
-                // Source configuration (dist, dist[CCS.ProcessId, CCS.ProcessId]
-                const sourceLeft = this.labelWithTooltip(game.getCurrentConfiguration().left);
-                const sourceRight = this.labelWithTooltip(game.getCurrentConfiguration().right);
-                const $sourceTd = $("<td id='source'></td>").append(sourceLeft, " ", sourceRight);
-                const $actionTd = $("<td id='action'></td>"); // empty action td
-
-                // onClick
-                $(row).on('click', (event) => {
-                    this.clickCouplingChoice(choice, game as ProbabilisticBisimulationGame);
-                });
-
-                row.append($sourceTd, $actionTd, $targetTd);
-                this.$table.append(row);
+                this.addCouplingToTable(choice!, game as ProbabilisticBisimulationGame);
             });
+            this.showMoreButton(choices, game);
+        }
+
+        private showMoreButton(choices: dg.GameOptions[], game: DgGame): void {
+            if (choices.length > 0) {
+                let button = $("<tr><td colspan='3'>Show another coupling</td></tr>");
+                this.$table.append(button);
+                $(button).on('click', (event) => {
+                    this.addCouplingToTable(choices.pop(), game as ProbabilisticBisimulationGame);
+                    $(button).remove(); // remove the button
+                    this.showMoreButton(choices, game); // add it again
+                });
+            }
+        }
+
+        private addCouplingToTable(choice: dg.GameOptions, game: DgGame): void {
+            var row = $('<tr></tr>');
+            row.attr('data-target-id', choice.target); // attach multiset that is dist
+
+            let $targetTd = $("<td id='target'></td>");
+            choice.target.forEach((target: [CCS.ProcessId, CCS.ProcessId]) => { // for each pair of processes in support(coupling)
+                $targetTd.append(this.labelFromId(target[0]), this.labelFromId(target[1]), "  ");
+            });
+
+            // Source configuration (dist, dist[CCS.ProcessId, CCS.ProcessId]
+            const sourceLeft = this.labelWithTooltip(game.getCurrentConfiguration().left);
+            const sourceRight = this.labelWithTooltip(game.getCurrentConfiguration().right);
+            const $sourceTd = $("<td id='source'></td>").append(sourceLeft, " ", sourceRight);
+            const $actionTd = $("<td id='action'></td>"); // empty action td
+
+            // onClick
+            $(row).on('click', (event) => {
+                this.clickCouplingChoice(choice, game as ProbabilisticBisimulationGame);
+            });
+
+            row.append($sourceTd, $actionTd, $targetTd);
+            this.$table.append(row);
         }
 
         private labelFromId(processId: CCS.ProcessId): JQuery {
