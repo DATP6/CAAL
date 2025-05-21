@@ -1760,7 +1760,7 @@ module Activity {
     class Computer extends Player {
         // TODO: set this back to something more realistic when not debugging
 
-        static Delay: number = 250;
+        static Delay: number = 1500;
 
         private delayedPlay: number | undefined;
 
