@@ -74,30 +74,24 @@ module Traverse {
             var resultProcess = this.cache[process.id];
             if (!resultProcess) {
                 var subProcess = process.subProcess.dispatchOn(this);
+                var tempProcess;
                 // (P \ L1) \L2 => P \ (L1 Union L2)
                 if (subProcess instanceof ccs.RestrictionProcess) {
                     var subRestriction = <ccs.RestrictionProcess>subProcess;
                     var mergedLabels = subRestriction.restrictedLabels.union(process.restrictedLabels);
-                    resultProcess = this.graph.newRestrictedProcess(subRestriction.subProcess, mergedLabels);
+                    tempProcess = this.graph.newRestrictedProcess(subRestriction.subProcess, mergedLabels);
                 } else {
-                    resultProcess = this.graph.newRestrictedProcess(subProcess, process.restrictedLabels);
+                    tempProcess = this.graph.newRestrictedProcess(subProcess, process.restrictedLabels);
                 }
                 // 0 \ L => 0
-                if (resultProcess.subProcess instanceof ccs.NullProcess) {
-                    return resultProcess.subProcess;
+                if (tempProcess.subProcess instanceof ccs.NullProcess) {
+                    return tempProcess.subProcess;
                 }
                 // P \ Ø => P
-                if (resultProcess.restrictedLabels.empty()) {
-                    return resultProcess.subProcess;
+                if (tempProcess.restrictedLabels.empty()) {
+                    return tempProcess.subProcess;
                 }
-                // (P + Q) \ L => P \ L + Q \ L
-                if (subProcess instanceof ccs.SummationProcess) {
-                    const newSubprocess = subProcess.subProcesses.map((sp) =>
-                        this.graph.newRestrictedProcess(sp, process.restrictedLabels).dispatchOn(this)
-                    );
-                    resultProcess = this.graph.newSummationProcess(newSubprocess);
-                }
-                this.cache[process.id] = resultProcess;
+                resultProcess = this.cache[process.id] = tempProcess;
             }
             return resultProcess;
         }
@@ -120,13 +114,6 @@ module Traverse {
                 if (resultProcess.relabellings.isEmpty()) {
                     // P [] => P
                     resultProcess = resultProcess.subProcess;
-                }
-                // (P + Q) [] => P [] + Q []
-                if (subProcess instanceof ccs.SummationProcess) {
-                    const newSubprocess = subProcess.subProcesses.map((sp) =>
-                        this.graph.newRelabelingProcess(sp, process.relabellings).dispatchOn(this)
-                    );
-                    resultProcess = this.graph.newSummationProcess(newSubprocess);
                 }
                 this.cache[process.id] = resultProcess;
             }

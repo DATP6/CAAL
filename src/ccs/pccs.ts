@@ -400,19 +400,11 @@ module Traverse {
         }
 
         dispatchProbabilisticProcess(process: PCCS.ProbabilisticProcess) {
-            let resultProcess = this.cache[process.id];
-            if (!resultProcess) {
-                const newDistribution: Distribution = new MultiSetUtil.MultiSet<CCS.Process>([]);
-                process.dist
-                    .normalized()
-                    .getEntries()
-                    .sort((a, b) => a.proc.id.localeCompare(b.proc.id))
-                    .forEach((e) => {
-                        newDistribution.add({ proc: e.proc.dispatchOn(this), weight: e.weight });
-                    });
-                resultProcess = this.cache[process.id] = this.pccsgraph.newDistributionProcess(newDistribution);
-            }
-            return resultProcess;
+            let newDistribution: Distribution = new MultiSetUtil.MultiSet<CCS.Process>([]);
+            process.dist.getEntries().forEach((e) => {
+                newDistribution.add({ proc: e.proc.dispatchOn(this), weight: e.weight });
+            });
+            return this.pccsgraph.newDistributionProcess(newDistribution);
         }
     }
 }
