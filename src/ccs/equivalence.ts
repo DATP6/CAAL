@@ -2,7 +2,7 @@
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
 
-declare var yalps: any;
+declare var solver;
 
 module Equivalence {
     import ccs = CCS;
@@ -1077,14 +1077,14 @@ module Equivalence {
             constraints[`col${i}`] = { equal: rs.get(rSupp[i]) };
         }
 
-        const result = yalps.solve({
+        const result = solver.Solve({
             optimize: 'cost',
             opType: 'min',
             constraints,
             variables,
             ints
         });
-        return result.status === 'optimal';
+        return result.feasible;
     }
 
     export class ProbabilisticBisimDG implements dg.LazyPartialDependencyGraph {

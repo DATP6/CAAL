@@ -10,7 +10,7 @@ declare var PHMLParser;
 
 importScripts(
     '../math-14.4.0.js',
-    '../yalps.js',
+    '../lp-solver-0.4.24.js',
     '../ccs_grammar.js',
     '../tccs_grammar.js',
     '../phml_grammar.js',
