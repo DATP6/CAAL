@@ -686,6 +686,14 @@ module Activity {
             this.currentRight = currentRight;
         }
 
+        public getMarking(node: number): number{
+            return this.marking.getMarking(node)
+        }
+
+        get markingOne(): any {
+            return this.marking.ZERO;
+        }
+
         public isPCCS(): boolean {
             return this.graph instanceof PCCS.Graph;
         }
@@ -1519,7 +1527,27 @@ module Activity {
 
         private fillCouplingTable(choices: dg.GameOptions[], game: DgGame): void {
             this.$table.empty();
-            choices.forEach((choice) => {
+            let badCouplings = 0;
+            let goodCouplings = 0;
+            let choicesToShow = []
+            for (let i = 0; i < choices.length; i++) {
+                const choice = choices[i];
+                const marking = game.getMarking(choice!.nextNode);
+                if (goodCouplings < 2 && marking == game.markingOne) { // Bisimilar
+                    let newChoice = choices.splice(i, 1)[0]; // remove from choices
+                    choicesToShow.push(newChoice)
+                    goodCouplings++;
+                    i--;
+                } else if (badCouplings < 2 && marking !== game.markingOne) { // Not bisimilar
+                    console.log("badChoice added")
+                    badCouplings++;
+                    i--;
+                }
+                if (choicesToShow.length >= 4) break; // max 4 couplings
+            }
+            // if we have less than 4 couplings, add until we have 4
+            while (choicesToShow.length < 4 && choices.length !== 0) choicesToShow.push(choices.shift());
+            choicesToShow.forEach((choice) => {
                 var row = $('<tr></tr>');
                 row.attr('data-target-id', choice.target); // attach multiset that is dist
 
