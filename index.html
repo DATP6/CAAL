@@ -403,21 +403,15 @@
                                                 <option value="weak" data-time="timed">Weak Timed</option>
                                                 <option value="weak" data-time="untimed">Weak Untimed</option>
                                             </select>
-                                            <select id="pccsTransition" class="form-control">
-                                                <option value="strong">Strong</option>
-                                            </select>
                                         </div>
                                         <div class="relation-type">
-                                            <label>Relation</label>
+                                            <label for="relationType">Relation</label>
                                             <select id="relationType" class="form-control">
                                                 <option value="Simulation">Simulation</option>
                                                 <option value="SimulationEquivalence">Simulation Equivalence</option>
                                                 <option value="Bisimulation" selected>Bisimulation</option>
                                                 <option value="TraceInclusion">Trace Inclusion</option>
                                                 <option value="TraceEquivalence">Trace Equivalence</option>
-                                            </select>
-                                            <select id="pccsRelationType" class="form-control">
-                                                <option value="ProbabilisticBisimulation" selected>Probabilistic Bisimulation</option>
                                             </select>
                                         </div>
                                         <div class="relation-process">
@@ -633,7 +627,6 @@
         <script src="lib/smartmenus/jquery.smartmenus.bootstrap.min.js"></script>
         <script src="lib/ace/src/ace.js" type="text/javascript" charset="utf-8"></script>
         <script src="lib/ace/src/ext-language_tools.js"></script>
-        <script src="lib/math-14.4.0.js"></script>
         <script src="lib/ccs_grammar.js"></script>
         <script src="lib/pccs_grammar.js"></script>
         <script src="lib/tccs_grammar.js"></script>

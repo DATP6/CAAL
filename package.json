@@ -10,7 +10,6 @@
         "typescript": "4.9.4"
     },
     "devDependencies": {
-        "mathjs": "^14.4.0",
         "node-qunit-phantomjs": "~2.1.1",
         "qunitjs": "~2.4.1"
     },
@@ -24,6 +23,6 @@
         "release": "./node_modules/.bin/jake -q -f build.js || exit 1; OPENSSL_CONF=/etc/ssl ./node_modules/.bin/node-qunit-phantomjs ./test/test.html || exit 1; rm -f release.tar.gz; tar -zcf release.tar.gz lib/ css/ fonts/ docs/ index.html help.html contact.html about.html LICENSE README.md server.js;",
         "release-notest": "./node_modules/.bin/jake -q -f build.js || exit 1; rm -f release.tar.gz; tar -zcf release.tar.gz lib/ css/ fonts/ docs/ index.html help.html contact.html about.html LICENSE README.md server.js;"
     },
-    "authors": "Jacob K. Wortmann, Jesper R. Andersen, Mathias M. Hansen, Nicklas Andersen, Simon R. Olesen, Søren Enevoldsen, Asbjørn R. Eriksen, Jens Tinggaard, Mikkel B. Jørgensen, Thomas Thorsen, Martin Enevoldsen, Aske Klitgaard Ottesen, Markus Vang Kleist, Markus Ketilsø Dam",
+    "authors": "Jacob K. Wortmann, Jesper R. Andersen, Mathias M. Hansen, Nicklas Andersen, Simon R. Olesen, Søren Enevoldsen, Asbjørn R. Eriksen, Jens Tinggaard, Mikkel B. Jørgensen, Thomas Thorsen, Mads Hebsgaard Andersen, Mads Hvid Byriel, Martin Enevoldsen, Aske Klitgaard Ottesen, Markus Vang Kleist",
     "license": "MIT"
 }

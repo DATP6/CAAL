@@ -93,7 +93,7 @@ module Property {
             this.setUnknownStatus();
         }
 
-        public verify(callback: (property: Property) => void): void {
+        public verify(callback: Function): void {
             if (!this.isReadyForVerification()) {
                 console.log('something is wrong, please check the property');
                 callback(this);
@@ -353,21 +353,6 @@ module Property {
         }
     }
 
-    export interface RelationOptions {
-        firstProcess: string;
-        secondProcess: string;
-        type: string;
-        time: string;
-        comment: string;
-    }
-
-    export interface RelationWorkerMessage {
-        type: string;
-        time: string;
-        leftProcess: string;
-        rightProcess: string;
-    }
-
     export class Relation extends Property {
         protected propertyType;
         protected firstProcess: string;
@@ -375,7 +360,7 @@ module Property {
         protected type: string;
         protected time: string;
 
-        public constructor(options: RelationOptions, status: PropertyStatus = PropertyStatus.unknown) {
+        public constructor(options: any, status: PropertyStatus = PropertyStatus.unknown) {
             super(status);
             this.firstProcess = options.firstProcess;
             this.secondProcess = options.secondProcess;
@@ -439,7 +424,7 @@ module Property {
                 time: this.time,
                 leftProcess: this.firstProcess,
                 rightProcess: this.secondProcess
-            } satisfies RelationWorkerMessage;
+            };
         }
 
         /**
@@ -616,7 +601,7 @@ module Property {
     export class Traces extends DistinguishingFormula {
         private formula: string = null;
 
-        constructor(options: RelationOptions, status: PropertyStatus) {
+        constructor(options: any, status: PropertyStatus) {
             super(options, status);
         }
 
@@ -645,7 +630,7 @@ module Property {
     }
 
     export class TraceEquivalence extends Traces {
-        constructor(options: RelationOptions, status: PropertyStatus = PropertyStatus.unknown) {
+        constructor(options: any, status: PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
 
@@ -676,7 +661,7 @@ module Property {
     }
 
     export class TraceInclusion extends Traces {
-        constructor(options: RelationOptions, status: PropertyStatus = PropertyStatus.unknown) {
+        constructor(options: any, status: PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
 
@@ -703,25 +688,6 @@ module Property {
 
         protected getWorkerHandler(): string {
             return super.getType() === 'strong' ? 'isStronglyTraceIncluded' : 'isWeaklyTraceIncluded';
-        }
-    }
-
-    export class ProbabilisticBisimulation extends Relation {
-        constructor(options: RelationOptions, status: PropertyStatus = PropertyStatus.unknown) {
-            super(options, status);
-        }
-
-        public getDescription(): string {
-            var symbol = super.getType() === 'strong' ? '&#8764;' : '&#8776;';
-            return this.firstProcess + ' ' + symbol + super.getTimeSubscript() + ' ' + this.secondProcess;
-        }
-
-        public getClassName(): string {
-            return 'Probabilistic Bisimulation';
-        }
-
-        protected getWorkerHandler(): string {
-            return super.getType() === 'strong' ? 'isStronglyProbBisimilar' : 'isWeaklyProbBisimilar';
         }
     }
 }
