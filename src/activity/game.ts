@@ -1549,17 +1549,18 @@ module Activity {
             choicesToShow.forEach((choice) => {
                 this.addCouplingToTable(choice!, game as ProbabilisticBisimulationGame);
             });
-            this.showMoreButton(choices, game);
+            this.showAnotherCouplingButton(choices, game);
         }
 
-        private showMoreButton(choices: dg.GameOptions[], game: DgGame): void {
+        button = $("<tr class='info'><td colspan='3'><div style='text-align: center;'>-&gt; Show another coupling &lt;-</div></td></tr>");
+
+        private showAnotherCouplingButton(choices: dg.GameOptions[], game: DgGame): void {
             if (choices.length > 0) {
-                let button = $("<tr><td colspan='3'>Show another coupling</td></tr>");
-                this.$table.append(button);
-                $(button).on('click', (event) => {
+                this.$table.append(this.button);
+                $(this.button).on('click', (event) => {
                     this.addCouplingToTable(choices.pop(), game as ProbabilisticBisimulationGame);
-                    $(button).remove(); // remove the button
-                    this.showMoreButton(choices, game); // add it again
+                    $(this.button).remove(); // remove the button
+                    this.showAnotherCouplingButton(choices, game); // add it again
                 });
             }
         }

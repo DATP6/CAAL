@@ -506,6 +506,12 @@ nav.navbar {
     color: #333;
 }
 
+#game-transitions-table thead {
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+}
+
 #game-log {
     height: 225px;
     padding: 10px;
@@ -540,8 +546,9 @@ nav.navbar {
 }
 
 #game-transitions {
-    height: 225px;
-    padding: 10px;
+    height: 215px; /* 10px smaller than game-log due to margin (sticky thead overflow)  */
+    margin-top: 10px;
+    padding: 0 10px 10px; /* top, x, bot */
     overflow: auto;
     border: 1px solid #e7e7e7;
     border-top: none;
