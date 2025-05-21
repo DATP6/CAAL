@@ -1016,7 +1016,7 @@ module Equivalence {
 
         getHyperEdges(id: dg.DgNodeId): dg.Iterator<dg.LazyHyperedge> {
             const node = this.nodes[id]!;
-            const constructedNode = isConstructed(node) ? node : this.constructNode(node, id);
+            const constructedNode = isConstructed(node) ? node : this.constructNode(node);
             this.nodes[id] = constructedNode;
             return constructedNode.hyperedges;
         }
@@ -1054,8 +1054,7 @@ module Equivalence {
         }
 
         private constructNode(
-            node: ProbabilisticDGNode & UnconstructedProbDGNode,
-            id: dg.DgNodeId
+            node: ProbabilisticDGNode & UnconstructedProbDGNode
         ): ProbabilisticDGNode & ConstructedProbDGNode {
             switch (node.kind) {
                 case ProbDGNodeKind.NoSide:
@@ -1065,7 +1064,7 @@ module Equivalence {
                 case ProbDGNodeKind.Distribution:
                     return this.constructDistributionNode(node);
                 case ProbDGNodeKind.Support:
-                    return this.constructSupportNode(node, id);
+                    return this.constructSupportNode(node);
             }
         }
 
@@ -1221,6 +1220,29 @@ module Equivalence {
                     if (checkedGood[targetIndex]) {
                         break;
                     }
+
+                    for (const [leftId, rightId] of target.support) {
+                        const targetPair: ProbDGNoSideNode & UnconstructedProbDGNode = {
+                            kind: ProbDGNodeKind.NoSide,
+                            leftId,
+                            rightId,
+                            isConstructed: false
+                        };
+                        const key = this.cacheKey(targetPair);
+
+                        if (this.badPairs.has(key)) {
+                            this.badNodes.add(targetIndex);
+                            he[index++] = -1;
+                            continue;
+                        }
+
+                        if (!this.pairDependencies.has(key)) {
+                            this.pairDependencies.set(key, new Set());
+                        }
+
+                        this.pairDependencies.get(key).add(targetIndex);
+                    }
+
                     if (lpCoupling(node.leftDist, node.rightDist, target.support)) {
                         checkedGood[targetIndex] = true;
                         break;
@@ -1243,32 +1265,19 @@ module Equivalence {
         }
 
         private constructSupportNode(
-            node: ProbDGSupportNode & UnconstructedProbDGNode,
-            nodeId: dg.DgNodeId
+            node: ProbDGSupportNode & UnconstructedProbDGNode
         ): ProbDGSupportNode & ConstructedProbDGNode {
-            const hyperedges: dg.LazyHyperedge[] = [];
-            for (const [leftId, rightId] of node.support) {
-                const targetPair: ProbDGNoSideNode & UnconstructedProbDGNode = {
-                    kind: ProbDGNodeKind.NoSide,
-                    leftId,
-                    rightId,
-                    isConstructed: false
-                };
-                const key = this.cacheKey(targetPair);
+            const hyperedges = node.support
+                .map(([leftId, rightId]) => [
+                    this.getOrAddNode({
+                        kind: ProbDGNodeKind.NoSide,
+                        leftId,
+                        rightId,
+                        isConstructed: false
+                    } as ProbDGNoSideNode & UnconstructedProbDGNode)
+                ])
+                .map(toIter);
 
-                if (this.badPairs.has(key)) {
-                    this.badNodes.add(nodeId);
-                    const empty: dg.Iterator<dg.LazyHyperedge> = toIter([toIter([])]);
-                    return toConstructed(node, empty);
-                }
-
-                if (!this.pairDependencies.has(key)) {
-                    this.pairDependencies.set(key, new Set());
-                }
-
-                this.pairDependencies.get(key).add(nodeId);
-                hyperedges.push(toIter([this.getOrAddNode(targetPair)]));
-            }
             return toConstructed(node, toIter(hyperedges));
         }
         /**

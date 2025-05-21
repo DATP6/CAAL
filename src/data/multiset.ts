@@ -6,13 +6,10 @@ module MultiSetUtil {
     export type Entry<T> = { proc: T; weight: number };
 
     export class MultiSet<T> {
-        private _map: Map<T, number> = new Map();
-        private _size = 0;
-        private _entries: Entry<T>[] = [];
-        private entryMap: Map<T, number> = new Map();
-        private _support: T[] = [];
+        private _map: Map<T, number>;
 
         constructor(entries: Entry<T>[]) {
+            this._map = new Map();
             entries.forEach((e) => this.add(e));
         }
 
@@ -21,7 +18,7 @@ module MultiSetUtil {
         }
 
         public getEntries(): Entry<T>[] {
-            return this._entries;
+            return Array.from(this._map.entries()).map(([key, val]) => ({ proc: key, weight: val }));
         }
 
         public getProbabilities(): (Entry<T> & { probability: number })[] {
@@ -35,19 +32,15 @@ module MultiSetUtil {
         }
 
         public size() {
-            return this._size;
+            return this.getEntries()
+                .map((x) => x.weight)
+                .reduce((acc, curr) => acc + curr, 0);
         }
 
         public add(entry: Entry<T>) {
             let weight = this._map.get(entry.proc) ?? 0;
             weight += entry.weight;
             this._map.set(entry.proc, weight);
-            this._size += weight;
-            if (!this.entryMap.has(entry.proc)) {
-                this.entryMap.set(entry.proc, this._entries.push({ ...entry }) - 1);
-                this._support.push(entry.proc);
-            }
-            this._entries[this.entryMap.get(entry.proc)]!.weight = weight;
         }
 
         public map<U>(mapper: (entry: Entry<T>, index: number, entries: Entry<T>[]) => Entry<U>): MultiSet<U> {
@@ -57,7 +50,7 @@ module MultiSetUtil {
         }
 
         public support(): T[] {
-            return this._support;
+            return Array.from(this._map.keys());
         }
 
         public clone() {
@@ -80,9 +73,8 @@ module MultiSetUtil {
          * @param keyConversion Function to get a cache key from elements in the multiset. Like this function, keyConversion(x) == keyConversion(y) iff x and y are equivalent
          */
         public cacheKey(keyConversion: (a: T) => string, separator: string = '::'): string {
-            return this.normalized()
-                .getEntries()
-                .map(({ proc, weight }) => keyConversion(proc) + ': ' + weight)
+            return this.getEntries()
+                .map(({ proc }) => keyConversion(proc))
                 .sort()
                 .join(separator);
         }
