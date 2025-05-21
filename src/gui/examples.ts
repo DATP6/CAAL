@@ -424,7 +424,7 @@ var examples: any[] = [
                     process: 'BM',
                     definitions: [
                         "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
-                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        'Y max= (<-> >=1 Z) and ([-] >=1 Y);',
                         "Z min= (<'error> tt) or (<-> >0 Z);"
                     ].join('\n'),
                     topFormula: 'X;'
@@ -438,7 +438,7 @@ var examples: any[] = [
                     process: 'S0',
                     definitions: [
                         "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
-                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        'Y max= (<-> >=1 Z) and ([-] >=1 Y);',
                         "Z min= (<'error> tt) or (<-> >0 Z);"
                     ].join('\n'),
                     topFormula: 'X;'
@@ -452,7 +452,7 @@ var examples: any[] = [
                     process: 'S1',
                     definitions: [
                         "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
-                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        'Y max= (<-> >=1 Z) and ([-] >=1 Y);',
                         "Z min= (<'error> tt) or (<-> >0 Z);"
                     ].join('\n'),
                     topFormula: 'X;'
@@ -466,7 +466,7 @@ var examples: any[] = [
                     process: 'S2',
                     definitions: [
                         "X min= (<'error> >=1 Y) or ((<-> tt) and ([-] >0 X));",
-                        'Y max= (<-> >=1 Z) and (<-> >=1 Y);',
+                        'Y max= (<-> >=1 Z) and ([-] >=1 Y);',
                         "Z min= (<'error> tt) or (<-> >0 Z);"
                     ].join('\n'),
                     topFormula: 'X;'
