@@ -608,6 +608,13 @@ module CCS {
             }
             return this.action.toString() + '->' + this.targetProcess.id;
         }
+
+        getTargetProcesses(): Process[] {
+            if (this.targetProcess instanceof PCCS.ProbabilisticProcess) {
+                return this.targetProcess.getTargetProcesses();
+            }
+            return [this.targetProcess];
+        }
     }
 
     export class TransitionSet {

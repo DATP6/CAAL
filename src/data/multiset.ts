@@ -19,6 +19,11 @@ module MultiSetUtil {
             return this.getEntries().map((e) => ({ ...e, probability: e.weight / size }));
         }
 
+        public probabilityOf(elements: T[]): { num: number; den: number } {
+            const weight = elements.map((e) => this._map.get(e)).reduce<number>((acc, curr) => acc + (curr ?? 0), 0);
+            return { num: weight, den: this.size() };
+        }
+
         public size() {
             return this.getEntries()
                 .map((x) => x.weight)

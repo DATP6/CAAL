@@ -1,6 +1,7 @@
 /// <reference path="../../lib/util.d.ts" />
 /// <reference path="../../lib/data.d.ts" />
 /// <reference path="ccs.ts" />
+/// <reference path="pccs.ts" />
 /// <reference path="hml.ts" />
 /// <reference path="util.ts" />
 /// <reference path="collapse.ts" />
@@ -72,6 +73,41 @@ module DependencyGraph {
             private weakSuccGen: ccs.SuccessorGenerator,
             private formulaSet: hml.FormulaSet
         ) {}
+
+        // TODO: OOP can be used to beautify switch case
+        dispatchDiamondFormula(formula: hml.DiamondFormula) {
+            if (!(this.currentNode.process instanceof PCCS.ProbabilisticProcess)) {
+                throw new Error('Diamond formula was not dispatched with a probabilistic process');
+            }
+
+            console.log('[MDG Diamond] In:', formula);
+
+            const distribution = this.currentNode.process.dist; // Potential successor states
+
+            console.log('[MDG Diamond] Dist:', distribution);
+
+            const processes = distribution.getEntries().map((e) => e.proc);
+            const powerset = processes.reduce<CCS.Process[][]>(
+                (acc, curr) => acc.concat(acc.map((s) => [curr].concat(s))),
+                [[]]
+            );
+
+            console.log('[MDG Diamond] Power:', powerset);
+
+            const setsRespectingOp = powerset.filter((s) => {
+                const { den, num } = distribution.probabilityOf(s);
+                const fraction = new HML.Fraction(num, den);
+                return fraction.compare(formula.relational_operator, formula.probability);
+            });
+
+            const hyperedges = setsRespectingOp.map((s) =>
+                s.map((process) => new MuCalculusNode(process, formula.subformula, this.currentNode.isMin))
+            );
+
+            console.log('[MDG Diamond] Out:', hyperedges);
+
+            return hyperedges;
+        }
 
         getHyperEdges(node: MuCalculusNode): Hyperedge[] {
             this.currentNode = node;

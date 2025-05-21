@@ -21,7 +21,7 @@ module Activity {
         private $statusContainer: JQuery;
         private $statusTable: JQuery;
         private tooltip: ProcessTooltip;
-        private timeout: number;
+        private timeout: ReturnType<typeof setTimeout>;
         private $ccsOptions: JQuery;
         private $pccsOptions: JQuery;
         private $tccsOptions: JQuery;

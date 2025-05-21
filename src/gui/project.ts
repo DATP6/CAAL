@@ -179,8 +179,8 @@ class Project {
                 formulaSet: formulaSet
             });
         } else if (this.inputMode === InputMode.PCCS) {
-            HMLParser.parse(property.getDefinitions(), { ccs: CCS, pccs: PCCS, hml: HML, formulaSet: formulaSet });
-            HMLParser.parse(property.getTopFormula(), {
+            PHMLParser.parse(property.getDefinitions(), { ccs: CCS, pccs: PCCS, hml: HML, formulaSet: formulaSet });
+            PHMLParser.parse(property.getTopFormula(), {
                 startRule: 'TopFormula',
                 ccs: CCS,
                 pccs: PCCS,

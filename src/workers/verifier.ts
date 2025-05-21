@@ -6,10 +6,12 @@ declare var TCCSParser;
 declare var PCCSParser;
 declare var HMLParser;
 declare var THMLParser;
+declare var PHMLParser;
 
 importScripts(
     '../ccs_grammar.js',
     '../tccs_grammar.js',
+    '../phml_grammar.js',
     '../pccs_grammar.js',
     '../hml_grammar.js',
     '../thml_grammar.js',
@@ -286,6 +288,15 @@ function readFormulaSet(data): HML.FormulaSet {
     } else if (inputMode === 'TCCS') {
         THMLParser.parse(data.definitions, { ccs: CCS, tccs: TCCS, hml: HML, formulaSet: formulaSet });
         THMLParser.parse(data.formula, {
+            startRule: 'TopFormula',
+            ccs: CCS,
+            tccs: TCCS,
+            hml: HML,
+            formulaSet: formulaSet
+        });
+    } else if (inputMode === 'PCCS') {
+        PHMLParser.parse(data.definitions, { ccs: CCS, pccs: PCCS, hml: HML, formulaSet: formulaSet });
+        PHMLParser.parse(data.formula, {
             startRule: 'TopFormula',
             ccs: CCS,
             tccs: TCCS,

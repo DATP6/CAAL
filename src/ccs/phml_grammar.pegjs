@@ -1,4 +1,4 @@
-//Hennessy-Milner Logic
+/* Grammar for Probabilistic Hennessey Milner Logic (PHML)*/
 
 {
 	function strFirstAndRest(first, rest) {
@@ -22,8 +22,13 @@ TopFormula = F:SimpleFormula _ ";"_ { formulas.setTopFormula(F); return F;}
 
 SimpleFormula = P:Disjunction _ { var f = formulas.unnamedMinFixedPoint(P); return f; }
 
+SimplePhiFormula = P:PhiDisjunction _ {return P;}
+
 FixedPoint = _ V:Variable _ [mM][aA][xX] "=" _ P:Disjunction { return formulas.newMaxFixedPoint(V, P); }
 		   / _ V:Variable _ [mM][iI][nN] "=" _ P:Disjunction { return formulas.newMinFixedPoint(V, P); }
+           // / _ V:Variable _ [mM][aA][xX] "=" _ Pd:PhiDisjunction { return formulas.newMaxFixedPoint(V, Pd); }
+           // / _ V:Variable _ [mM][iI][nN] "=" _ Pd:PhiDisjunction { return formulas.newMinFixedPoint(V, Pd); }
+           
 
 Disjunction = P:Conjunction Whitespace _ "or" Whitespace _ Q:Disjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
 			/ P:Conjunction { return P; }
@@ -31,11 +36,36 @@ Disjunction = P:Conjunction Whitespace _ "or" Whitespace _ Q:Disjunction { retur
 Conjunction = M:Modal Whitespace _ "and" Whitespace _ P:Conjunction { return P instanceof hml.ConjFormula ? formulas.newConj([M].concat(P.subFormulas)) : formulas.newConj([M, P]); }
 			/ M:Modal { return M; }
 
-Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:Modal { return formulas.newWeakForAll(AM, F); }
-	  / _ "<" _ "<" _ AM:ActionList _ ">" _ ">" _ F:Modal { return formulas.newWeakExists(AM, F); }
-      / _ "[" _ AM:ActionList _ "]" _ F:Modal { return formulas.newStrongForAll(AM, F); }
-	  / _ "<" _ AM:ActionList _ ">" _ F:Modal { return formulas.newStrongExists(AM, F); }
+PhiDisjunction = P:PhiConjunction Whitespace _ "or" Whitespace _ Q:PhiDisjunction { return Q instanceof hml.DisjFormula ? formulas.newDisj([P].concat(Q.subFormulas)) : formulas.newDisj([P, Q]); }
+			/ P:PhiConjunction { return P; }
+
+PhiConjunction = Pt:PhiProbTerm Whitespace _ "and" Whitespace _ P:PhiConjunction { return P instanceof hml.ConjFormula ? formulas.newConj([Pt].concat(P.subFormulas)) : formulas.newConj([Pt, P]); }
+			/ Pt:PhiProbTerm { return Pt; }
+
+Modal = _ "[" _ "[" _ AM:ActionList _ "]" _ "]" _ F:SimplePhiFormula { return formulas.newWeakForAll(AM, F); }
+	  / _ "<" _ "<" _ AM:ActionList _ ">" _ ">" _ F:SimplePhiFormula { return formulas.newWeakExists(AM, F); }
+      / _ "[" _ AM:ActionList _ "]" _ F:SimplePhiFormula { return formulas.newStrongForAll(AM, F); }
+	  / _ "<" _ AM:ActionList _ ">" _ F:SimplePhiFormula { return formulas.newStrongExists(AM, F); }
 	  / Unary
+
+
+// Additions
+PhiProbTerm
+    = R:Relational_op P:Probability _ S:Disjunction {return formulas.newDiamondFormula(R,P,S);}
+	/ PhiUnary 
+
+PhiUnary "term"
+	= PhiParenFormula
+	/ _ "tt" { return formulas.newTrue(); }
+	// = _ "tt" { return formulas.newTrue(); }
+	/ _ "ff" { return formulas.newFalse(); }
+	/ _ "T" { return formulas.newTrue(); }
+	/ _ "F" { return formulas.newFalse(); }
+	// / PhiParenFormula
+
+PhiParenFormula
+	= _ "(" _ F:PhiDisjunction _ ")" { return F; }
+// ----
 
 //Order important!
 Unary "term"
@@ -59,11 +89,11 @@ ActionList = A:Action _ "," _ AM:ActionList { return AM.add(A); }
 		   / A:Action { return new hml.SingleActionMatcher(A); }
 		   / "-" { return new hml.AllActionMatcher(); }
 
+/**** Utiliy Section ****/ 
 Action "action"
     = ['] label:Label { return new ccs.Action(label, true); }
     / label:Label { return new ccs.Action(label, false); }
 
-//Valid name for actions
 Label "label"
     = first:[a-z] rest:IdentifierRestSym* { return strFirstAndRest(first, rest); }
 
@@ -78,3 +108,20 @@ _ = (Whitespace / Newline)* Comment _
 
 Newline "newline"
     = "\r\n" / "\n" / "\r"
+
+Integer
+    = I:[0-9]+ { return formulas.newInteger(I); }
+
+Diamond 
+    = "<>"
+
+Probability
+    = N:Integer"/"D:Integer { return formulas.newProbability(N, D) }
+    / "0"? "." N:[0-9] { const digits = String(N).length; return formulas.newProbability(parseInt(N), Math.pow(10, digits)); } 
+    / "1" { return formulas.newProbability(1, 1); }
+    / "0" { return formulas.newProbability(0, 1); }
+
+Relational_op 
+    = S:">=" { return formulas.newRelationalOp(S); }
+    / S:">" { return formulas.newRelationalOp(S); }
+

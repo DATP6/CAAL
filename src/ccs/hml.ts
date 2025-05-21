@@ -1,6 +1,8 @@
 /// <reference path="../../lib/util.d.ts" />
 /// <reference path="ccs.ts" />
 
+// import { TupleType } from 'typescript';
+
 module HML {
     import ccs = CCS;
     import DGMod = DependencyGraph;
@@ -28,6 +30,41 @@ module HML {
         dispatchMinFixedPointFormula(formula: MinFixedPointFormula): T;
         dispatchMaxFixedPointFormula(formula: MaxFixedPointFormula): T;
         dispatchVariableFormula(formula: VariableFormula): T;
+        dispatchDiamondFormula(formula: DiamondFormula): T;
+    }
+
+    export enum RelationOp {
+        Greater = '>',
+        GreaterEqual = '>='
+    }
+
+    export class Fraction {
+        constructor(
+            public numerator: number,
+            public denominator: number
+        ) {}
+
+        toString(): string {
+            return `${this.numerator}/${this.denominator}`;
+        }
+
+        reverse(): Fraction {
+            return new Fraction(this.denominator - this.numerator, this.denominator);
+        }
+
+        compare(op: RelationOp, other: Fraction): boolean {
+            const numThis = this.numerator * other.denominator;
+            const numOther = other.numerator * this.denominator;
+
+            switch (op) {
+                case RelationOp.Greater:
+                    return numThis > numOther;
+                case RelationOp.GreaterEqual:
+                    return numThis >= numOther;
+            }
+
+            throw new Error('Unknown relational operator');
+        }
     }
 
     export class DisjFormula implements Formula {
@@ -207,6 +244,36 @@ module HML {
         }
     }
 
+    export class DiamondFormula implements Formula {
+        constructor(
+            public relational_operator: RelationOp,
+            public probability: Fraction,
+            public subformula: Formula
+        ) {}
+
+        dispatchOn<T>(dispatcher: FormulaDispatchHandler<T>): T {
+            return dispatcher.dispatchDiamondFormula(this);
+        }
+
+        toString() {
+            return (
+                '<>' + this.relational_operator.toString() + this.probability.toString() + this.subformula.toString()
+            );
+        }
+
+        get id(): string {
+            return this.toString();
+        }
+
+        get probabilityTerm(): [string, string] {
+            return [this.probability.toString(), this.relational_operator.toString()];
+        }
+
+        get probabilisticOperator(): RelationOp {
+            return this.relational_operator;
+        }
+    }
+
     function compareStrings(strA, strB) {
         return strA.toString().localeCompare(strB.toString());
     }
@@ -246,10 +313,37 @@ module HML {
             return this.falseFormula;
         }
 
+        newDiamondFormula(operator: RelationOp, probability: Fraction, subformula: Formula) {
+            let formula = new DiamondFormula(operator, probability, subformula);
+            return formula;
+        }
+
         private newExistOrForAll(structuralPrefix, constructor, actionMatcher, subFormula) {
             var uniqActionMatcher = this.actionMatchers.getOrAdd(actionMatcher);
             var formula = new constructor(uniqActionMatcher, subFormula);
             return (this.formulas[formula.id] = formula);
+        }
+
+        newProbability(numerator: number, denominator: number) {
+            return new Fraction(numerator, denominator);
+        }
+
+        newInteger(integerToken: string[]) {
+            let s = integerToken.join('');
+            return Number(s);
+        }
+
+        newRelationalOp(op) {
+            switch (op) {
+                case '>':
+                    return RelationOp.Greater;
+                    break;
+                case '>=':
+                    return RelationOp.GreaterEqual;
+                    break;
+                default:
+                    throw `'${op}' as an operator is not defined.`;
+            }
         }
 
         newStrongExists(actionMatcher: ActionMatcher, subFormula: Formula) {
@@ -472,6 +566,10 @@ module HML {
 
         dispatchVariableFormula(formula: VariableFormula): boolean {
             return this.formulaSet.formulaByName(formula.variable).dispatchOn(this);
+        }
+
+        dispatchDiamondFormula(formula: DiamondFormula): boolean {
+            return formula.subformula.dispatchOn(this);
         }
     }
 
