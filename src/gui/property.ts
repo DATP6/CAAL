@@ -723,9 +723,8 @@ module Property {
             return this.firstProcess + ' ' + symbol + this.getProbSubscript() + ' ' + this.secondProcess;
         }
 
-        // Must be identical to the actual class name or it can't reconstruct the property
         public getClassName(): string {
-            return 'ProbabilisticBisimulation';
+            return 'Probabilistic Bisimulation';
         }
 
         protected getWorkerHandler(): string {
