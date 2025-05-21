@@ -1197,7 +1197,7 @@ module Equivalence {
 
             const next = () => {
                 const he = support.ref;
-                while (index < he.length - 1) {
+                while (index < he.length) {
                     const targetIndex = he[index];
                     if (!targetIndex) {
                         throw new Error('Distribution is pointing at undefined target');
