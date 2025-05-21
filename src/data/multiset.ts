@@ -13,10 +13,6 @@ module MultiSetUtil {
             entries.forEach((e) => this.add(e));
         }
 
-        public get(key: T): number {
-            return this._map.get(key);
-        }
-
         public getEntries(): Entry<T>[] {
             return Array.from(this._map.entries()).map(([key, val]) => ({ proc: key, weight: val }));
         }
@@ -62,7 +58,7 @@ module MultiSetUtil {
          * This means that `a.normalized()[x] = a[x]/gcd(a.weights)`.
          */
         public normalized(): MultiSet<T> {
-            const d = math.gcd(0, ...this.getEntries().map((e) => e.weight));
+            const d = math.gcd(...this.getEntries().map((e) => e.weight));
             return this.map((e) => ({ ...e, weight: e.weight / d }));
         }
 
