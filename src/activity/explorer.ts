@@ -469,7 +469,7 @@ module Activity {
             }
         }
 
-        private onTransitionTableRowHover(entering: boolean, event): void {
+        private onTransitionTableRowHover(entering: boolean, event: Event): void {
             this.uiGraph.clearHighlights();
 
             if (entering) {

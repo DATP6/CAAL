@@ -17,6 +17,7 @@ module Activity {
         private fullscreen: Fullscreen;
         private tooltip: ProcessTooltip;
         private timeout: any;
+        private $table: any;
         private $leftProcessList: JQuery;
         private $rightProcessList: JQuery;
         private $ccsGameTypes: JQuery;
@@ -51,6 +52,7 @@ module Activity {
             this.tooltip = new ProcessTooltip($('#game-status'));
             new DataTooltip($('#game-log')); // no need to save instance
 
+            this.$table = $('#game-transitions-table').find('tbody');
             this.$leftProcessList = $('#game-left-process');
             this.$rightProcessList = $('#game-right-process');
             this.$ccsGameTypes = $('#game-ccs-type');
@@ -100,6 +102,10 @@ module Activity {
                 this.toggleFreeze(this.rightGraph, !this.$rightFreeze.data('frozen'), $(e.currentTarget))
             );
 
+            this.$table
+                .on('mouseenter', 'tr', this.onTransitionTableRowHover.bind(this, true))
+                .on('mouseleave', 'tr', this.onTransitionTableRowHover.bind(this, false));
+
             // Manually remove focus from depth input when the canvas is clicked.
             $(this.leftCanvas).on('click', () => {
                 if (this.$leftDepth.is(':focus')) this.$leftDepth.blur();
@@ -135,6 +141,17 @@ module Activity {
             } else {
                 this.$leftZoom.on('input', () => this.resize(this.$leftZoom.val(), null));
                 this.$rightZoom.on('input', () => this.resize(null, this.$rightZoom.val()));
+            }
+        }
+
+        private onTransitionTableRowHover(entering: boolean, event: Event): void {
+            this.leftGraph.clearHighlights();
+            this.rightGraph.clearHighlights();
+
+            if (entering) {
+                var targetId = $(event.currentTarget).data('targetId');
+                this.leftGraph.highlightToNode(targetId);
+                this.rightGraph.highlightToNode(targetId);
             }
         }
 
@@ -317,7 +334,7 @@ module Activity {
             const inputMode = this.project.getInputMode()
             if (inputMode === InputMode.CCS) {
                 options.type = this.$ccsGameTypes.val();
-            } else if (inputMode === InputMode.TCCS){
+            } else if (inputMode === InputMode.TCCS) {
                 options.type = this.$tccsGameTypes.find('option:selected').val();
                 options.time = this.$tccsGameTypes.find('option:selected').data('time');
             } else {
@@ -686,7 +703,7 @@ module Activity {
             this.currentRight = currentRight;
         }
 
-        public getMarking(node: number): number{
+        public getMarking(node: number): number {
             return this.marking.getMarking(node)
         }
 
@@ -1607,7 +1624,7 @@ module Activity {
                 const $actionTd = $("<td id='action'></td>"); // empty action td
                 // Next configutation (process, process):
                 const $targetTd = $("<td id='target'></td>").append(this.labelFromId(choice.left), " ", this.labelFromId(choice.right));
-                
+
                 // onClick
                 $(row).on('click', (event) => {
                     this.clickSupportPairChoice(choice, game);
