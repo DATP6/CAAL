@@ -1,15 +1,14 @@
 /// <reference path="activity.ts" />
 
 module Activity {
-	
-	export class ActivityHandler {
-		private currentActivity: Activity.Activity;
+    export class ActivityHandler {
+        private currentActivity: Activity.Activity;
         private activities: Activity.Activity[] = [];
 
         public addActivity(name: string, activity: Activity.Activity): void {
             this.activities[name] = activity;
 
-            activity.getButton().on("click", () => {
+            activity.getButton().on('click', () => {
                 this.selectActivity(name);
             });
 
@@ -23,15 +22,14 @@ module Activity {
                 if (this.currentActivity) {
                     this.currentActivity.onHide();
                     this.currentActivity.getContainer().hide();
-                    this.currentActivity.getActiveToggle().removeClass("active");
+                    this.currentActivity.getActiveToggle().removeClass('active');
                 }
 
                 this.currentActivity = activity;
                 this.currentActivity.getContainer().show();
-                this.currentActivity.getActiveToggle().addClass("active");
+                this.currentActivity.getActiveToggle().addClass('active');
                 activity.onShow(configuration);
             }
         }
-	}
-
+    }
 }

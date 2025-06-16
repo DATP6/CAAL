@@ -3,10 +3,10 @@
 /// <reference path="../../activity/tooltip.ts" />
 
 module GUI.Widget {
-    export type htmlWrapper = {tag : string; attr? : [{name: string; value: string}];}
-    export type GameLogObjectRow = {text : string; htmlWrapper? : htmlWrapper; tag? : string, attr? : any};
+    export type htmlWrapper = { tag: string; attr?: [{ name: string; value: string }] };
+    export type GameLogObjectRow = { text: string; htmlWrapper?: htmlWrapper; tag?: string; attr?: any };
     export class GameLog {
-        private log = document.createElement("div");
+        private log = document.createElement('div');
         private round = 0;
         /*
             Things to consider
@@ -22,10 +22,10 @@ module GUI.Widget {
         */
         constructor() {
             var $log = $(this.log);
-            $log.attr("id", "hml-game-log");
+            $log.attr('id', 'hml-game-log');
         }
 
-        public getRootElement() : HTMLElement {
+        public getRootElement(): HTMLElement {
             return this.log;
         }
 
@@ -37,19 +37,20 @@ module GUI.Widget {
 
         public deleteTempRows() {
             var $log = $(this.log);
-            var $temprows = $log.find("#temprow");
-            $temprows.remove()
+            var $temprows = $log.find('#temprow');
+            $temprows.remove();
         }
 
         private newRound() {
             var $log = $(this.log);
-            var $round = $("<h4></h4>").append("Round " + (++this.round).toString()).addClass("hml-game-round");
-
+            var $round = $('<h4></h4>')
+                .append('Round ' + (++this.round).toString())
+                .addClass('hml-game-round');
 
             $log.append($round);
         }
 
-        public printToGameLog(gameLogObject : GameLogObject) : void {
+        public printToGameLog(gameLogObject: GameLogObject): void {
             var $log = $(this.log),
                 logStr = this.render(gameLogObject);
 
@@ -61,9 +62,9 @@ module GUI.Widget {
             // $log.scrollTop($log[0].scrollHeight);
         }
 
-        private render(gameLogObject : GameLogObject) : string {
-            var result : string = gameLogObject.getTemplate();
-            var context : any = gameLogObject.getContext();
+        private render(gameLogObject: GameLogObject): string {
+            var result: string = gameLogObject.getTemplate();
+            var context: any = gameLogObject.getContext();
 
             context.forEach((element, index) => {
                 var current = element.text;
@@ -75,9 +76,9 @@ module GUI.Widget {
                         current.attr(element.attr[j].name, element.attr[j].value);
                     }
 
-                    result = result.replace("{" + index + "}", current[0].outerHTML);
+                    result = result.replace('{' + index + '}', current[0].outerHTML);
                 } else {
-                    result = result.replace("{" + index + "}", current);
+                    result = result.replace('{' + index + '}', current);
                 }
             });
 
@@ -85,8 +86,8 @@ module GUI.Widget {
             if (wrapper) {
                 var $temp = $(wrapper.tag);
 
-                if (wrapper.attr){
-                    wrapper.attr.forEach(elem => {
+                if (wrapper.attr) {
+                    wrapper.attr.forEach((elem) => {
                         $temp.attr(elem.name, elem.value);
                     });
                 }
@@ -98,22 +99,24 @@ module GUI.Widget {
         }
     }
 
-
-    const enum GameLogType {intro, play};
+    const enum GameLogType {
+        intro,
+        play
+    }
     export class GameLogObject {
-        private template : string;
-        private context : GameLogObjectRow[];
-        private wrapper : htmlWrapper;
-        private isNewRound : boolean;
+        private template: string;
+        private context: GameLogObjectRow[];
+        private wrapper: htmlWrapper;
+        private isNewRound: boolean;
 
-        constructor(private graph : CCS.Graph) {
-            this.template = "";
+        constructor(private graph: CCS.Graph) {
+            this.template = '';
             this.context = [];
             this.wrapper = null;
             this.isNewRound = false;
         }
 
-        public addLabel (row : GameLogObjectRow, index? : number) : void {
+        public addLabel(row: GameLogObjectRow, index?: number): void {
             if (index) {
                 this.context.splice(index, 0, row);
             } else {
@@ -121,42 +124,41 @@ module GUI.Widget {
             }
         }
 
-        public setNewRound(isNewRound : boolean) : void {
+        public setNewRound(isNewRound: boolean): void {
             this.isNewRound = isNewRound;
         }
 
-        public getNewRound() : boolean {
+        public getNewRound(): boolean {
             return this.isNewRound;
         }
 
-        public addWrapper (wrapper : htmlWrapper) : void {
+        public addWrapper(wrapper: htmlWrapper): void {
             this.wrapper = wrapper;
         }
 
-        public getWrapper() : htmlWrapper {
+        public getWrapper(): htmlWrapper {
             return this.wrapper;
         }
 
-        public setTemplate(template : string) {
+        public setTemplate(template: string) {
             this.template = template;
         }
 
-        public getTemplate() : string {
+        public getTemplate(): string {
             return this.template;
         }
 
-        public getContext() : GameLogObjectRow[] {
+        public getContext(): GameLogObjectRow[] {
             return this.context;
         }
 
-        public labelForProcess(process : CCS.Process) : string {
+        public labelForProcess(process: CCS.Process): string {
             return this.graph.getLabel(process);
         }
 
-        public labelForFormula(formula : HML.Formula) : string {
+        public labelForFormula(formula: HML.Formula): string {
             var hmlNotationVisitor = new Traverse.HMLNotationVisitor(false, true, true);
             return hmlNotationVisitor.visit(formula);
         }
     }
 }
-

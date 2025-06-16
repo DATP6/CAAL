@@ -2,8 +2,9 @@
 /// <reference path="hml.ts" />
 /// <reference path="depgraph.ts" />
 
-module Equivalence {
+declare var yalps: any;
 
+module Equivalence {
     import ccs = CCS;
     import hml = HML;
     import dg = DependencyGraph;
@@ -16,7 +17,6 @@ module Equivalence {
         bisimulation collapse
     */
     export class BisimulationDG implements dg.DependencyGraph, dg.PlayableDependencyGraph {
-
         /** The dependency graph is constructed such a minimum fixed point
             of 1 indicates the processes diverge. Since bisimulation is
             maximal fixed-point, the result marking should be
@@ -28,14 +28,17 @@ module Equivalence {
         private leftPairs = {}; // leftPairs[P.id][Q.id] is a cache for solved process pairs.
         private isFullyConstructed = false;
 
-        constructor(private attackSuccGen : ccs.SuccessorGenerator,
-                    private defendSuccGen : ccs.SuccessorGenerator,
-                    leftNode : ccs.ProcessId, rightNode : ccs.ProcessId) {
+        constructor(
+            private attackSuccGen: ccs.SuccessorGenerator,
+            private defendSuccGen: ccs.SuccessorGenerator,
+            leftNode: ccs.ProcessId,
+            rightNode: ccs.ProcessId
+        ) {
             this.constructData[0] = [0, leftNode, rightNode];
             this.nextIdx = 1;
         }
 
-        getHyperEdges(identifier : dg.DgNodeId) : dg.Hyperedge[] {
+        getHyperEdges(identifier: dg.DgNodeId): dg.Hyperedge[] {
             var type, result;
             //Have we already built this? Then return copy of the edges.
             if (this.nodes[identifier]) {
@@ -46,31 +49,34 @@ module Equivalence {
             return dg.copyHyperEdges(result);
         }
 
-        private constructNode(identifier : dg.DgNodeId) {
+        private constructNode(identifier: dg.DgNodeId) {
             var result,
-            data = this.constructData[identifier],
-            type = data[0];
-            if (type === 0) { //Is it a pair?
+                data = this.constructData[identifier],
+                type = data[0];
+            if (type === 0) {
+                //Is it a pair?
                 result = this.nodes[identifier] = this.getProcessPairStates(data[1], data[2]);
-            } else if (type === 1) { // The left action and destination is fixed?
+            } else if (type === 1) {
+                // The left action and destination is fixed?
                 result = this.nodes[identifier] = this.getNodeForLeftTransition(data);
-            } else if (type === 2) { // The right action and destination is fixed?
+            } else if (type === 2) {
+                // The right action and destination is fixed?
                 result = this.nodes[identifier] = this.getNodeForRightTransition(data);
             }
             return result;
         }
 
-        getAllHyperEdges() : [dg.DgNodeId, dg.Hyperedge][] {
+        getAllHyperEdges(): [dg.DgNodeId, dg.Hyperedge][] {
             if (!this.isFullyConstructed) {
                 this.isFullyConstructed = true;
                 //All nodes have ids in order of creation, thus there are no gaps.
-                for (var i=0; i < this.nextIdx; i++) {
+                for (var i = 0; i < this.nextIdx; i++) {
                     this.constructNode(i);
                 }
             }
             var result = [];
             result.length = this.nextIdx;
-            for (var i=0; i < this.nextIdx; i++) {
+            for (var i = 0; i < this.nextIdx; i++) {
                 result[i] = [i, dg.copyHyperEdges(this.nodes[i])];
             }
             return result;
@@ -78,13 +84,13 @@ module Equivalence {
 
         private getNodeForLeftTransition(data) {
             var action = data[1],
-            toLeftId = data[2],
-            fromRightId = data[3],
-            result = [];
+                toLeftId = data[2],
+                fromRightId = data[3],
+                result = [];
             // for (s, fromRightId), s ----action---> toLeftId.
             // fromRightId must be able to match.
             var rightTransitions = this.defendSuccGen.getSuccessors(fromRightId);
-            rightTransitions.forEach(rightTransition => {
+            rightTransitions.forEach((rightTransition) => {
                 var existing, toRightId;
                 //Same action - possible candidate.
                 if (rightTransition.action.equals(action)) {
@@ -97,11 +103,11 @@ module Equivalence {
 
         private getNodeForRightTransition(data) {
             var action = data[1],
-            toRightId = data[2],
-            fromLeftId = data[3],
-            result = [];
+                toRightId = data[2],
+                fromLeftId = data[3],
+                result = [];
             var leftTransitions = this.defendSuccGen.getSuccessors(fromLeftId);
-            leftTransitions.forEach(leftTransition => {
+            leftTransitions.forEach((leftTransition) => {
                 var existing, toLeftId;
                 if (leftTransition.action.equals(action)) {
                     toLeftId = leftTransition.targetProcess.id;
@@ -111,8 +117,8 @@ module Equivalence {
             return [result];
         }
 
-        private getOrCreatePairNode(leftId : ccs.ProcessId, rightId : ccs.ProcessId) : dg.DgNodeId {
-            var result : dg.DgNodeId;
+        private getOrCreatePairNode(leftId: ccs.ProcessId, rightId: ccs.ProcessId): dg.DgNodeId {
+            var result: dg.DgNodeId;
             var rightIds = this.leftPairs[leftId];
             if (rightIds) {
                 result = rightIds[rightId];
@@ -123,23 +129,33 @@ module Equivalence {
             //Build the node.
             result = this.nextIdx++;
             if (!rightIds) this.leftPairs[leftId] = rightIds = {};
-            rightIds[rightId] = result
+            rightIds[rightId] = result;
             this.constructData[result] = [0, leftId, rightId];
             return result;
         }
 
-        private getProcessPairStates(leftProcessId : ccs.ProcessId, rightProcessId : ccs.ProcessId) : dg.Hyperedge[] {
-            var hyperedges : dg.Hyperedge[] = [];
+        private getProcessPairStates(leftProcessId: ccs.ProcessId, rightProcessId: ccs.ProcessId): dg.Hyperedge[] {
+            var hyperedges: dg.Hyperedge[] = [];
             var leftTransitions = this.attackSuccGen.getSuccessors(leftProcessId);
             var rightTransitions = this.attackSuccGen.getSuccessors(rightProcessId);
-            leftTransitions.forEach(leftTransition => {
+            leftTransitions.forEach((leftTransition) => {
                 var newNodeIdx = this.nextIdx++;
-                this.constructData[newNodeIdx] = [1, leftTransition.action, leftTransition.targetProcess.id, rightProcessId];
+                this.constructData[newNodeIdx] = [
+                    1,
+                    leftTransition.action,
+                    leftTransition.targetProcess.id,
+                    rightProcessId
+                ];
                 hyperedges.push([newNodeIdx]);
             });
-            rightTransitions.forEach(rightTransition => {
+            rightTransitions.forEach((rightTransition) => {
                 var newNodeIdx = this.nextIdx++;
-                this.constructData[newNodeIdx] = [2, rightTransition.action, rightTransition.targetProcess.id, leftProcessId];
+                this.constructData[newNodeIdx] = [
+                    2,
+                    rightTransition.action,
+                    rightTransition.targetProcess.id,
+                    leftProcessId
+                ];
                 hyperedges.push([newNodeIdx]);
             });
             return hyperedges;
@@ -149,14 +165,13 @@ module Equivalence {
             Returns information about the attackers options P -- alpha --> Q that the defender than have to match.
             returns: the action, alpha, leading to Q, Q itself, the next DG node, type of move (0,1,2).
         */
-        public getAttackerOptions(dgNodeId : dg.DgNodeId) : [CCS.Action, CCS.Process, dg.DgNodeId, number][] {
-            if (this.constructData[dgNodeId][0] !== 0)
-                throw "Bad node for attacker options";
-            
+        public getAttackerOptions(dgNodeId: dg.DgNodeId): [CCS.Action, CCS.Process, dg.DgNodeId, number][] {
+            if (this.constructData[dgNodeId][0] !== 0) throw 'Bad node for attacker options';
+
             var hyperedges = this.getHyperEdges(dgNodeId);
             var result = [];
-            
-            hyperedges.forEach(hyperedge => {
+
+            hyperedges.forEach((hyperedge) => {
                 //The dg nodes are constructed such that each hyperedge only have one target node.
                 //therefore no need to loop over the hyperedge.
                 var targetNode = hyperedge[0];
@@ -164,7 +179,7 @@ module Equivalence {
                 var action = data[1];
                 var targetProcess = this.attackSuccGen.getProcessById(data[2]);
                 var move = data[0];
-                
+
                 result.push({
                     action: action,
                     targetProcess: targetProcess,
@@ -172,39 +187,38 @@ module Equivalence {
                     move: move
                 });
             });
-            
+
             return result;
         }
-        
+
         /*
             Similar to getAttackerOptions, but returns instead the process the other side
             matched with and the resulting dependency graph node
         */
-        public getDefenderOptions(dgNodeId : dg.DgNodeId) : [CCS.Process, dg.DgNodeId][] {
-            if (this.constructData[dgNodeId][0] === 0)
-                throw "Bad node for defender options";
-            
+        public getDefenderOptions(dgNodeId: dg.DgNodeId): [CCS.Process, dg.DgNodeId][] {
+            if (this.constructData[dgNodeId][0] === 0) throw 'Bad node for defender options';
+
             var hyperedge = this.getHyperEdges(dgNodeId)[0];
             var result = [];
             var tcpi = this.constructData[dgNodeId][0] === 1 ? 2 : 1;
-            
-            hyperedge.forEach(targetNode => {
+
+            hyperedge.forEach((targetNode) => {
                 var data = this.constructData[targetNode];
                 var targetProcess = this.defendSuccGen.getProcessById(data[tcpi]);
-                
+
                 result.push({
                     targetProcess: targetProcess,
                     nextNode: targetNode
                 });
             });
-            
+
             return result;
         }
 
         /*
             Create a node for all pairs of reachable processes
         */
-        addReachablePairs(fromProcess : ccs.ProcessId) : void {
+        addReachablePairs(fromProcess: ccs.ProcessId): void {
             var reachableProcessIds = [];
             var count = 0,
                 maxCount = 666;
@@ -212,8 +226,8 @@ module Equivalence {
             var iterator = ccs.reachableProcessIterator(fromProcess, this.attackSuccGen);
             while (iterator.hasNext()) {
                 if (count++ > maxCount) {
-                    var error = new Error("Too many process pairs");
-                    error.name = "CollapseTooLarge";
+                    var error = new Error('Too many process pairs');
+                    error.name = 'CollapseTooLarge';
                     throw error;
                 }
                 reachableProcessIds.push(iterator.next());
@@ -228,17 +242,17 @@ module Equivalence {
                 }
             }
         }
-        
-        getBisimulationCollapse(marking : dg.LevelMarking, graph : ccs.Graph) : Traverse.Collapse {
+
+        getBisimulationCollapse(marking: dg.LevelMarking, graph: ccs.Graph): Traverse.Collapse {
             //Implementation of Union-Find algorithm.
             //Since Bisimulation is an equivalence relation
             //this datastructure/algorithm is a good match.
             var sets = Object.create(null);
 
             function singleton(id) {
-                var o : any = {val: id, rank: 0};
+                var o: any = { val: id, rank: 0 };
                 o.parent = o;
-                sets[id]= o;
+                sets[id] = o;
             }
 
             function findRootInternal(set) {
@@ -254,7 +268,7 @@ module Equivalence {
 
             function union(pId, qId) {
                 var pRoot = findRoot(pId),
-                qRoot = findRoot(qId);
+                    qRoot = findRoot(qId);
                 if (pRoot === qRoot) return;
                 if (pRoot.rank < qRoot.rank) pRoot.parent = qRoot;
                 else if (pRoot.rank > qRoot.rank) qRoot.parent = pRoot;
@@ -265,7 +279,7 @@ module Equivalence {
             }
 
             //Apply union find algorithm
-            Object.keys(this.constructData).forEach(id => {
+            Object.keys(this.constructData).forEach((id) => {
                 var pId, qId, pair;
                 pair = this.constructData[id];
                 if (pair[0] !== 0) return;
@@ -281,7 +295,7 @@ module Equivalence {
 
             //Map each represenative id to the array of equivalent processes
             var collapses = {};
-            Object.keys(sets).forEach(procId => {
+            Object.keys(sets).forEach((procId) => {
                 var reprId = findRoot(procId).val,
                     process = graph.processById(procId);
                 (collapses[reprId] = collapses[reprId] || []).push(process);
@@ -290,10 +304,10 @@ module Equivalence {
             //For each array create a collapse and map each proc id to its
             //corresponding collapse
             var proc2collapse = {};
-            Object.keys(collapses).forEach(reprId => {
+            Object.keys(collapses).forEach((reprId) => {
                 var collapsedProces = collapses[reprId];
                 var collapse = graph.newCollapsedProcess(collapses[reprId]);
-                collapsedProces.forEach(proc => {
+                collapsedProces.forEach((proc) => {
                     proc2collapse[proc.id] = collapse;
                 });
                 //Add self collapse
@@ -301,22 +315,22 @@ module Equivalence {
             });
 
             return {
-                getRepresentative: function(id) : ccs.CollapsedProcess {
+                getRepresentative: function (id): ccs.CollapsedProcess {
                     return proc2collapse[id];
                 }
-            }
+            };
         }
 
-        findDistinguishingFormula(marking : dg.LevelMarking, isWeak : boolean) : hml.Formula {
+        findDistinguishingFormula(marking: dg.LevelMarking, isWeak: boolean): hml.Formula {
             var that = this,
                 formulaSet = new hml.FormulaSet(),
                 trace;
-            if (marking.getMarking(0) !== marking.ONE) throw "Error: Processes are bisimilar";
+            if (marking.getMarking(0) !== marking.ONE) throw 'Error: Processes are bisimilar';
 
-            function selectMinimaxLevel(node : dg.DgNodeId) {
+            function selectMinimaxLevel(node: dg.DgNodeId) {
                 var hyperEdges = that.getHyperEdges(node),
-                bestHyperEdge : dg.Hyperedge,
-                bestNode : dg.DgNodeId;
+                    bestHyperEdge: dg.Hyperedge,
+                    bestNode: dg.DgNodeId;
 
                 //Why JavaScript... why????
                 function wrapMax(a, b) {
@@ -326,7 +340,7 @@ module Equivalence {
                 if (hyperEdges.length === 0) return null;
                 var bestHyperEdge = ArrayUtil.selectBest(hyperEdges, (tNodesLeft, tNodesRight) => {
                     var maxLevelLeft = tNodesLeft.map(marking.getLevel).reduce(wrapMax, 1),
-                    maxLevelRight = tNodesRight.map(marking.getLevel).reduce(wrapMax, 1);
+                        maxLevelRight = tNodesRight.map(marking.getLevel).reduce(wrapMax, 1);
                     if (maxLevelLeft < maxLevelRight) return true;
                     if (maxLevelLeft > maxLevelRight) return false;
                     return tNodesLeft.length < tNodesRight.length;
@@ -343,24 +357,24 @@ module Equivalence {
 
             //Remove terms in con/dis-junctions
             var muDG = new dg.MuCalculusDG(this.attackSuccGen, this.defendSuccGen, formulaSet);
-            var minfpCalc = new dg.MinFixedPointCalculator(node => muDG.getHyperEdges(node));
+            var minfpCalc = new dg.MinFixedPointCalculator((node) => muDG.getHyperEdges(node));
 
-            function simplifyConjOrDisjunctions(processes : ccs.Process[], terms : hml.Formula[], mustSatisfy : boolean) {
+            function simplifyConjOrDisjunctions(processes: ccs.Process[], terms: hml.Formula[], mustSatisfy: boolean) {
                 if (terms.length < 2) return terms.slice();
                 var desiredMarking = mustSatisfy ? minfpCalc.ONE : minfpCalc.ZERO;
                 var table = Object.create(null);
-                
-                terms.forEach(t => {
-                    processes.forEach(p => {
+
+                terms.forEach((t) => {
+                    processes.forEach((p) => {
                         var node = new dg.MuCalculusNode(p, t, true);
                         minfpCalc.solve(node);
                         table[node.id] = minfpCalc.getMarking(node) === desiredMarking ? 1 : 0;
                     });
                 });
-               
+
                 function fulfilledProcesses(term) {
                     var result = [];
-                    processes.forEach(p => {
+                    processes.forEach((p) => {
                         var node = new dg.MuCalculusNode(p, term, true);
                         if (table[node.id] === 1) {
                             result.push(p);
@@ -370,8 +384,8 @@ module Equivalence {
                 }
 
                 function clearProcs(procs) {
-                    terms.forEach(t => {
-                        procs.forEach(p => {
+                    terms.forEach((t) => {
+                        procs.forEach((p) => {
                             var node = new dg.MuCalculusNode(p, t, true);
                             table[node.id] = 0;
                         });
@@ -382,9 +396,9 @@ module Equivalence {
                 var fulfilledProcs = 0;
                 function greedySelect() {
                     var fProcesses = terms.map(fulfilledProcesses);
-                    var scores = fProcesses.map(fprocs => fprocs.length);
+                    var scores = fProcesses.map((fprocs) => fprocs.length);
                     var bestTermIdx = 0;
-                    for (var i=1; i < terms.length; ++i) {
+                    for (var i = 1; i < terms.length; ++i) {
                         if (scores[i] > scores[bestTermIdx]) bestTermIdx = i;
                     }
                     resultTerms.push(terms[bestTermIdx]);
@@ -410,13 +424,13 @@ module Equivalence {
 
             var succGen = that.attackSuccGen;
 
-            function getTargetProcs(pairs, getRight : boolean) {
+            function getTargetProcs(pairs, getRight: boolean) {
                 var index = getRight ? 2 : 1;
-                var procIds = pairs.map(node => that.constructData[node][index]);
-                return procIds.map(pId => succGen.getProcessById(pId));
+                var procIds = pairs.map((node) => that.constructData[node][index]);
+                return procIds.map((pId) => succGen.getProcessById(pId));
             }
 
-            function formulaForBranch(node : dg.DgNodeId) : hml.Formula {
+            function formulaForBranch(node: dg.DgNodeId): hml.Formula {
                 var cData = that.constructData[node];
                 if (cData[0] === 0) {
                     var selectedNode = selectSuccessor(node);
@@ -445,7 +459,7 @@ module Equivalence {
                     }
                 }
             }
-            
+
             var formula = formulaForBranch(0);
             return new Traverse.HMLSimplifier().visitVariableFreeFormula(formula);
         }
@@ -458,14 +472,17 @@ module Equivalence {
         private leftPairs = {};
         private isFullyConstructed = false;
 
-        constructor(private attackSuccGen : ccs.SuccessorGenerator,
-                    private defendSuccGen : ccs.SuccessorGenerator,
-                    leftNode, rightNode) {
+        constructor(
+            private attackSuccGen: ccs.SuccessorGenerator,
+            private defendSuccGen: ccs.SuccessorGenerator,
+            leftNode,
+            rightNode
+        ) {
             this.constructData[0] = [0, leftNode, rightNode];
             this.nextIdx = 1;
         }
 
-        getHyperEdges(identifier : dg.DgNodeId) : dg.Hyperedge[] {
+        getHyperEdges(identifier: dg.DgNodeId): dg.Hyperedge[] {
             var type, result;
             //Have we already built this? Then return copy of the edges.
             if (this.nodes[identifier]) {
@@ -476,29 +493,31 @@ module Equivalence {
             return dg.copyHyperEdges(result);
         }
 
-        private constructNode(identifier : dg.DgNodeId) {
+        private constructNode(identifier: dg.DgNodeId) {
             var result,
-            data = this.constructData[identifier],
-            type = data[0];
-            if (type === 0) { //It it a pair?
+                data = this.constructData[identifier],
+                type = data[0];
+            if (type === 0) {
+                //It it a pair?
                 result = this.nodes[identifier] = this.getProcessPairStates(data[1], data[2]);
-            } else if (type === 1) { // The left action and destination is fixed?
+            } else if (type === 1) {
+                // The left action and destination is fixed?
                 result = this.nodes[identifier] = this.getNodeForLeftTransition(data);
             }
             return result;
         }
 
-        getAllHyperEdges() : [dg.DgNodeId, dg.Hyperedge][] {
+        getAllHyperEdges(): [dg.DgNodeId, dg.Hyperedge][] {
             if (!this.isFullyConstructed) {
                 this.isFullyConstructed = true;
                 //All nodes have ids in order of creation, thus there are no gaps.
-                for (var i=0; i < this.nextIdx; i++) {
+                for (var i = 0; i < this.nextIdx; i++) {
                     this.constructNode(i);
                 }
             }
             var result = [];
             result.length = this.nextIdx;
-            for (var i=0; i < this.nextIdx; i++) {
+            for (var i = 0; i < this.nextIdx; i++) {
                 result[i] = [i, dg.copyHyperEdges(this.nodes[i])];
             }
             return result;
@@ -506,13 +525,13 @@ module Equivalence {
 
         private getNodeForLeftTransition(data) {
             var action = data[1],
-            toLeftId = data[2],
-            fromRightId = data[3],
-            result = [];
+                toLeftId = data[2],
+                fromRightId = data[3],
+                result = [];
             // for (s, fromRightId), s ----action---> toLeftId.
             // fromRightId must be able to match.
             var rightTransitions = this.defendSuccGen.getSuccessors(fromRightId);
-            rightTransitions.forEach(rightTransition => {
+            rightTransitions.forEach((rightTransition) => {
                 var existing, toRightId;
                 //Same action - possible candidate.
                 if (rightTransition.action.equals(action)) {
@@ -528,7 +547,7 @@ module Equivalence {
                         //Build the node.
                         var newIndex = this.nextIdx++;
                         if (!rightIds) this.leftPairs[toLeftId] = rightIds = {};
-                        rightIds[toRightId] = newIndex
+                        rightIds[toRightId] = newIndex;
                         this.constructData[newIndex] = [0, toLeftId, toRightId];
                         result.push(newIndex);
                     }
@@ -537,31 +556,35 @@ module Equivalence {
             return [result];
         }
 
-        private getProcessPairStates(leftProcessId : ccs.ProcessId, rightProcessId : ccs.ProcessId) : dg.Hyperedge[] {
-            var hyperedges : dg.Hyperedge[] = [];
+        private getProcessPairStates(leftProcessId: ccs.ProcessId, rightProcessId: ccs.ProcessId): dg.Hyperedge[] {
+            var hyperedges: dg.Hyperedge[] = [];
             var leftTransitions = this.attackSuccGen.getSuccessors(leftProcessId);
-            leftTransitions.forEach(leftTransition => {
+            leftTransitions.forEach((leftTransition) => {
                 var newNodeIdx = this.nextIdx++;
-                this.constructData[newNodeIdx] = [1, leftTransition.action, leftTransition.targetProcess.id, rightProcessId];
+                this.constructData[newNodeIdx] = [
+                    1,
+                    leftTransition.action,
+                    leftTransition.targetProcess.id,
+                    rightProcessId
+                ];
                 hyperedges.push([newNodeIdx]);
             });
             return hyperedges;
         }
-        
-        public getAttackerOptions(dgNodeId : dg.DgNodeId) : [CCS.Action, CCS.Process, dg.DgNodeId, number][] {
-            if (this.constructData[dgNodeId][0] !== 0)
-                throw "Bad node for attacker options";
-            
+
+        public getAttackerOptions(dgNodeId: dg.DgNodeId): [CCS.Action, CCS.Process, dg.DgNodeId, number][] {
+            if (this.constructData[dgNodeId][0] !== 0) throw 'Bad node for attacker options';
+
             var hyperedges = this.getHyperEdges(dgNodeId);
             var result = [];
-            
-            hyperedges.forEach(hyperedge => {
+
+            hyperedges.forEach((hyperedge) => {
                 var targetNode = hyperedge[0];
                 var data = this.constructData[targetNode];
                 var action = data[1];
                 var targetProcess = this.attackSuccGen.getProcessById(data[2]);
                 var move = data[0];
-                
+
                 result.push({
                     action: action,
                     targetProcess: targetProcess,
@@ -569,68 +592,92 @@ module Equivalence {
                     move: move
                 });
             });
-            
+
             return result;
         }
-        
-        public getDefenderOptions(dgNodeId : dg.DgNodeId) : [CCS.Process, dg.DgNodeId][] {
-            if (this.constructData[dgNodeId][0] === 0)
-                throw "Bad node for defender options";
-            
+
+        public getDefenderOptions(dgNodeId: dg.DgNodeId): [CCS.Process, dg.DgNodeId][] {
+            if (this.constructData[dgNodeId][0] === 0) throw 'Bad node for defender options';
+
             var hyperedge = this.getHyperEdges(dgNodeId)[0];
             var result = [];
             var tcpi = this.constructData[dgNodeId][0] === 1 ? 2 : 1;
-            
-            hyperedge.forEach(targetNode => {
+
+            hyperedge.forEach((targetNode) => {
                 var data = this.constructData[targetNode];
                 var targetProcess = this.defendSuccGen.getProcessById(data[tcpi]);
-                
+
                 result.push({
                     targetProcess: targetProcess,
                     nextNode: targetNode
                 });
             });
-            
+
             return result;
         }
     }
-    
-    export function isBisimilar(attackSuccGen : ccs.SuccessorGenerator, defendSuccGen : ccs.SuccessorGenerator, leftProcessId, rightProcessId, graph?) {
+
+    export function isBisimilar(
+        attackSuccGen: ccs.SuccessorGenerator,
+        defendSuccGen: ccs.SuccessorGenerator,
+        leftProcessId,
+        rightProcessId,
+        graph?
+    ) {
         var bisimDG = new Equivalence.BisimulationDG(attackSuccGen, defendSuccGen, leftProcessId, rightProcessId),
-        marking = dg.liuSmolkaLocal2(0, bisimDG);
+            marking = dg.liuSmolkaLocal2(0, bisimDG);
         return marking.getMarking(0) === marking.ZERO;
     }
-    
-    export function isSimilar(attackSuccGen : ccs.SuccessorGenerator, defendSuccGen : ccs.SuccessorGenerator, leftProcessId, rightProcessId) {
+
+    export function isSimilar(
+        attackSuccGen: ccs.SuccessorGenerator,
+        defendSuccGen: ccs.SuccessorGenerator,
+        leftProcessId,
+        rightProcessId
+    ) {
         var simDG = new Equivalence.SimulationDG(attackSuccGen, defendSuccGen, leftProcessId, rightProcessId);
         var marking = dg.liuSmolkaLocal2(0, simDG);
         return marking.getMarking(0) === marking.ZERO;
     }
 
-    export function getBisimulationCollapse(attackSuccGen : ccs.SuccessorGenerator, defendSuccGen : ccs.SuccessorGenerator, leftProcessId, rightProcessId) : Traverse.Collapse {
-            var bisimDG = new Equivalence.BisimulationDG(attackSuccGen, defendSuccGen, leftProcessId, rightProcessId);
-            bisimDG.addReachablePairs(leftProcessId);
-            if (leftProcessId != rightProcessId) {
-                bisimDG.addReachablePairs(rightProcessId);
-            }
-            var marking = dg.solveDgGlobalLevel(bisimDG);
-            return bisimDG.getBisimulationCollapse(marking, attackSuccGen.getGraph());
+    export function getBisimulationCollapse(
+        attackSuccGen: ccs.SuccessorGenerator,
+        defendSuccGen: ccs.SuccessorGenerator,
+        leftProcessId,
+        rightProcessId
+    ): Traverse.Collapse {
+        var bisimDG = new Equivalence.BisimulationDG(attackSuccGen, defendSuccGen, leftProcessId, rightProcessId);
+        bisimDG.addReachablePairs(leftProcessId);
+        if (leftProcessId != rightProcessId) {
+            bisimDG.addReachablePairs(rightProcessId);
         }
+        var marking = dg.solveDgGlobalLevel(bisimDG);
+        return bisimDG.getBisimulationCollapse(marking, attackSuccGen.getGraph());
+    }
+
+    export function isProbabilisticBisimilar(succGen: ccs.SuccessorGenerator, leftProcessId, rightProcessId) {
+        var bisimDG = new Equivalence.ProbabilisticBisimDG(succGen, leftProcessId, rightProcessId),
+            marking = dg.liuSmolkaLazy(0, bisimDG);
+        return marking.getMarking(0) === marking.ZERO;
+    }
 
     export class TraceDG implements dg.DependencyGraph {
-
-        private nextIdx : number;
+        private nextIdx: number;
         private constructData = [];
         private nodes = [];
         private leftPairs = {};
         private isFullyConstructed = false;
-        
-        constructor(leftNode : ccs.ProcessId, rightNode : ccs.ProcessId, private attackSuccGen : ccs.SuccessorGenerator) {
+
+        constructor(
+            leftNode: ccs.ProcessId,
+            rightNode: ccs.ProcessId,
+            private attackSuccGen: ccs.SuccessorGenerator
+        ) {
             this.constructData[0] = [0, null, leftNode, [rightNode]];
             this.nextIdx = 1;
         }
 
-        public getHyperEdges(identifier : dg.DgNodeId) : dg.Hyperedge[] {
+        public getHyperEdges(identifier: dg.DgNodeId): dg.Hyperedge[] {
             var type, result;
             //Have we already built this? Then return copy of the edges.
             if (this.nodes[identifier]) {
@@ -641,47 +688,48 @@ module Equivalence {
 
             return dg.copyHyperEdges(result);
         }
-        
-        getAllHyperEdges() : [dg.DgNodeId, dg.Hyperedge][] {
+
+        getAllHyperEdges(): [dg.DgNodeId, dg.Hyperedge][] {
             if (!this.isFullyConstructed) {
                 this.isFullyConstructed = true;
                 //All nodes have ids in order of creation, thus there are no gaps.
-                for (var i=0; i < this.nextIdx; i++) {
+                for (var i = 0; i < this.nextIdx; i++) {
                     this.constructNode(i);
                 }
             }
             var result = [];
             result.length = this.nextIdx;
-            for (var i=0; i < this.nextIdx; i++) {
+            for (var i = 0; i < this.nextIdx; i++) {
                 result[i] = [i, dg.copyHyperEdges(this.nodes[i])];
             }
 
             return result;
         }
-        
-        private constructNode(identifier : dg.DgNodeId) {
+
+        private constructNode(identifier: dg.DgNodeId) {
             var data = this.constructData[identifier];
-            return this.nodes[identifier] = this.getProcessPairStates(data[2], data[3]);
+            return (this.nodes[identifier] = this.getProcessPairStates(data[2], data[3]));
         }
 
-        private getProcessPairStates(leftProcessId : ccs.ProcessId, rightProcessIds : ccs.ProcessId[]) : dg.Hyperedge[] {
-            if(rightProcessIds.length === 0)
-                return [[]];
-            
+        private getProcessPairStates(leftProcessId: ccs.ProcessId, rightProcessIds: ccs.ProcessId[]): dg.Hyperedge[] {
+            if (rightProcessIds.length === 0) return [[]];
+
             var hyperedges = [];
 
             var leftTransitions = this.attackSuccGen.getSuccessors(leftProcessId);
             var rightTransitions = [];
 
-            rightProcessIds.forEach(rightProcessId => {
+            rightProcessIds.forEach((rightProcessId) => {
                 var succs = this.attackSuccGen.getSuccessors(rightProcessId);
-                succs.forEach(succ => {rightTransitions.push(succ) });
+                succs.forEach((succ) => {
+                    rightTransitions.push(succ);
+                });
             });
-            
-            leftTransitions.forEach(leftTransition => {
+
+            leftTransitions.forEach((leftTransition) => {
                 var rightTargets = [];
-                
-                rightTransitions.forEach(rightTransition => {
+
+                rightTransitions.forEach((rightTransition) => {
                     if (rightTransition.action.equals(leftTransition.action)) {
                         rightTargets.push(rightTransition.targetProcess.id);
                     }
@@ -690,17 +738,17 @@ module Equivalence {
                 rightTargets.sort();
                 rightTargets = ArrayUtil.removeConsecutiveDuplicates(rightTargets);
 
-                if(this.leftPairs[leftTransition.targetProcess.id] === undefined)
+                if (this.leftPairs[leftTransition.targetProcess.id] === undefined)
                     this.leftPairs[leftTransition.targetProcess.id] = [];
 
-                if(this.leftPairs[leftTransition.targetProcess.id][rightTargets.length] === undefined)
+                if (this.leftPairs[leftTransition.targetProcess.id][rightTargets.length] === undefined)
                     this.leftPairs[leftTransition.targetProcess.id][rightTargets.length] = [];
-                
+
                 var rightSets = this.leftPairs[leftTransition.targetProcess.id][rightTargets.length];
                 var existing = false;
 
-                for(var n = 0; n < rightSets.length; n++) {
-                    if(rightTargets.every((v,i)=> v === rightSets[n].set[i])) {
+                for (var n = 0; n < rightSets.length; n++) {
+                    if (rightTargets.every((v, i) => v === rightSets[n].set[i])) {
                         hyperedges.push([rightSets[n].index]);
                         existing = true;
                         break;
@@ -709,37 +757,40 @@ module Equivalence {
 
                 if (!existing) {
                     var newNodeIdx = this.nextIdx++;
-                    var rightSet = {set: rightTargets, index: newNodeIdx};
-                    
+                    var rightSet = { set: rightTargets, index: newNodeIdx };
+
                     this.leftPairs[leftTransition.targetProcess.id][rightTargets.length].push(rightSet);
 
-                    this.constructData[newNodeIdx] = [0, leftTransition.action, leftTransition.targetProcess.id, rightTargets];
-                    
+                    this.constructData[newNodeIdx] = [
+                        0,
+                        leftTransition.action,
+                        leftTransition.targetProcess.id,
+                        rightTargets
+                    ];
+
                     hyperedges.push([newNodeIdx]);
                 }
             });
-            
+
             return hyperedges;
         }
-        
-        public getDistinguishingFormula(marking : dg.LevelMarking) : string {
-            if (marking.getMarking(0) === marking.ZERO)
-                return null;
-            
+
+        public getDistinguishingFormula(marking: dg.LevelMarking): string {
+            if (marking.getMarking(0) === marking.ZERO) return null;
+
             var hyperedges = this.getHyperEdges(0);
-            var formulaStr = "";
+            var formulaStr = '';
             var emptySetReached = false;
             var isWeak = this.attackSuccGen instanceof Traverse.WeakSuccessorGenerator;
-            
+
             while (!emptySetReached) {
-                
-                var bestTarget : dg.DgNodeId = 0;
+                var bestTarget: dg.DgNodeId = 0;
                 var lowestLevel = Infinity;
-                
-                hyperedges.forEach( (hyperedge) => {
+
+                hyperedges.forEach((hyperedge) => {
                     var level;
                     var edge = hyperedge[0];
-                    
+
                     if (marking.getMarking(edge) === marking.ONE) {
                         level = marking.getLevel(edge);
                         if (level <= lowestLevel) {
@@ -748,42 +799,528 @@ module Equivalence {
                         }
                     }
                 });
-                
-                formulaStr += (isWeak ? "<<" : "<") + this.constructData[bestTarget][1].toString(false) + (isWeak ? ">>" : ">");
+
+                formulaStr +=
+                    (isWeak ? '<<' : '<') + this.constructData[bestTarget][1].toString(false) + (isWeak ? '>>' : '>');
 
                 hyperedges = this.getHyperEdges(bestTarget);
 
-                for(var i = 0; i < hyperedges.length; i++) {
+                for (var i = 0; i < hyperedges.length; i++) {
                     if (hyperedges[i].length === 0) {
                         emptySetReached = true;
                         break;
                     }
                 }
             }
-            
-            formulaStr += "tt;";
+
+            formulaStr += 'tt;';
             return formulaStr;
         }
     }
 
-    export function isTraceIncluded(attackSuccGen : ccs.SuccessorGenerator, defendSuccGen : ccs.SuccessorGenerator, leftProcessId, rightProcessId, graph?) : {isSatisfied :boolean; formula : string} {
+    export function isTraceIncluded(
+        attackSuccGen: ccs.SuccessorGenerator,
+        defendSuccGen: ccs.SuccessorGenerator,
+        leftProcessId,
+        rightProcessId,
+        graph?
+    ): { isSatisfied: boolean; formula: string } {
         var traceDG = new TraceDG(leftProcessId, rightProcessId, attackSuccGen);
         var marking = dg.liuSmolkaLocal2(0, traceDG);
-        
+
         return {
             isSatisfied: marking.getMarking(0) === marking.ZERO,
             formula: traceDG.getDistinguishingFormula(marking)
-        };   
+        };
     }
 
     function prettyPrintTrace(graph, trace) {
         var notation = new Traverse.CCSNotationVisitor(),
-        stringParts = [];
-        for (var i=0; i < trace.length; i++) {
-            if (i % 2 == 1) stringParts.push("---- " + trace[i].toString() + " ---->");
+            stringParts = [];
+        for (var i = 0; i < trace.length; i++) {
+            if (i % 2 == 1) stringParts.push('---- ' + trace[i].toString() + ' ---->');
             else stringParts.push(notation.visit(graph.processById(trace[i])));
         }
-        return stringParts.join("\n\t");
+        return stringParts.join('\n\t');
     }
 
+    enum ProbDGNodeKind {
+        NoSide,
+        SidedState,
+        Distribution,
+        Support
+    }
+
+    enum Side {
+        Left,
+        Right
+    }
+
+    type MaybeConstructedNode = ConstructedProbDGNode | UnconstructedProbDGNode;
+    type ProbabilisticDGNode = (ProbDGNoSideNode | ProbDGSidedStateNode | ProbDGDistributionNode | ProbDGSupportNode) &
+        MaybeConstructedNode;
+
+    interface ConstructedProbDGNode {
+        isConstructed: true;
+        hyperedges: dg.Iterator<dg.LazyHyperedge>;
+    }
+
+    interface UnconstructedProbDGNode {
+        isConstructed: false;
+    }
+
+    interface ProbDGNoSideNode {
+        kind: ProbDGNodeKind.NoSide;
+        leftId: CCS.ProcessId;
+        rightId: CCS.ProcessId;
+    }
+
+    interface ProbDGSidedStateNode {
+        kind: ProbDGNodeKind.SidedState;
+        side: Side;
+        leftId: CCS.ProcessId;
+        rightId: CCS.ProcessId;
+    }
+
+    interface ProbDGDistributionNode {
+        kind: ProbDGNodeKind.Distribution;
+        leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
+        rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>;
+    }
+
+    interface ProbDGSupportNode {
+        kind: ProbDGNodeKind.Support;
+        support: [CCS.ProcessId, CCS.ProcessId][];
+    }
+
+    function toConstructed<T>(
+        node: T & UnconstructedProbDGNode,
+        hyperedges: dg.Iterator<dg.LazyHyperedge>
+    ): T & ConstructedProbDGNode {
+        // SAFETY: We immediately set isConstructed and hyperedges to valid values
+        const newNode = node as unknown as T & ConstructedProbDGNode;
+        newNode.isConstructed = true;
+        newNode.hyperedges = hyperedges;
+        return newNode;
+    }
+
+    function isProcessDist(proc: CCS.Process): proc is PCCS.ProbabilisticProcess {
+        return 'dist' in proc;
+    }
+
+    function isConstructed(node: MaybeConstructedNode): node is ConstructedProbDGNode {
+        return node.isConstructed;
+    }
+
+    /**
+     * Compute the powerset of a set
+     */
+    function powerset<T>(s: T[]): T[][] {
+        return s.reduce<T[][]>((acc, curr) => acc.concat(acc.map((x) => x.concat([curr]))), [[]]);
+    }
+
+    type Record<T> = { [key: string]: T };
+
+    function lpCoupling(
+        leftDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
+        rightDist: MultiSetUtil.MultiSet<CCS.ProcessId>,
+        support: [CCS.ProcessId, CCS.ProcessId][]
+    ): boolean {
+        const ln = leftDist;
+        const lSize = ln.size();
+        const rn = rightDist;
+        const rSize = rn.size();
+
+        const ls = ln.map((e) => ({ ...e, weight: e.weight * rSize }));
+        const rs = rn.map((e) => ({ ...e, weight: e.weight * lSize }));
+        const lSupp = ls.support();
+        const rSupp = rs.support();
+
+        const variables: Record<Record<number>> = {};
+        const ints: Record<number> = {};
+        const constraints: Record<{ equal: number }> = {};
+
+        const targetSup: Record<Record<boolean>> = {};
+
+        for (const [sl, sr] of support) {
+            if (!(sl in targetSup)) {
+                targetSup[sl] = {};
+            }
+            targetSup[sl]![sr] = true;
+        }
+
+        for (let i = 0; i < lSupp.length; i++) {
+            for (let j = 0; j < rSupp.length; j++) {
+                const [tl, tr] = [lSupp[i]!, rSupp[j]!];
+                if ((targetSup[tl] ?? {})[tr]) {
+                    const varName = `${i},${j}`;
+                    variables[varName] = {
+                        cost: 0,
+                        [`row${i}`]: 1,
+                        [`col${j}`]: 1
+                    };
+                    ints[varName] = 1;
+                }
+            }
+        }
+
+        for (let i = 0; i < lSupp.length; i++) {
+            constraints[`row${i}`] = { equal: ls.get(lSupp[i]!) };
+        }
+
+        for (let i = 0; i < rSupp.length; i++) {
+            constraints[`col${i}`] = { equal: rs.get(rSupp[i]!) };
+        }
+
+        // TODO: glpk.js might be faster for big systems
+        const result = yalps.solve({
+            optimize: 'cost',
+            opType: 'min',
+            constraints,
+            variables,
+            ints
+        });
+        return result.status === 'optimal';
+    }
+
+    function toIter<T>(arr: T[]): dg.Iterator<T> {
+        let index = 0;
+        const next = () => {
+            return arr[index++];
+        };
+        const reset = () => (index = 0);
+        const support = arr;
+        return { next, reset, support };
+    }
+
+    export class ProbabilisticBisimDG implements dg.LazyPartialDependencyGraph {
+        private nodes: ProbabilisticDGNode[] = [];
+        private cache: Map<string, number> = new Map();
+        private badPairs: Set<string> = new Set();
+        private pairDependencies: Map<string, Set<dg.DgNodeId>> = new Map();
+        private badNodes: Set<dg.DgNodeId> = new Set();
+        private distCache: Map<MultiSetUtil.MultiSet<CCS.ProcessId>, string> = new Map();
+
+        constructor(
+            private succGen: CCS.SuccessorGenerator,
+            leftNode: CCS.ProcessId,
+            rightNode: CCS.ProcessId
+        ) {
+            this.getOrAddNode({
+                kind: ProbDGNodeKind.NoSide,
+                isConstructed: false,
+                leftId: leftNode,
+                rightId: rightNode
+            } as ProbDGNoSideNode & UnconstructedProbDGNode);
+        }
+
+        getHyperEdges(id: dg.DgNodeId): dg.Iterator<dg.LazyHyperedge> {
+            const node = this.nodes[id]!;
+            const constructedNode = isConstructed(node) ? node : this.constructNode(node, id);
+            this.nodes[id] = constructedNode;
+            return constructedNode.hyperedges;
+        }
+
+        public markNode(nodeId: dg.DgNodeId, isOne: boolean): void {
+            if (!isOne) {
+                return;
+            }
+            const node = this.nodes[nodeId]!;
+
+            if (node.kind != ProbDGNodeKind.NoSide) {
+                return;
+            }
+
+            const key = this.cacheKey(node);
+
+            this.badPairs.add(key);
+
+            this.pairDependencies.get(key)?.forEach((id) => this.badNodes.add(id));
+        }
+
+        /**
+         * Add a node to the graph and cache
+         *
+         * @returns The index of the node in the nodes array
+         */
+        private getOrAddNode(node: ProbabilisticDGNode): number {
+            const key = this.cacheKey(node);
+            if (this.cache.get(key)) {
+                return this.cache.get(key);
+            }
+            const i = this.nodes.push(node) - 1;
+            this.cache.set(key, i);
+            return i;
+        }
+
+        private constructNode(
+            node: ProbabilisticDGNode & UnconstructedProbDGNode,
+            id: dg.DgNodeId
+        ): ProbabilisticDGNode & ConstructedProbDGNode {
+            switch (node.kind) {
+                case ProbDGNodeKind.NoSide:
+                    return this.constructNoSideNode(node);
+                case ProbDGNodeKind.SidedState:
+                    return this.constructSidedStateNode(node);
+                case ProbDGNodeKind.Distribution:
+                    return this.constructDistributionNode(node);
+                case ProbDGNodeKind.Support:
+                    return this.constructSupportNode(node, id);
+            }
+        }
+
+        private constructNoSideNode(
+            node: ProbDGNoSideNode & UnconstructedProbDGNode
+        ): ProbDGNoSideNode & ConstructedProbDGNode {
+            const left: ProbDGSidedStateNode & UnconstructedProbDGNode = {
+                kind: ProbDGNodeKind.SidedState,
+                side: Side.Left,
+                leftId: node.leftId,
+                rightId: node.rightId,
+                isConstructed: false
+            };
+            const right: ProbDGSidedStateNode & UnconstructedProbDGNode = {
+                kind: ProbDGNodeKind.SidedState,
+                side: Side.Right,
+                leftId: node.leftId,
+                rightId: node.rightId,
+                isConstructed: false
+            };
+
+            const leftIdx = this.getOrAddNode(left);
+            const rightIdx = this.getOrAddNode(right);
+
+            const iter = toIter([[leftIdx], [rightIdx]].map(toIter));
+
+            return toConstructed(node, iter);
+        }
+
+        private constructSidedStateNode(
+            node: ProbDGSidedStateNode & UnconstructedProbDGNode
+        ): ProbDGSidedStateNode & ConstructedProbDGNode {
+            const [attackerProc, defenderProc] = (
+                node.side == Side.Left ? [node.leftId, node.rightId] : [node.rightId, node.leftId]
+            ) as [CCS.ProcessId, CCS.ProcessId];
+
+            const hyperedges = this.succGen
+                .getSuccessors(attackerProc)
+                .toArray()
+                .map((attack) =>
+                    toIter(
+                        this.succGen
+                            .getSuccessors(defenderProc)
+                            .toArray()
+                            .filter((defense) => attack.action.equals(defense.action))
+                            .map((defense) => {
+                                if (!isProcessDist(attack.targetProcess)) {
+                                    throw `Target processes of attack was not a distribution. Attack: ${attack}.`;
+                                }
+                                if (!isProcessDist(defense.targetProcess)) {
+                                    throw `Target processes of defense was not a distribution. Defense: ${defense}.`;
+                                }
+
+                                const [leftDist, rightDist] =
+                                    node.side == Side.Left
+                                        ? [attack.targetProcess.dist, defense.targetProcess.dist]
+                                        : [defense.targetProcess.dist, attack.targetProcess.dist];
+
+                                const target: ProbDGDistributionNode & UnconstructedProbDGNode = {
+                                    kind: ProbDGNodeKind.Distribution,
+                                    isConstructed: false,
+                                    leftDist: leftDist.map(({ proc, weight }) => ({ proc: proc.id, weight })),
+                                    rightDist: rightDist.map(({ proc, weight }) => ({ proc: proc.id, weight }))
+                                };
+                                return this.getOrAddNode(target);
+                            })
+                    )
+                );
+
+            return toConstructed(node, toIter(hyperedges));
+        }
+
+        private constructDistributionNode(
+            node: ProbDGDistributionNode & UnconstructedProbDGNode
+        ): ProbDGDistributionNode & ConstructedProbDGNode {
+            const leftSupport = node.leftDist.support();
+            const rightSupport = node.rightDist.support();
+            // TODO: This could probably just be a Set, but I don't wanna fight the build system
+            const prod: [CCS.ProcessId, CCS.ProcessId][] = [];
+
+            for (const a of leftSupport) {
+                const aActions = this.succGen.getSuccessors(a).possibleActions().sort();
+                for (const b of rightSupport) {
+                    const bActions = this.succGen.getSuccessors(b).possibleActions().sort();
+                    if (aActions.length !== bActions.length || !aActions.every((act, i) => act.equals(bActions[i]!))) {
+                        continue;
+                    }
+                    if (
+                        this.badPairs.has(
+                            this.cacheKey({
+                                kind: ProbDGNodeKind.NoSide,
+                                leftId: a,
+                                rightId: b,
+                                isConstructed: false
+                            })
+                        )
+                    ) {
+                        continue;
+                    }
+                    prod.push([a, b]);
+                }
+            }
+
+            const powerAll = powerset(prod);
+            const power = powerAll.filter(
+                (supp) =>
+                    leftSupport.every((p) => supp.some(([q, _]) => p === q)) &&
+                    rightSupport.every((p) => supp.some(([_, q]) => p === q))
+            );
+
+            // TODO: There is probably a decent bit of performance to be gained by making this lazy
+            const targets = power
+                .map((support) => {
+                    const target: ProbDGSupportNode & UnconstructedProbDGNode = {
+                        kind: ProbDGNodeKind.Support,
+                        isConstructed: false,
+                        support
+                    };
+
+                    const nodeId = this.getOrAddNode(target);
+                    return nodeId;
+                })
+                .sort();
+
+            const support = { ref: targets };
+
+            let index = 0;
+            const checkedGood: boolean[] = [];
+
+            const next = () => {
+                const he = support.ref;
+                while (index < he.length) {
+                    const targetIndex = he[index];
+                    if (!targetIndex) {
+                        throw new Error('Distribution is pointing at undefined target');
+                    }
+
+                    if (targetIndex === -1) {
+                        index++;
+                        continue;
+                    }
+
+                    const target = this.nodes[targetIndex]!;
+
+                    if (target.kind !== ProbDGNodeKind.Support) {
+                        throw new Error('Distribution is pointing to a non-support node');
+                    }
+                    if (this.badNodes.has(targetIndex)) {
+                        he[index++] = -1;
+                        continue;
+                    }
+
+                    if (checkedGood[targetIndex]) {
+                        break;
+                    }
+                    if (lpCoupling(node.leftDist, node.rightDist, target.support)) {
+                        checkedGood[targetIndex] = true;
+                        break;
+                    } else {
+                        he[index++] = -1;
+                        continue;
+                    }
+                }
+                return he[index++];
+            };
+
+            const reset = () => {
+                index = 0;
+                support.ref = support.ref.filter((x) => x !== -1);
+            };
+
+            const iter: dg.LazyHyperedge = { next, reset, support };
+
+            return toConstructed(node, toIter([iter]));
+        }
+
+        private constructSupportNode(
+            node: ProbDGSupportNode & UnconstructedProbDGNode,
+            nodeId: dg.DgNodeId
+        ): ProbDGSupportNode & ConstructedProbDGNode {
+            const hyperedges: dg.LazyHyperedge[] = [];
+            for (const [leftId, rightId] of node.support) {
+                const targetPair: ProbDGNoSideNode & UnconstructedProbDGNode = {
+                    kind: ProbDGNodeKind.NoSide,
+                    leftId,
+                    rightId,
+                    isConstructed: false
+                };
+                const key = this.cacheKey(targetPair);
+
+                if (this.badPairs.has(key)) {
+                    this.badNodes.add(nodeId);
+                    const empty: dg.Iterator<dg.LazyHyperedge> = toIter([toIter([])]);
+                    return toConstructed(node, empty);
+                }
+
+                if (!this.pairDependencies.has(key)) {
+                    this.pairDependencies.set(key, new Set());
+                }
+
+                this.pairDependencies.get(key).add(nodeId);
+                hyperedges.push(toIter([this.getOrAddNode(targetPair)]));
+            }
+            return toConstructed(node, toIter(hyperedges));
+        }
+        /**
+         * A string representation of a given node in the dependency graph.
+         * The keys of two nodes are equal if they have the same kind and the same kind-specific data.
+         * Note that the construction data does not have to be equal.
+         */
+        private cacheKey(node: ProbabilisticDGNode): string {
+            const distCacheKey = (dist: MultiSetUtil.MultiSet<ccs.ProcessId>): string => {
+                if (!this.distCache.has(dist)) {
+                    this.distCache.set(
+                        dist,
+                        dist.cacheKey((k) => k)
+                    );
+                }
+                return this.distCache.get(dist);
+            };
+            const pairKey = (p: [string, string]) => {
+                let l, r;
+                if (p[0] < p[1]) {
+                    l = p[0];
+                    r = p[1];
+                } else {
+                    l = p[1];
+                    r = p[0];
+                }
+                return '<' + l + ',' + r + '>';
+            };
+            const kindDataKey = (node: ProbabilisticDGNode): string => {
+                const sep = ';;';
+                switch (node.kind) {
+                    case ProbDGNodeKind.NoSide:
+                        return pairKey([node.leftId, node.rightId]);
+                    case ProbDGNodeKind.SidedState:
+                        if (node.leftId <= node.rightId) {
+                            return node.leftId + sep + node.rightId + sep + node.side;
+                        } else {
+                            return (
+                                node.rightId +
+                                sep +
+                                node.leftId +
+                                sep +
+                                (node.side == Side.Left ? Side.Right : Side.Left)
+                            );
+                        }
+                    case ProbDGNodeKind.Distribution:
+                        return [distCacheKey(node.leftDist), distCacheKey(node.rightDist)].sort().join(sep);
+                    case ProbDGNodeKind.Support:
+                        return node.support.map(pairKey).sort().join('::');
+                }
+            };
+            return node.kind + '//' + kindDataKey(node);
+        }
+    }
 }

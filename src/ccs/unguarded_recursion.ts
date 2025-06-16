@@ -1,7 +1,6 @@
 /// <reference path="ccs.ts" />
 
 module Traverse {
-
     import ccs = CCS;
 
     export class UnguardedRecursionChecker implements ccs.ProcessDispatchHandler<boolean> {
@@ -15,10 +14,9 @@ module Traverse {
         private visiting;
         private unguardedProcesses;
 
-        constructor() {
-        }
+        constructor() {}
 
-        findUnguardedProcesses(allNamedProcesses : ccs.NamedProcess[]) : ccs.NamedProcess[] {
+        findUnguardedProcesses(allNamedProcesses: ccs.NamedProcess[]): ccs.NamedProcess[] {
             this.unknownResults = allNamedProcesses.slice(0);
             this.visiting = [];
             this.unguardedProcesses = [];
@@ -28,11 +26,11 @@ module Traverse {
             return this.unguardedProcesses;
         }
 
-        dispatchNullProcess(process : ccs.NullProcess) {
+        dispatchNullProcess(process: ccs.NullProcess) {
             return false;
         }
 
-        dispatchNamedProcess(process : ccs.NamedProcess) {
+        dispatchNamedProcess(process: ccs.NamedProcess) {
             var index = this.unknownResults.indexOf(process),
                 isUnguarded;
             if (index >= 0) {
@@ -53,9 +51,9 @@ module Traverse {
             return isUnguarded;
         }
 
-        dispatchSummationProcess(process : ccs.SummationProcess) {
+        dispatchSummationProcess(process: ccs.SummationProcess) {
             var isUnguarded = false;
-            process.subProcesses.forEach(subProc => {
+            process.subProcesses.forEach((subProc) => {
                 if (subProc.dispatchOn(this)) {
                     isUnguarded = true;
                 }
@@ -63,25 +61,25 @@ module Traverse {
             return isUnguarded;
         }
 
-        dispatchCompositionProcess(process : ccs.CompositionProcess) {
+        dispatchCompositionProcess(process: ccs.CompositionProcess) {
             var isUnguarded = false;
-            process.subProcesses.forEach(subProc => {
+            process.subProcesses.forEach((subProc) => {
                 if (subProc.dispatchOn(this)) {
                     isUnguarded = true;
                 }
             });
-            return isUnguarded; 
+            return isUnguarded;
         }
 
-        dispatchActionPrefixProcess(process : ccs.ActionPrefixProcess) {
+        dispatchActionPrefixProcess(process: ccs.ActionPrefixProcess) {
             return false;
         }
 
-        dispatchRestrictionProcess(process : ccs.RestrictionProcess) {
+        dispatchRestrictionProcess(process: ccs.RestrictionProcess) {
             return process.subProcess.dispatchOn(this);
         }
 
-        dispatchRelabellingProcess(process : ccs.RelabellingProcess) {
+        dispatchRelabellingProcess(process: ccs.RelabellingProcess) {
             return process.subProcess.dispatchOn(this);
         }
     }

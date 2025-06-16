@@ -18,6 +18,7 @@ Download and unzip the latest [release](http://caal.cs.aau.dk/caal-local.zip) fo
 
 All you need is to have installed is [Node.js](http://nodejs.org/), npm, and Python (for building ace).
 Clone this repository and run the following commands in the root directory of the repository:
+
 ```bash
 npm install
 git submodule init
@@ -33,20 +34,25 @@ To build CAAL, run the following command in the root directory.
 ```bash
 npm run build-all
 ```
-This will run the ``` build.sh ``` script, which will compile all of the Typescript files, and compile any potential changes in the Ace submodule.
+
+This will run the `build.sh` script, which will compile all of the Typescript files, and compile any potential changes in the Ace submodule.
 
 To run the server locally (localhost) run:
+
 ```bash
 node server.js
 ```
 
 To compile the project, run all unit tests, and zip all necessary files to run CAAL:
+
 ```bash
 npm run release
 ```
-The release will be zipped to ```release.tar.gz```. ([caal.cs.aau.dk](http://caal.cs.aau.dk/) is running the latest release.)
+
+The release will be zipped to `release.tar.gz`. ([caal.cs.aau.dk](http://caal.cs.aau.dk/) is running the latest release.)
 
 Another option (not recommended) is to compile the release without running tests:
+
 ```bash
 npm run release-notest
 ```
@@ -54,12 +60,14 @@ npm run release-notest
 #### Troubleshooting
 
 You might see the following JavaScript errors in the browser console upon running the tool.
+
 ```
 ace.js:14346 Uncaught SyntaxError: Unexpected token ILLEGAL
 editor.ts:19 Uncaught ReferenceError: ace is not defined
 ```
+
 The problem is that some line endings characters are causing issues. One possible method to fix this is to run the following commands.
 
-1. Delete the directory ``` modules/ace ```.
-2. Run ```git config --global core.autocrlf input```.
+1. Delete the directory `modules/ace`.
+2. Run `git config --global core.autocrlf input`.
 3. Run the above setup again.

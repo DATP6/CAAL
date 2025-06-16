@@ -6,41 +6,41 @@ module ContactForm {
         var project = Project.getInstance();
 
         // Set version in contact form
-        $("#contact-version").attr("placeholder", Main.getVersion());
+        $('#contact-version').attr('placeholder', Main.getVersion());
 
         // Set validation on focusout
-        $("#contact-form > .form-group").each( (i, item) => {
-            $(item).on( "focusout", () => {
+        $('#contact-form > .form-group').each((i, item) => {
+            $(item).on('focusout', () => {
                 verifyFormGroup($(item));
             });
         });
 
-        $("#contact-send").on("click", () => {
-            var url = "mailer.php";
+        $('#contact-send').on('click', () => {
+            var url = 'mailer.php';
 
-            if(!verifyForm()) {
+            if (!verifyForm()) {
                 return false;
             }
 
             $.ajax({
-                type: "POST",
+                type: 'POST',
                 url: url,
-                data: {subject: $("#contact-subject").val(),
-                       email: $("#contact-email").val(),
-                       text: $("#contact-text").val(),
-                       name: $("#contact-name").val(),
-                       project: ($('#contact-isAttached').is(':checked')) ? project.toJSON() : "",
-                       version: Main.getVersion()},
-                success: function(data)
-                {
-                    if(data == "true") {
+                data: {
+                    subject: $('#contact-subject').val(),
+                    email: $('#contact-email').val(),
+                    text: $('#contact-text').val(),
+                    name: $('#contact-name').val(),
+                    project: $('#contact-isAttached').is(':checked') ? project.toJSON() : '',
+                    version: Main.getVersion()
+                },
+                success: function (data) {
+                    if (data == 'true') {
                         showSuccess();
                     } else {
                         showError();
                     }
                 },
-                error: function(data)
-                {
+                error: function (data) {
                     showError();
                 }
             });
@@ -50,21 +50,21 @@ module ContactForm {
     }
 
     function verifyFormGroup(element) {
-        var control = element.find(".form-control");
+        var control = element.find('.form-control');
         var result = true;
 
-        var test = control.attr('id')
+        var test = control.attr('id');
 
-        if(control.attr('id') == "contact-email") {
+        if (control.attr('id') == 'contact-email') {
             result = validateEmail(control.val());
         } else {
-            result = (control.val() == "") ? false : true;
+            result = control.val() == '' ? false : true;
         }
 
-        if(result) {
-            element.removeClass("has-error");
+        if (result) {
+            element.removeClass('has-error');
         } else {
-            element.removeClass("has-error").addClass("has-error");
+            element.removeClass('has-error').addClass('has-error');
         }
 
         return result;
@@ -73,9 +73,9 @@ module ContactForm {
     function verifyForm() {
         var result = true;
 
-        $("#contact-form > .form-group").each( (i, item) => {
+        $('#contact-form > .form-group').each((i, item) => {
             var test = $(item).attr('class');
-            result = (verifyFormGroup($(item))) ? result : false;
+            result = verifyFormGroup($(item)) ? result : false;
         });
 
         return result;
@@ -87,12 +87,12 @@ module ContactForm {
     }
 
     function showSuccess() {
-        $("#contactModal").modal("hide");
-        Main.showNotification("Thank you!", 2000);
+        $('#contactModal').modal('hide');
+        Main.showNotification('Thank you!', 2000);
     }
 
     function showError() {
-        $("#contactModal").modal("hide");
-        Main.showNotification("An error occurred, please try again", 2000);
+        $('#contactModal').modal('hide');
+        Main.showNotification('An error occurred, please try again', 2000);
     }
 }

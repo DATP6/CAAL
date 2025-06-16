@@ -6,23 +6,22 @@
 /// <reference path="../gui.ts" />
 
 module GUI {
-
     export class ArborGraph implements GUI.ProcessGraphUI {
-        private sys : ParticleSystem;
-        private renderer : Renderer;
-        private handler : Handler;
-        private highlightedEdges : Edge[] = [];
-        private selectedNode : Node;
+        private sys: ParticleSystem;
+        private renderer: Renderer;
+        private handler: Handler;
+        private highlightedEdges: Edge[] = [];
+        private selectedNode: Node;
 
-        constructor(renderer, options = {repulsion: 400, stiffness: 800, friction: 0.5, integrator: "verlet"}) {
+        constructor(renderer, options = { repulsion: 400, stiffness: 800, friction: 0.5, integrator: 'verlet' }) {
             this.sys = arbor.ParticleSystem(options);
-            this.sys.parameters({gravity:true});
+            this.sys.parameters({ gravity: true });
             this.renderer = renderer;
             this.sys.renderer = renderer;
             this.handler = new Handler(renderer);
         }
 
-        public showProcess(nodeId : string, data : Object) : void {
+        public showProcess(nodeId: string, data: Object): void {
             var node = this.sys.getNode(nodeId);
             if (node) {
                 node.data = data;
@@ -31,65 +30,65 @@ module GUI {
             }
         }
 
-        public getProcessDataObject(nodeId : string) : Object {
+        public getProcessDataObject(nodeId: string): Object {
             var node = this.sys.getNode(nodeId),
                 data = node ? node.data : null;
             return data;
         }
 
-        public getNode(name : string) : Node {
+        public getNode(name: string): Node {
             return this.sys.getNode(name);
         }
 
-        public getPosition(name : string) : Point {
+        public getPosition(name: string): Point {
             return this.sys.toScreen(this.getNode(name).p);
         }
 
-        public showTransitions(fromId : string, toId : string, datas : Object[]) {
+        public showTransitions(fromId: string, toId: string, datas: Object[]) {
             var edges = this.sys.getEdges(fromId, toId),
                 edge = edges.length > 0 ? edges[0] : null;
             if (edge) {
                 edge.data.datas = datas;
             } else {
-                this.sys.addEdge(fromId, toId, {datas: datas});
+                this.sys.addEdge(fromId, toId, { datas: datas });
             }
         }
 
         public setSelected(name: string) {
-            if(!name) return;
+            if (!name) return;
             var newSelectedNode = this.sys.getNode(name);
 
-            if(this.selectedNode && newSelectedNode) {
-                this.selectedNode.data.status = "expanded";
+            if (this.selectedNode && newSelectedNode) {
+                this.selectedNode.data.status = 'expanded';
             }
 
-            if(newSelectedNode) {
+            if (newSelectedNode) {
                 this.selectedNode = newSelectedNode;
                 this.selectedNode.data.status = 'selected';
             }
             this.renderer.redraw();
         }
 
-        public getSelected() : string {
+        public getSelected(): string {
             return this.selectedNode.name;
         }
 
-        public highlightToNode(name : string) : void {
+        public highlightToNode(name: string): void {
             var node = this.sys.getNode(name);
             if (this.selectedNode && node) {
                 this.highlightEdgeNodes(this.selectedNode, node);
             }
         }
 
-        public clearHighlights() : void {
-            while(this.highlightedEdges.length > 0) {
+        public clearHighlights(): void {
+            while (this.highlightedEdges.length > 0) {
                 var edge = this.highlightedEdges.pop();
                 edge.data.highlight = false;
             }
             this.renderer.redraw();
         }
 
-        public highlightEdge(from : string, to : string) {
+        public highlightEdge(from: string, to: string) {
             var fromNode = this.sys.getNode(from);
             var toNode = this.sys.getNode(to);
             if (fromNode && toNode) {
@@ -97,16 +96,16 @@ module GUI {
             }
         }
 
-        private highlightEdgeNodes(from : Node, to : Node) {
+        private highlightEdgeNodes(from: Node, to: Node) {
             var edges = this.sys.getEdges(from, to);
-            for (var i = 0; i < edges.length; i++){
+            for (var i = 0; i < edges.length; i++) {
                 edges[i].data.highlight = true;
                 this.highlightedEdges.push(edges[i]);
             }
             this.renderer.redraw();
         }
 
-        public getTransitionDataObjects(fromId : string, toId : string) : Object[] {
+        public getTransitionDataObjects(fromId: string, toId: string): Object[] {
             var edges = this.sys.getEdges(fromId, toId),
                 edge = edges.length > 0 ? edges[0] : null,
                 datas = edge && edge.data ? edge.data.datas : null;
@@ -114,49 +113,49 @@ module GUI {
         }
 
         /* Event handling */
-        public setOnSelectListener(f : (identifier : string) => void) : void {
+        public setOnSelectListener(f: (identifier: string) => void): void {
             this.handler.onClick = (nodeId) => {
                 f(nodeId);
             };
         }
 
-        public clearOnSelectListener() : void {
+        public clearOnSelectListener(): void {
             this.handler.onClick = null;
         }
 
-        public setHoverOnListener(f : (identifier : string) => void) : void {
-            this.handler.onHover = f
+        public setHoverOnListener(f: (identifier: string) => void): void {
+            this.handler.onHover = f;
         }
 
-        public clearHoverOutListener() : void {
+        public clearHoverOutListener(): void {
             this.handler.onHover = null;
         }
 
-        public setHoverOutListener(f : (identifier : string) => void) : void {
-            this.handler.onHoverOut = f
+        public setHoverOutListener(f: (identifier: string) => void): void {
+            this.handler.onHoverOut = f;
         }
 
-        public clearHoverOnListener() : void {
+        public clearHoverOnListener(): void {
             this.handler.onHoverOut = null;
         }
 
-        public clearAll() : void {
+        public clearAll(): void {
             this.sys.prune((node, from, to) => true);
         }
 
-        public freeze() : void {
+        public freeze(): void {
             this.sys.stop();
         }
 
-        public unfreeze() : void {
+        public unfreeze(): void {
             this.sys.start(true);
         }
 
-        public bindCanvasEvents() : void { 
+        public bindCanvasEvents(): void {
             this.handler.bindCanvasEvents();
         }
 
-        public unbindCanvasEvents() : void {
+        public unbindCanvasEvents(): void {
             this.handler.unbindCanvasEvents();
         }
     }
